@@ -17,3 +17,4 @@
 - docs(scanner): improve streaming response
 - feat(dashboard): update trending repos fetcher
 - fix(ui): secure rate limiting
+- chore(cache): handle error boundaries
