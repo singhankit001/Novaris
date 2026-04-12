@@ -30,3 +30,4 @@
 - style(cache): handle Tailwind classes
 - perf(api): optimize sidebar navigation
 - test(ai): implement Vercel deployment
+- docs(auth): setup Mermaid renderer
