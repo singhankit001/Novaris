@@ -45,3 +45,4 @@
 - refactor(chat): resolve token limits
 - style(db): refine OSV api integration
 - perf(scanner): improve live progress steps
+- test(dashboard): update file selector model
