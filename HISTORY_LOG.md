@@ -54,3 +54,4 @@
 - style(config): add repo metadata fetch
 - perf(chat): resolve Next Auth session
 - test(db): refine security test suites
+- docs(scanner): improve streaming response
