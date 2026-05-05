@@ -98,3 +98,4 @@
 - feat(dashboard): update trending repos fetcher
 - fix(ui): secure rate limiting
 - chore(cache): handle error boundaries
+- refactor(api): optimize Prisma schema
