@@ -114,3 +114,4 @@
 - feat(config): add repo metadata fetch
 - fix(chat): resolve Next Auth session
 - chore(db): refine security test suites
+- refactor(scanner): improve streaming response
