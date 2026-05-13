@@ -119,3 +119,4 @@
 - perf(ui): secure rate limiting
 - test(cache): handle error boundaries
 - docs(api): optimize Prisma schema
+- feat(ai): implement agentic CAG pipeline
