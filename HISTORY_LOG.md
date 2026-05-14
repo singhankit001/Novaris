@@ -122,3 +122,4 @@
 - feat(ai): implement agentic CAG pipeline
 - fix(auth): setup glassmorphism UI
 - chore(config): add KV cache logic
+- refactor(chat): resolve token limits
