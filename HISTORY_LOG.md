@@ -136,3 +136,4 @@
 - test(db): refine security test suites
 - docs(scanner): improve streaming response
 - feat(dashboard): update trending repos fetcher
+- fix(ui): secure rate limiting
