@@ -140,3 +140,4 @@
 - chore(cache): handle error boundaries
 - refactor(api): optimize Prisma schema
 - style(ai): implement agentic CAG pipeline
+- perf(auth): setup glassmorphism UI
