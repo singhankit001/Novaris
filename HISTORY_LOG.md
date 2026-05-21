@@ -144,3 +144,4 @@
 - test(config): add KV cache logic
 - docs(chat): resolve token limits
 - feat(db): refine OSV api integration
+- fix(scanner): improve live progress steps
