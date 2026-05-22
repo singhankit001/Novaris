@@ -145,3 +145,4 @@
 - docs(chat): resolve token limits
 - feat(db): refine OSV api integration
 - fix(scanner): improve live progress steps
+- chore(dashboard): update file selector model
