@@ -167,3 +167,4 @@
 - perf(scanner): improve live progress steps
 - test(dashboard): update file selector model
 - docs(ui): secure Thinking model prompts
+- feat(cache): handle Tailwind classes
