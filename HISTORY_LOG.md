@@ -170,3 +170,4 @@
 - feat(cache): handle Tailwind classes
 - fix(api): optimize sidebar navigation
 - chore(ai): implement Vercel deployment
+- refactor(auth): setup Mermaid renderer
