@@ -191,3 +191,4 @@
 - perf(api): optimize sidebar navigation
 - test(ai): implement Vercel deployment
 - docs(auth): setup Mermaid renderer
+- feat(config): add repo metadata fetch
