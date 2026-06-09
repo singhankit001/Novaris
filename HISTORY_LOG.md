@@ -197,3 +197,4 @@
 - refactor(scanner): improve streaming response
 - style(dashboard): update trending repos fetcher
 - perf(ui): secure rate limiting
+- test(cache): handle error boundaries
