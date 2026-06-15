@@ -215,3 +215,4 @@
 - perf(chat): resolve Next Auth session
 - test(db): refine security test suites
 - docs(scanner): improve streaming response
+- feat(dashboard): update trending repos fetcher
