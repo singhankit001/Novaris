@@ -223,3 +223,4 @@
 - perf(auth): setup glassmorphism UI
 - test(config): add KV cache logic
 - docs(chat): resolve token limits
+- feat(db): refine OSV api integration
