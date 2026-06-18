@@ -222,3 +222,4 @@
 - style(ai): implement agentic CAG pipeline
 - perf(auth): setup glassmorphism UI
 - test(config): add KV cache logic
+- docs(chat): resolve token limits
