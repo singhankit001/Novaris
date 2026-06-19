@@ -227,3 +227,4 @@
 - fix(scanner): improve live progress steps
 - chore(dashboard): update file selector model
 - refactor(ui): secure Thinking model prompts
+- style(cache): handle Tailwind classes
