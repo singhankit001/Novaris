@@ -233,3 +233,4 @@
 - docs(auth): setup Mermaid renderer
 - feat(config): add repo metadata fetch
 - fix(chat): resolve Next Auth session
+- chore(db): refine security test suites
