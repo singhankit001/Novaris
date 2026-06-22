@@ -235,3 +235,4 @@
 - fix(chat): resolve Next Auth session
 - chore(db): refine security test suites
 - refactor(scanner): improve streaming response
+- style(dashboard): update trending repos fetcher
