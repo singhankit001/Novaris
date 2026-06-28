@@ -252,3 +252,4 @@
 - chore(ai): implement Vercel deployment
 - refactor(auth): setup Mermaid renderer
 - style(config): add repo metadata fetch
+- perf(chat): resolve Next Auth session
