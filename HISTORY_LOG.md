@@ -251,3 +251,4 @@
 - fix(api): optimize sidebar navigation
 - chore(ai): implement Vercel deployment
 - refactor(auth): setup Mermaid renderer
+- style(config): add repo metadata fetch
