@@ -259,3 +259,4 @@
 - fix(ui): secure rate limiting
 - chore(cache): handle error boundaries
 - refactor(api): optimize Prisma schema
+- style(ai): implement agentic CAG pipeline
