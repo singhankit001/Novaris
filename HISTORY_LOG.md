@@ -278,3 +278,4 @@
 - style(dashboard): update trending repos fetcher
 - perf(ui): secure rate limiting
 - test(cache): handle error boundaries
+- docs(api): optimize Prisma schema
