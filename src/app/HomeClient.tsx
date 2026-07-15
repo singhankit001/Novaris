@@ -177,10 +177,8 @@ export default function HomeClient({
                         </div>
                     </div>
 
-                    <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-100 to-zinc-300 relative leading-none max-w-5xl animate-fade-in-up-blur drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                        GitHub Repository Analysis,
-                        <br />
-                        Code Review & Security Scanning
+                    <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-100 to-zinc-300 relative leading-tight max-w-5xl text-balance animate-fade-in-up-blur drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                        GitHub Repository Analysis, Code Review & Security Scanning
                     </h1>
 
                     <CAGBadge />
