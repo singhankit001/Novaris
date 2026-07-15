@@ -110,7 +110,7 @@ export default function HomeClient({
             <div className="absolute bottom-1/3 right-1/4 w-[600px] h-[600px] bg-blue-950/10 rounded-full blur-[160px] pointer-events-none z-0 animate-mesh-2" />
 
             {/* Sticky Glass Navbar */}
-            <header className="sticky top-0 z-[100] w-full border-b border-white/5 bg-[#050505]/75 backdrop-blur-md">
+            <header className="sticky top-0 z-[100] w-full border-b border-white/10 bg-[#030303]/85 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all">
                 <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-6">
                     <div className="flex items-center gap-8">
                         <Link href="/" className="flex items-center gap-2.5 group">
@@ -118,17 +118,17 @@ export default function HomeClient({
                                 NOVARIS
                             </span>
                         </Link>
-                        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-200">
-                            <Link href="/solutions" className="hover:text-white transition-colors">
+                        <nav className="hidden md:flex items-center gap-4 text-xs font-semibold tracking-wider uppercase text-zinc-200">
+                            <Link href="/solutions" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
                                 Solutions
                             </Link>
-                            <Link href="/compare" className="hover:text-white transition-colors">
+                            <Link href="/compare" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
                                 Compare
                             </Link>
-                            <Link href="/blog" className="hover:text-white transition-colors">
+                            <Link href="/blog" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
                                 Insights
                             </Link>
-                            <Link href="/faq" className="hover:text-white transition-colors">
+                            <Link href="/faq" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
                                 FAQ
                             </Link>
                         </nav>

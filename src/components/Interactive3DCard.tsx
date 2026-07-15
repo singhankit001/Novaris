@@ -20,10 +20,10 @@ export function Interactive3DCard({
   const [isHovered, setIsHovered] = useState(false);
 
   const glowBorderClasses = {
-    cyan: "border-cyan-500/20 hover:border-cyan-400/50 hover:shadow-[0_0_40px_rgba(6,182,212,0.18)]",
-    purple: "border-purple-500/20 hover:border-purple-400/50 hover:shadow-[0_0_40px_rgba(168,85,247,0.18)]",
-    blue: "border-blue-500/20 hover:border-blue-400/50 hover:shadow-[0_0_40px_rgba(59,130,246,0.18)]",
-    emerald: "border-emerald-500/20 hover:border-emerald-400/50 hover:shadow-[0_0_40px_rgba(16,185,129,0.18)]",
+    cyan: "border-cyan-500/35 shadow-[0_0_25px_rgba(6,182,212,0.06)] hover:border-cyan-400/60 hover:shadow-[0_0_50px_rgba(6,182,212,0.25)]",
+    purple: "border-purple-500/35 shadow-[0_0_25px_rgba(168,85,247,0.06)] hover:border-purple-400/60 hover:shadow-[0_0_50px_rgba(168,85,247,0.25)]",
+    blue: "border-blue-500/35 shadow-[0_0_25px_rgba(59,130,246,0.06)] hover:border-blue-400/60 hover:shadow-[0_0_50px_rgba(59,130,246,0.25)]",
+    emerald: "border-emerald-500/35 shadow-[0_0_25px_rgba(16,185,129,0.06)] hover:border-emerald-400/60 hover:shadow-[0_0_50px_rgba(16,185,129,0.25)]",
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -64,7 +64,7 @@ export function Interactive3DCard({
         transform: transformStyle,
         transition: isHovered ? "transform 0.08s ease-out" : "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
-      className={`relative rounded-2xl bg-[#09090b]/40 backdrop-blur-md border ${glowBorderClasses[glowColor]} transition-all duration-300 ${className}`}
+      className={`relative rounded-3xl bg-[#08080a]/85 backdrop-blur-2xl border ${glowBorderClasses[glowColor]} transition-all duration-500 ${className}`}
     >
       {children}
     </div>

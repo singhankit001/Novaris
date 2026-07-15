@@ -113,7 +113,7 @@ export default function RepoSearch({
     return (
         <div className="w-full flex flex-col items-center">
             <form onSubmit={handleFormSubmit} className="w-full max-w-md relative group">
-                <div className="flex items-center bg-zinc-900/60 border border-white/10 focus-within:border-purple-500/50 focus-within:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 p-1.5 rounded-xl">
+                <div className="flex items-center bg-[#0a0a0f]/80 border border-white/10 focus-within:border-cyan-500/40 focus-within:shadow-[0_0_30px_rgba(6,182,212,0.15)] transition-all duration-300 p-2 rounded-2xl shadow-inner">
                     <input
                         type="text"
                         value={input}
@@ -122,7 +122,7 @@ export default function RepoSearch({
                         onFocus={() => input.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                         placeholder="GitHub URL, username, or repo"
-                        className="flex-1 bg-transparent border-none outline-none text-white px-3 py-1.5 md:px-4 md:py-2.5 placeholder-zinc-500 text-sm md:text-base w-full min-w-0 font-sans"
+                        className="flex-1 bg-transparent border-none outline-none text-white px-3 py-2 md:px-4 md:py-3 placeholder-zinc-500 text-sm md:text-base w-full min-w-0 font-sans font-medium"
                     />
                     <AnimatePresence>
                         {input.length > 0 && (
@@ -133,7 +133,7 @@ export default function RepoSearch({
                                 transition={{ duration: 0.15, ease: "easeOut" }}
                                 type="submit"
                                 disabled={loading}
-                                className="p-2 md:p-3 rounded-md transition-all disabled:opacity-60 shrink-0 text-zinc-400 hover:text-white hover:bg-white/5 active:scale-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/10"
+                                className="p-2.5 md:p-3.5 rounded-xl transition-all disabled:opacity-60 shrink-0 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold hover:opacity-90 active:scale-95 focus-visible:outline-none shadow-[0_0_15px_rgba(168,85,247,0.35)]"
                             >
                                 {loading || isFetchingSuggestions ? (
                                     <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
