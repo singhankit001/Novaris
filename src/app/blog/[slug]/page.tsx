@@ -12,10 +12,15 @@ import { buildBlogPostingStructuredData, buildBreadcrumbStructuredData } from "@
 
 // Generates static params for all blog posts
 export async function generateStaticParams() {
-  const posts: BlogPost[] = await getPublishedPosts();
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
+  try {
+    const posts: BlogPost[] = await getPublishedPosts();
+    return posts.map((post) => ({
+      slug: post.slug,
+    }));
+  } catch (error) {
+    console.warn("Skipping static blog generation: Database connection failed (likely missing DATABASE_URL during build).");
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

@@ -67,20 +67,35 @@ function toCreatePayload(data: SavePostInput, slug: string): Prisma.BlogPostCrea
 }
 
 export async function getPublishedPosts() {
-  return await prisma.blogPost.findMany({
-    where: { published: true },
-    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-  });
+  try {
+    return await prisma.blogPost.findMany({
+      where: { published: true },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    });
+  } catch (error) {
+    console.warn("Skipping getPublishedPosts: Database connection failed.");
+    return [];
+  }
 }
 
 export async function getHomepagePosts() {
-  return getCachedHomepagePosts();
+  try {
+    return await getCachedHomepagePosts();
+  } catch (error) {
+    console.warn("Skipping getHomepagePosts: Database connection failed.");
+    return [];
+  }
 }
 
 export async function getAllPosts() {
-  return await prisma.blogPost.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    return await prisma.blogPost.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.warn("Skipping getAllPosts: Database connection failed.");
+    return [];
+  }
 }
 
 export async function getPostBySlug(slug: string) {
