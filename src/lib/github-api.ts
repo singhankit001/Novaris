@@ -15,7 +15,7 @@ export async function fetchGitHubAPI(url: string | URL | Request, options: Reque
   
   try {
     const session = await auth();
-    // @ts-expect-error accessToken is injected via callbacks in auth.config.ts
+    // accessToken is injected via callbacks in auth.config.ts
     if (session?.accessToken) {
       sessionToken = session.accessToken as string;
     }
