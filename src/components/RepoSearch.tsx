@@ -157,7 +157,7 @@ export default function RepoSearch({
             </form>
 
             <div className="mt-4 md:mt-6 flex flex-col items-center gap-4 md:gap-6 w-full">
-                <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4 text-[10px] sm:text-xs md:text-sm text-zinc-500">
+                <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4 text-[10px] sm:text-xs md:text-sm text-zinc-300">
                     {isSessionActive && recentSearches.length > 0 ? (
                         <>
                             <span>Recent:</span>

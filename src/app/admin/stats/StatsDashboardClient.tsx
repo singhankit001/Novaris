@@ -320,7 +320,7 @@ export default function StatsDashboardClient({
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
                                 Analytics Dashboard
                             </h1>
-                            <p className="text-zinc-500 text-sm mt-1">Real-time platform performance monitoring (IST)</p>
+                            <p className="text-zinc-300 text-sm mt-1">Real-time platform performance monitoring (IST)</p>
                         </div>
                     </div>
 
@@ -331,8 +331,8 @@ export default function StatsDashboardClient({
                             </span>
                         )}
                         <div className="text-right hidden sm:block">
-                            <div className="text-sm text-zinc-400">Current Time (IST)</div>
-                            <div className="text-xs font-mono text-zinc-500">
+                            <div className="text-sm text-zinc-200">Current Time (IST)</div>
+                            <div className="text-xs font-mono text-zinc-300">
                                 {currentTime > 0 ? formatIST(currentTime) : "Syncing..."}
                             </div>
                         </div>
@@ -357,22 +357,22 @@ export default function StatsDashboardClient({
                     <h3 className="text-yellow-500/80 font-mono text-[10px] mb-3 uppercase tracking-[0.2em]">Your Current Session</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm font-mono">
                         <div className="space-y-1">
-                            <span className="text-zinc-500 block text-[10px] uppercase">Country</span>
+                            <span className="text-zinc-300 block text-[10px] uppercase">Country</span>
                             <span className="text-zinc-200 flex items-center gap-2">
-                                <Globe className="w-3 h-3 text-zinc-400" />
+                                <Globe className="w-3 h-3 text-zinc-200" />
                                 {country || "Unknown"}
                             </span>
                         </div>
                         <div className="space-y-1">
-                            <span className="text-zinc-500 block text-[10px] uppercase">Device</span>
+                            <span className="text-zinc-300 block text-[10px] uppercase">Device</span>
                             <span className={isMobile ? "text-orange-400 flex items-center gap-2" : "text-blue-400 flex items-center gap-2"}>
                                 {isMobile ? <Smartphone className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}
                                 {isMobile ? "Mobile" : "Desktop"}
                             </span>
                         </div>
                         <div className="space-y-1 sm:col-span-1">
-                            <span className="text-zinc-500 block text-[10px] uppercase">User Agent Snippet</span>
-                            <span className="text-zinc-500 truncate block text-xs" title={userAgent}>{userAgent.slice(0, 40)}...</span>
+                            <span className="text-zinc-300 block text-[10px] uppercase">User Agent Snippet</span>
+                            <span className="text-zinc-300 truncate block text-xs" title={userAgent}>{userAgent.slice(0, 40)}...</span>
                         </div>
                     </div>
                 </motion.div>
@@ -422,7 +422,7 @@ export default function StatsDashboardClient({
                                 <Search className="w-5 h-5 text-cyan-400" />
                                 Search Performance
                             </h2>
-                            <span className="text-xs text-zinc-500 uppercase tracking-wider">File selection speed + fallback rate</span>
+                            <span className="text-xs text-zinc-300 uppercase tracking-wider">File selection speed + fallback rate</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
                             {(["24h", "7d"] as const).map((range) => (
@@ -452,7 +452,7 @@ export default function StatsDashboardClient({
                                 <Zap className="w-5 h-5 text-indigo-400" />
                                 Report to Chat Funnel (7d)
                             </h2>
-                            <span className="text-xs text-zinc-500 uppercase tracking-wider">{"North star: report -> chat starts"}</span>
+                            <span className="text-xs text-zinc-300 uppercase tracking-wider">{"North star: report -> chat starts"}</span>
                         </div>
                         <button
                             type="button"
@@ -478,7 +478,7 @@ export default function StatsDashboardClient({
                             <ShieldAlert className="w-5 h-5 text-amber-400" />
                             False Positive Review
                         </h2>
-                        <span className="text-xs text-zinc-500 uppercase tracking-wider">Recent submissions + review state</span>
+                        <span className="text-xs text-zinc-300 uppercase tracking-wider">Recent submissions + review state</span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <MetricTile label="Total" value={falsePositiveReview?.total ?? 0} />
@@ -496,7 +496,7 @@ export default function StatsDashboardClient({
                                 <Activity className="w-5 h-5 text-blue-400" />
                                 Activity Visualization
                             </h2>
-                            <div className="flex items-center gap-3 text-xs text-zinc-500">
+                            <div className="flex items-center gap-3 text-xs text-zinc-300">
                                 <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500" /> Visitors</div>
                                 <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> Queries</div>
                             </div>
@@ -506,8 +506,8 @@ export default function StatsDashboardClient({
                         <div className="space-y-8">
                             <div>
                                 <div className="flex justify-between items-end mb-2">
-                                    <span className="text-sm text-zinc-400">Device Distribution</span>
-                                    <span className="text-xs text-zinc-500">BY PERCENTAGE</span>
+                                    <span className="text-sm text-zinc-200">Device Distribution</span>
+                                    <span className="text-xs text-zinc-300">BY PERCENTAGE</span>
                                 </div>
                                 <div className="h-12 w-full flex rounded-xl overflow-hidden bg-zinc-800">
                                     {Object.entries(analyticsData.deviceStats).map(([device, count]) => {
@@ -544,8 +544,8 @@ export default function StatsDashboardClient({
                                             .map(([country, count]) => (
                                                 <div key={country} className="space-y-1">
                                                     <div className="flex justify-between text-xs">
-                                                        <span className="text-zinc-400">{country}</span>
-                                                        <span className="text-zinc-500">{count}</span>
+                                                        <span className="text-zinc-200">{country}</span>
+                                                        <span className="text-zinc-300">{count}</span>
                                                     </div>
                                                     <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
                                                         <motion.div
@@ -564,7 +564,7 @@ export default function StatsDashboardClient({
                                         <UserCheck className="w-5 h-5" />
                                         <span className="font-semibold">Engagement Insight</span>
                                     </div>
-                                    <p className="text-sm text-zinc-400 leading-relaxed">
+                                    <p className="text-sm text-zinc-200 leading-relaxed">
                                         Your platform has a <span className="text-white font-medium">{retentionRate}% retention rate</span>.
                                         High query volume from {Object.entries(analyticsData.countryStats).sort(([, a], [, b]) => b - a)[0]?.[0] || 'users'} suggests
                                         strong feature adoption in those regions.
@@ -582,19 +582,19 @@ export default function StatsDashboardClient({
                         <div className="space-y-6">
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-400">Active (24h)</span>
+                                    <span className="text-zinc-200">Active (24h)</span>
                                     <span className="font-mono text-zinc-200">{analyticsData.activeUsers24h}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-400">Avg. Queries</span>
+                                    <span className="text-zinc-200">Avg. Queries</span>
                                     <span className="font-mono text-zinc-200">{avgQueriesPerUser}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-400">Total Sessions</span>
+                                    <span className="text-zinc-200">Total Sessions</span>
                                     <span className="font-mono text-zinc-200">{analyticsData.totalVisitors}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-400">Returning Users</span>
+                                    <span className="text-zinc-200">Returning Users</span>
                                     <span className="font-mono text-zinc-200">{returningUsers}</span>
                                 </div>
                             </div>
@@ -616,7 +616,7 @@ export default function StatsDashboardClient({
                                 <Database className="w-5 h-5 text-amber-400" />
                                 KV Cache Storage History
                             </h2>
-                            <p className="text-zinc-500 text-xs mt-1">Storage usage trend over the selected period (MB)</p>
+                            <p className="text-zinc-300 text-xs mt-1">Storage usage trend over the selected period (MB)</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <select
@@ -629,7 +629,7 @@ export default function StatsDashboardClient({
                                 <option value="1m">Last Month</option>
                                 <option value="3m">Last 3 Months</option>
                             </select>
-                            <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+                            <div className="flex items-center gap-2 text-xs font-mono text-zinc-200">
                                 <Zap className="w-3 h-3 text-amber-500" />
                                 <span>LIMIT: {formatSize(analyticsData.kvStats?.maxSize || 0)}</span>
                             </div>
@@ -698,7 +698,7 @@ export default function StatsDashboardClient({
                             return (
                                 <div className="w-full h-full pt-2">
                                     <div className="flex h-full gap-3">
-                                        <div className="hidden w-20 shrink-0 flex-col justify-between pb-6 text-[10px] font-mono text-zinc-500 sm:flex">
+                                        <div className="hidden w-20 shrink-0 flex-col justify-between pb-6 text-[10px] font-mono text-zinc-300 sm:flex">
                                             {yAxisTicks.map(({ tick, value }) => (
                                                 <span key={tick} className="leading-none">
                                                     {formatSize(Math.max(0, value))}
@@ -790,7 +790,7 @@ export default function StatsDashboardClient({
                                                     }}
                                                 >
                                                     <p className="font-mono text-[11px] text-amber-300">{formatSize(hoveredKvPoint.size)}</p>
-                                                    <p className="mt-1 text-[10px] text-zinc-400">
+                                                    <p className="mt-1 text-[10px] text-zinc-200">
                                                         {new Date(hoveredKvPoint.timestamp).toLocaleString()}
                                                     </p>
                                                 </div>
@@ -812,13 +812,13 @@ export default function StatsDashboardClient({
                 <div className="bg-zinc-900/50 border border-white/10 rounded-2xl overflow-hidden">
                     <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
                         <h2 className="text-xl font-semibold">False Positive Queue</h2>
-                        <span className="text-xs text-zinc-500 font-mono">
+                        <span className="text-xs text-zinc-300 font-mono">
                             Showing {falsePositiveRows.length} recent submissions
                         </span>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-zinc-900/80 text-zinc-400 font-medium">
+                            <thead className="bg-zinc-900/80 text-zinc-200 font-medium">
                                 <tr>
                                     <th className="px-6 py-4">Repository</th>
                                     <th className="px-6 py-4">Finding</th>
@@ -834,7 +834,7 @@ export default function StatsDashboardClient({
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-zinc-200 font-medium">{submission.owner}/{submission.repo}</span>
-                                                <span className="text-[10px] text-zinc-500 font-mono uppercase">
+                                                <span className="text-[10px] text-zinc-300 font-mono uppercase">
                                                     {submission.isSharedView ? "Shared report" : "Private report"}
                                                 </span>
                                             </div>
@@ -842,7 +842,7 @@ export default function StatsDashboardClient({
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-zinc-200">{submission.title}</span>
-                                                <span className="text-xs text-zinc-500">
+                                                <span className="text-xs text-zinc-300">
                                                     {submission.severity.toUpperCase()} • {submission.file}{submission.line ? `:${submission.line}` : ""}
                                                 </span>
                                             </div>
@@ -852,7 +852,7 @@ export default function StatsDashboardClient({
                                                 <span className="inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
                                                     {formatFalsePositiveReason(submission.reason)}
                                                 </span>
-                                                <p className="whitespace-pre-wrap text-xs leading-relaxed text-zinc-400">
+                                                <p className="whitespace-pre-wrap text-xs leading-relaxed text-zinc-200">
                                                     {submission.details}
                                                 </p>
                                             </div>
@@ -863,7 +863,7 @@ export default function StatsDashboardClient({
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-zinc-300">{formatIST(submission.createdAt)}</span>
-                                                <span className="text-[10px] text-zinc-500 font-mono uppercase">{getRelativeTime(submission.createdAt)}</span>
+                                                <span className="text-[10px] text-zinc-300 font-mono uppercase">{getRelativeTime(submission.createdAt)}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -885,7 +885,7 @@ export default function StatsDashboardClient({
                                 ))}
                                 {falsePositiveRows.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
+                                        <td colSpan={6} className="px-6 py-12 text-center text-zinc-300">
                                             <div className="flex flex-col items-center gap-2">
                                                 <ShieldAlert className="w-8 h-8 opacity-20" />
                                                 <p>No false positive submissions yet.</p>
@@ -903,7 +903,7 @@ export default function StatsDashboardClient({
                         <div className="flex flex-col gap-2">
                             <h2 className="text-xl font-semibold">Logged-In Accounts (Postgres)</h2>
                             <div className="flex flex-wrap items-center gap-2 text-xs">
-                                <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 font-mono text-zinc-500">
+                                <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 font-mono text-zinc-300">
                                     Showing {displayedLoggedInUsers.length} of {analyticsData.totalLoggedInUsers}
                                 </span>
                                 <span className="rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 font-semibold uppercase tracking-wider text-red-200">
@@ -914,7 +914,7 @@ export default function StatsDashboardClient({
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-zinc-900/80 text-zinc-400 font-medium">
+                            <thead className="bg-zinc-900/80 text-zinc-200 font-medium">
                                 <tr>
                                     <th className="px-6 py-4">Account</th>
                                     <th className="px-6 py-4">Email</th>
@@ -941,14 +941,14 @@ export default function StatsDashboardClient({
                                                         </span>
                                                     )}
                                                 </div>
-                                                <span className="text-[10px] text-zinc-500 font-mono uppercase">
+                                                <span className="text-[10px] text-zinc-300 font-mono uppercase">
                                                     Joined {formatIST(user.createdAt)}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-zinc-300">
                                             <span className={`inline-flex items-center gap-2 ${user.email ? "" : "text-red-200"}`}>
-                                                <Mail className="w-3 h-3 text-zinc-500" />
+                                                <Mail className="w-3 h-3 text-zinc-300" />
                                                 {user.email || "Missing email"}
                                             </span>
                                         </td>
@@ -956,13 +956,13 @@ export default function StatsDashboardClient({
                                         <td className="px-6 py-4 text-right font-mono text-zinc-200">{user.scanCount}</td>
                                         <td className="px-6 py-4 text-right font-mono text-zinc-200">
                                             <span className="inline-flex items-center gap-1">
-                                                <Search className="w-3 h-3 text-zinc-500" />
+                                                <Search className="w-3 h-3 text-zinc-300" />
                                                 {user.searchCount}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right font-mono text-zinc-200">
                                             <span className="inline-flex items-center gap-1">
-                                                <MessageSquare className="w-3 h-3 text-zinc-500" />
+                                                <MessageSquare className="w-3 h-3 text-zinc-300" />
                                                 {user.chatCount}
                                             </span>
                                         </td>
@@ -970,10 +970,10 @@ export default function StatsDashboardClient({
                                             {user.lastActivityAt ? (
                                                 <div className="flex flex-col">
                                                     <span className="text-zinc-300">{formatIST(user.lastActivityAt)}</span>
-                                                    <span className="text-[10px] text-zinc-500 font-mono uppercase">{getRelativeTime(user.lastActivityAt)}</span>
+                                                    <span className="text-[10px] text-zinc-300 font-mono uppercase">{getRelativeTime(user.lastActivityAt)}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-zinc-500">No activity</span>
+                                                <span className="text-zinc-300">No activity</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
@@ -997,7 +997,7 @@ export default function StatsDashboardClient({
                                 ))}
                                 {loggedInUsers.length === 0 && (
                                     <tr>
-                                        <td colSpan={8} className="px-6 py-12 text-center text-zinc-500">
+                                        <td colSpan={8} className="px-6 py-12 text-center text-zinc-300">
                                             <div className="flex flex-col items-center gap-2">
                                                 <UserCheck className="w-8 h-8 opacity-20" />
                                                 <p>No logged-in account activity yet.</p>
@@ -1026,13 +1026,13 @@ export default function StatsDashboardClient({
                 <div className="bg-zinc-900/50 border border-white/10 rounded-2xl overflow-hidden">
                     <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
                         <h2 className="text-xl font-semibold">Recent Visitors (Anon + Logged-in)</h2>
-                        <span className="text-xs text-zinc-500 font-mono">
+                        <span className="text-xs text-zinc-300 font-mono">
                             Showing {displayedVisitors.length}{nextVisitorCursor ? " (more available)" : ""}
                         </span>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-zinc-900/80 text-zinc-400 font-medium">
+                            <thead className="bg-zinc-900/80 text-zinc-200 font-medium">
                                 <tr>
                                     <th className="px-6 py-4 cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('id')}>
                                         <div className="flex items-center gap-2">
@@ -1081,7 +1081,7 @@ export default function StatsDashboardClient({
                                                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 flex items-center justify-center text-[10px] text-zinc-500 group-hover:text-zinc-300 transition-colors">
                                                             {visitor.id.slice(0, 2).toUpperCase()}
                                                         </div>
-                                                        <span className="font-mono text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                                                        <span className="font-mono text-xs text-zinc-500 group-hover:text-zinc-200 transition-colors">
                                                             {visitor.actorType === "authenticated" && visitor.githubLogin
                                                                 ? `@${visitor.githubLogin}`
                                                                 : visitor.id.slice(0, 16)}
@@ -1104,7 +1104,7 @@ export default function StatsDashboardClient({
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-col">
                                                         <span className="text-zinc-300">{formatIST(visitor.lastSeen)}</span>
-                                                        <span className="text-[10px] text-zinc-500 font-mono uppercase">{getRelativeTime(visitor.lastSeen)}</span>
+                                                        <span className="text-[10px] text-zinc-300 font-mono uppercase">{getRelativeTime(visitor.lastSeen)}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
@@ -1114,7 +1114,7 @@ export default function StatsDashboardClient({
                                                             Online
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-zinc-800 text-zinc-500 text-[10px] font-bold uppercase tracking-wider border border-white/5">
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-bold uppercase tracking-wider border border-white/5">
                                                             Offline
                                                         </span>
                                                     )}
@@ -1125,7 +1125,7 @@ export default function StatsDashboardClient({
                                 </AnimatePresence>
                                 {visitorRows.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-zinc-500">
+                                        <td colSpan={7} className="px-6 py-12 text-center text-zinc-300">
                                             <div className="flex flex-col items-center gap-2">
                                                 <Users className="w-8 h-8 opacity-20" />
                                                 <p>No visitors recorded in the current dataset.</p>
@@ -1216,7 +1216,7 @@ function StatsCard({ title, value, icon, subValue, trend, infoText }: {
                     {icon}
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-zinc-400">{title}</div>
+                    <div className="text-sm font-medium text-zinc-200">{title}</div>
                     {infoText && (
                         <div className="relative group/info">
                             <button
@@ -1242,7 +1242,7 @@ function StatsCard({ title, value, icon, subValue, trend, infoText }: {
                 )}
             </div>
             {subValue && (
-                <div className="text-xs text-zinc-500 mt-2 font-medium uppercase tracking-wider">{subValue}</div>
+                <div className="text-xs text-zinc-300 mt-2 font-medium uppercase tracking-wider">{subValue}</div>
             )}
         </motion.div>
     );
@@ -1251,7 +1251,7 @@ function StatsCard({ title, value, icon, subValue, trend, infoText }: {
 function MetricTile({ label, value }: { label: string; value: string | number }) {
     return (
         <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
-            <p className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</p>
+            <p className="text-[11px] uppercase tracking-wider text-zinc-300">{label}</p>
             <p className="mt-1 text-lg font-semibold text-zinc-100">{value}</p>
         </div>
     );

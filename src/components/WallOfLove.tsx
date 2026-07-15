@@ -56,7 +56,7 @@ export default function WallOfLove() {
                 <h2 className="text-3xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-zinc-400">
                     Loved by developers
                 </h2>
-                <p className="text-zinc-400 text-lg">
+                <p className="text-zinc-200 text-lg">
                     See what engineers are saying about Novaris.
                 </p>
             </div>
@@ -88,7 +88,7 @@ export default function WallOfLove() {
                             />
                             <div>
                                 <div className="text-white text-sm font-semibold">{t.name}</div>
-                                <div className="text-zinc-500 text-xs">{t.role}</div>
+                                <div className="text-zinc-300 text-xs">{t.role}</div>
                             </div>
                         </div>
                     </motion.div>

@@ -154,7 +154,7 @@ export default function InteractiveDemo() {
                             <CheckCircle2 className="w-3 h-3" />
                             <span>Recommended Pattern</span>
                         </div>
-                        <code className="text-xs text-zinc-400 block overflow-hidden break-words whitespace-pre-wrap bg-black/50 p-2 rounded mt-2">
+                        <code className="text-xs text-zinc-200 block overflow-hidden break-words whitespace-pre-wrap bg-black/50 p-2 rounded mt-2">
                             <span className="text-pink-400">const</span> AuthContext = createContext(<span className="text-orange-400">null</span>);<br />
                             <span className="text-pink-400">export function</span> <span className="text-blue-300">useAuth</span>() {'{'} <br />
                             &nbsp;&nbsp;<span className="text-pink-400">return</span> useContext(AuthContext);<br />
@@ -207,7 +207,7 @@ export default function InteractiveDemo() {
                             <span>1 High Severity Issue Found</span>
                         </div>
                         <p className="text-zinc-300 mb-2 text-xs">A potentially unparameterized raw SQL query was detected in the studio API.</p>
-                        <code className="text-xs text-zinc-400 block p-2 bg-black/50 rounded overflow-hidden break-words whitespace-pre-wrap">
+                        <code className="text-xs text-zinc-200 block p-2 bg-black/50 rounded overflow-hidden break-words whitespace-pre-wrap">
                             <span className="line-through text-red-400 px-1 bg-red-500/10 inline-block">{"const res = await db.query(`SELECT * FROM users WHERE id = ${id}`);"}</span><br />
                             <span className="text-green-400 px-1 bg-green-500/10 inline-block mt-1">{"+ const res = await db.query(\"SELECT * FROM users WHERE id = $1\", [id]);"}</span>
                         </code>
@@ -253,7 +253,7 @@ export default function InteractiveDemo() {
                         <ChevronRight className="w-5 h-5" />
                     </button>
                 </div>
-                <p className="text-zinc-400 text-lg md:text-xl">
+                <p className="text-zinc-200 text-lg md:text-xl">
                     Whether chatting, visualizing, or auditing, Novaris handles it all.
                 </p>
             </div>
@@ -266,7 +266,7 @@ export default function InteractiveDemo() {
                         <div className="w-3 h-3 rounded-full bg-yellow-400/80" />
                         <div className="w-3 h-3 rounded-full bg-green-400/80" />
                     </div>
-                    <div className="mx-auto flex items-center space-x-2 text-xs text-zinc-400 font-medium">
+                    <div className="mx-auto flex items-center space-x-2 text-xs text-zinc-200 font-medium">
                         <Terminal className="w-3 h-3" />
                         <AnimatePresence mode="wait">
                             <motion.span
@@ -303,7 +303,7 @@ export default function InteractiveDemo() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="flex items-center gap-3 text-sm text-zinc-400 italic pl-14 relative z-10"
+                                className="flex items-center gap-3 text-sm text-zinc-200 italic pl-14 relative z-10"
                             >
                                 <motion.div>
                                     <BrainCircuit className="w-4 h-4 text-purple-400" />

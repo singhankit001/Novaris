@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="p-4 border-t border-white/5">
                     <button
                         onClick={() => signOut({ callbackUrl: '/' })}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-red-400 hover:bg-red-400/5 rounded-xl transition-all group"
+                        className="w-full flex items-center gap-3 px-3 py-2 text-zinc-200 hover:text-red-400 hover:bg-red-400/5 rounded-xl transition-all group"
                     >
                         <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
                         {!isCollapsed && <span className="font-medium">Sign Out</span>}
@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         >
                             <div className="flex items-center justify-between mb-8">
                                 <span className="font-bold text-xl">Novaris</span>
-                                <button onClick={() => setIsMobileOpen(false)} className="p-2 text-zinc-500">
+                                <button onClick={() => setIsMobileOpen(false)} className="p-2 text-zinc-300">
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
                             </div>

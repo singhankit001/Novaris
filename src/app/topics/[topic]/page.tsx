@@ -97,11 +97,11 @@ export default async function TopicPage({ params }: Props) {
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0">
                                 <div className="min-w-0 flex-1">
                                     <h2 className="text-xl md:text-2xl font-bold mb-2 flex flex-wrap items-center break-all">
-                                        <span className="text-zinc-500 mr-3 text-lg shrink-0">#{index + 1}</span>
+                                        <span className="text-zinc-300 mr-3 text-lg shrink-0">#{index + 1}</span>
                                         <span className="text-zinc-300">{repo.owner}/</span>
                                         <span className="text-white group-hover:text-purple-400 transition-colors">{repo.repo}</span>
                                     </h2>
-                                    <p className="text-zinc-400 mb-4 line-clamp-2 md:pr-12">{repo.description}</p>
+                                    <p className="text-zinc-200 mb-4 line-clamp-2 md:pr-12">{repo.description}</p>
 
                                     <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
                                         <span className="flex items-center text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded">

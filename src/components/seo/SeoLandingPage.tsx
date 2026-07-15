@@ -57,7 +57,7 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
       {page.schemaTypes.includes("BreadcrumbList") && <JsonLdScript data={breadcrumbSchema} />}
 
       <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex flex-wrap items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex flex-wrap items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <Link href="/explore" className="hover:text-white transition-colors">Explore</Link>
@@ -71,7 +71,7 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
           </p>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">{page.h1}</h1>
           <p className="text-zinc-300 text-lg leading-relaxed max-w-3xl">{page.lead}</p>
-          <p className="text-zinc-400 leading-relaxed mt-4 max-w-4xl">
+          <p className="text-zinc-200 leading-relaxed mt-4 max-w-4xl">
             This guide is optimized for teams comparing tools, planning onboarding, and choosing the
             next best action in repository analysis and security workflows.
           </p>
@@ -158,7 +158,7 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
                     <tr key={`${page.slug}-${row.criteria}`} className="border-t border-zinc-800">
                       <td className="px-4 py-4 text-zinc-100 font-medium align-top">{row.criteria}</td>
                       <td className="px-4 py-4 text-zinc-300 align-top">{row.novaris}</td>
-                      <td className="px-4 py-4 text-zinc-400 align-top">{row.alternative}</td>
+                      <td className="px-4 py-4 text-zinc-200 align-top">{row.alternative}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -193,7 +193,7 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-2">Take the Next Step</h2>
-          <p className="text-zinc-400 mb-6">
+          <p className="text-zinc-200 mb-6">
             Continue with a workflow that matches your analysis goal.
           </p>
           <div className="flex flex-wrap gap-3">

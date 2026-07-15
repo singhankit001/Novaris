@@ -35,7 +35,7 @@ export default async function AdminIndexManagementPage() {
           <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">
             Index Management
           </h1>
-          <p className="text-zinc-400">
+          <p className="text-zinc-200">
             Audit and manage the curated repository catalog and indexable topics.
           </p>
         </div>

@@ -20,10 +20,10 @@ export default function TermsPage() {
         <p className="text-zinc-300 leading-relaxed mb-4">
           By using Novaris, you agree to use the service responsibly and in compliance with applicable laws and platform policies.
         </p>
-        <p className="text-zinc-400 leading-relaxed mb-4">
+        <p className="text-zinc-200 leading-relaxed mb-4">
           We may update features, limits, and policies over time to improve quality and security.
         </p>
-        <p className="text-zinc-400 leading-relaxed">
+        <p className="text-zinc-200 leading-relaxed">
           If you have questions regarding these terms, contact <a href="mailto:singhankit91624@gmail.com" className="text-blue-300 hover:text-blue-200">singhankit91624@gmail.com</a>.
         </p>
       </div>

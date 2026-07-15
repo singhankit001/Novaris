@@ -33,7 +33,7 @@ export function CodeBlock({ language, value, components, owner, repo }: CodeBloc
     return (
         <div className="relative my-4 rounded-lg border border-white/10 bg-[#1e1e1e] grid min-w-0 max-w-full">
             <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/50 border-b border-white/5">
-                <span className="text-xs text-zinc-400 font-mono uppercase">{language || 'text'}</span>
+                <span className="text-xs text-zinc-200 font-mono uppercase">{language || 'text'}</span>
                 <div className="flex items-center gap-2">
                     {isMarkdown && (
                         <button

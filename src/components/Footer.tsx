@@ -76,11 +76,11 @@ export default function Footer() {
                         <Link href="/" className="flex items-center gap-3 group">
                             <div>
                                 <h2 className="text-xl font-bold text-white tracking-tight group-hover:text-cyan-400 transition-colors">Novaris</h2>
-                                <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest">Repository Intelligence</p>
+                                <p className="text-zinc-300 text-xs font-medium uppercase tracking-widest">Repository Intelligence</p>
                             </div>
                         </Link>
                         
-                        <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
+                        <p className="text-zinc-200 text-sm leading-relaxed max-w-sm">
                             Next-generation AI agents for deep repository analysis, automated code reviews, and proactive security scanning.
                         </p>
 
@@ -116,7 +116,7 @@ export default function Footer() {
                             <ul className="space-y-3">
                                 {footerLinks.explore.map((link) => (
                                     <li key={link.name}>
-                                        <Link href={link.href} className="text-zinc-400 hover:text-cyan-400 text-sm transition-colors flex items-center justify-between group">
+                                        <Link href={link.href} className="text-zinc-200 hover:text-cyan-400 text-sm transition-colors flex items-center justify-between group">
                                             {link.name}
                                         </Link>
                                     </li>
@@ -130,7 +130,7 @@ export default function Footer() {
                             <ul className="space-y-3">
                                 {footerLinks.company.map((link) => (
                                     <li key={link.name}>
-                                        <Link href={link.href} className="text-zinc-400 hover:text-cyan-400 text-sm transition-colors">
+                                        <Link href={link.href} className="text-zinc-200 hover:text-cyan-400 text-sm transition-colors">
                                             {link.name}
                                         </Link>
                                     </li>
@@ -138,7 +138,7 @@ export default function Footer() {
                                 <li>
                                     <button 
                                         onClick={() => setIsOpen(true)}
-                                        className="text-zinc-400 hover:text-cyan-400 text-sm transition-colors"
+                                        className="text-zinc-200 hover:text-cyan-400 text-sm transition-colors"
                                     >
                                         Contact
                                     </button>
@@ -152,7 +152,7 @@ export default function Footer() {
                             <ul className="space-y-3">
                                 {footerLinks.product.map((link) => (
                                     <li key={link.name}>
-                                        <Link href={link.href} className="text-zinc-400 hover:text-cyan-400 text-sm transition-colors flex items-center justify-between group">
+                                        <Link href={link.href} className="text-zinc-200 hover:text-cyan-400 text-sm transition-colors flex items-center justify-between group">
                                             {link.name}
                                         </Link>
                                     </li>
@@ -170,7 +170,7 @@ export default function Footer() {
                                             href={link.href} 
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-zinc-400 hover:text-cyan-400 text-sm transition-colors flex items-center justify-between group"
+                                            className="text-zinc-200 hover:text-cyan-400 text-sm transition-colors flex items-center justify-between group"
                                         >
                                             {link.name}
                                             <ArrowUpRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -191,7 +191,7 @@ export default function Footer() {
                                         <Zap className="w-4 h-4 text-cyan-400 fill-cyan-400/20" />
                                         Have an idea?
                                     </h4>
-                                    <p className="text-zinc-500 text-xs">Help us build the ultimate repository tool.</p>
+                                    <p className="text-zinc-300 text-xs">Help us build the ultimate repository tool.</p>
                                 </div>
                                 <button
                                     onClick={() => setIsOpen(true)}
@@ -206,7 +206,7 @@ export default function Footer() {
                         {/* Status Widget */}
                         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-white/5 w-fit">
                             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                            <span className="text-zinc-400 text-[10px] font-medium uppercase tracking-widest">All systems operational</span>
+                            <span className="text-zinc-200 text-[10px] font-medium uppercase tracking-widest">All systems operational</span>
                         </div>
                     </div>
                 </div>
@@ -217,7 +217,7 @@ export default function Footer() {
                         <p className="text-zinc-600 text-[11px] font-medium tracking-tight">
                             © {new Date().getFullYear()} NOVARIS. BUILT BY DEVELOPERS FOR DEVELOPERS.
                         </p>
-                        <div className="flex items-center gap-4 text-zinc-500 text-[11px] font-medium">
+                        <div className="flex items-center gap-4 text-zinc-300 text-[11px] font-medium">
                             <span className="flex items-center gap-1.5 cursor-default hover:text-zinc-300 transition-colors">
                                 <Globe className="w-3 h-3" />
                                 GLOBAL CACHE REDUNDANCY
@@ -261,7 +261,7 @@ export default function Footer() {
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="space-y-1">
                                         <h3 className="text-2xl font-bold text-white tracking-tight leading-none">Get in touch</h3>
-                                        <p className="text-zinc-500 text-xs">We typically respond within 24 hours.</p>
+                                        <p className="text-zinc-300 text-xs">We typically respond within 24 hours.</p>
                                     </div>
                                     <button
                                         onClick={() => setIsOpen(false)}
@@ -272,7 +272,7 @@ export default function Footer() {
                                 </div>
 
                                 <div className="space-y-6">
-                                    <p className="text-zinc-400 text-sm leading-relaxed">
+                                    <p className="text-zinc-200 text-sm leading-relaxed">
                                         Found a bug, have a feature request, or just want to say hi? We&apos;d love to hear from you.
                                     </p>
 

@@ -55,7 +55,7 @@ export default function SuggestionsList({
                                 : "hover:bg-white/5 border-transparent"
                         } border`}
                     >
-                        <div className="mt-1 shrink-0 text-zinc-500">
+                        <div className="mt-1 shrink-0 text-zinc-300">
                             {suggestion.source === 'user' ? (
                                 <User size={16} />
                             ) : suggestion.source === 'local' ? (
@@ -69,7 +69,7 @@ export default function SuggestionsList({
                                 <span className="text-sm font-bold text-white truncate">
                                     {suggestion.owner}/{suggestion.repo}
                                 </span>
-                                <span className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono">
+                                <span className="flex items-center gap-1 text-[10px] text-zinc-300 font-mono">
                                     <Star size={10} className="text-yellow-500/80" />
                                     {suggestion.stars >= 1000 
                                         ? `${(suggestion.stars / 1000).toFixed(1)}k` 
@@ -77,7 +77,7 @@ export default function SuggestionsList({
                                 </span>
                             </div>
                             {suggestion.description && (
-                                <p className="text-xs text-zinc-500 truncate italic">
+                                <p className="text-xs text-zinc-300 truncate italic">
                                     {suggestion.description}
                                 </p>
                             )}

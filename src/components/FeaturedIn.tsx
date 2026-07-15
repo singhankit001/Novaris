@@ -26,7 +26,7 @@ export default function FeaturedIn() {
     return (
         <section className="py-12 bg-black/50 border-y border-white/5 relative z-10 w-full">
             <div className="max-w-7xl mx-auto px-6">
-                <p className="text-center text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] mb-10">
+                <p className="text-center text-zinc-300 text-xs font-bold uppercase tracking-[0.3em] mb-10">
                     As Seen On & Featured In
                 </p>
                 <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
@@ -44,7 +44,7 @@ export default function FeaturedIn() {
                                     {item.name}
                                 </span>
                             </div>
-                            <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-400 flex items-center gap-1">
+                            <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-200 flex items-center gap-1">
                                 {item.label} <ExternalLink size={10} />
                             </span>
                         </a>

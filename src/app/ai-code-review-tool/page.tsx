@@ -89,7 +89,7 @@ export default function AICodeReviewToolPage() {
       <JsonLdScript data={softwareSchema} />
 
       <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <Link href="/solutions" className="hover:text-white transition-colors">Solutions</Link>
@@ -105,7 +105,7 @@ export default function AICodeReviewToolPage() {
             Novaris helps engineering teams review code with repository-level context, making it easier
             to catch high-impact issues before merge and reduce slow, repetitive review cycles.
           </p>
-          <p className="text-zinc-400 leading-relaxed">
+          <p className="text-zinc-200 leading-relaxed">
             Instead of local-only diff reading, this workflow highlights architecture side effects,
             dependency impact, and probable risk areas so reviewers can focus on what matters first.
           </p>
@@ -141,25 +141,25 @@ export default function AICodeReviewToolPage() {
         <section className="grid gap-4 md:grid-cols-2 mb-10">
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Review quality</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Catch hidden dependencies and system-level side effects that are easy to miss in diff-only reviews.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Reviewer productivity</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Spend less time rebuilding context and more time validating critical implementation decisions.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Team consistency</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Standardize how high-risk changes are reviewed across teams and repositories.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Release confidence</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Improve confidence before merge by highlighting areas that need deeper validation.
             </p>
           </article>
@@ -197,7 +197,7 @@ export default function AICodeReviewToolPage() {
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-2">Take the next step</h2>
-          <p className="text-zinc-400 mb-6">
+          <p className="text-zinc-200 mb-6">
             Run context-aware review on your highest-change repository and improve review outcomes this sprint.
           </p>
           <div className="flex flex-wrap gap-3">

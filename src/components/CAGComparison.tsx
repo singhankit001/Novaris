@@ -32,7 +32,7 @@ export default function CAGComparison() {
                     <h2 className="text-3xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                         Agentic CAG vs. Traditional RAG
                     </h2>
-                    <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+                    <p className="text-zinc-200 text-lg max-w-2xl mx-auto">
                         Novaris uses <strong>Agentic Context Augmented Generation (Agentic CAG)</strong>. We don&apos;t just retrieve fragments; we understand the whole picture.
                     </p>
                 </motion.div>
@@ -42,7 +42,7 @@ export default function CAGComparison() {
                     <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 backdrop-blur-sm cursor-default flex flex-col hover:border-zinc-700 transition-colors">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="p-3 bg-zinc-800 rounded-lg">
-                                <Database className="w-6 h-6 text-zinc-400" />
+                                <Database className="w-6 h-6 text-zinc-200" />
                             </div>
                             <h3 className="text-2xl font-semibold text-zinc-300">Traditional RAG</h3>
                         </div>
@@ -81,7 +81,7 @@ export default function CAGComparison() {
                             ))}
 
                             <motion.div
-                                className="absolute bottom-4 right-4 text-xs font-mono text-zinc-500 bg-black/50 px-2 py-1 rounded"
+                                className="absolute bottom-4 right-4 text-xs font-mono text-zinc-300 bg-black/50 px-2 py-1 rounded"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: [0, 1, 1, 0] }}
                                 transition={{ duration: 3, repeat: Infinity }}
@@ -97,7 +97,7 @@ export default function CAGComparison() {
                                 </div>
                                 <div>
                                     <h4 className="font-medium text-zinc-200 text-sm">Fragmented Context</h4>
-                                    <p className="text-xs text-zinc-500 mt-1">Chops code into disconnected vector chunks, losing the big picture.</p>
+                                    <p className="text-xs text-zinc-300 mt-1">Chops code into disconnected vector chunks, losing the big picture.</p>
                                 </div>
                             </div>
 
@@ -107,7 +107,7 @@ export default function CAGComparison() {
                                 </div>
                                 <div>
                                     <h4 className="font-medium text-zinc-200 text-sm">Similarity Search Flaws</h4>
-                                    <p className="text-xs text-zinc-500 mt-1">Relies on fuzzy matching which often misses logic buried in imports.</p>
+                                    <p className="text-xs text-zinc-300 mt-1">Relies on fuzzy matching which often misses logic buried in imports.</p>
                                 </div>
                             </div>
                         </div>
@@ -187,7 +187,7 @@ export default function CAGComparison() {
                                 </div>
                                 <div>
                                     <h4 className="font-medium text-white text-sm">Full File Context</h4>
-                                    <p className="text-xs text-zinc-400 mt-1">Loads entire relevant files into the 1M+ token window for flawless logic tracing.</p>
+                                    <p className="text-xs text-zinc-200 mt-1">Loads entire relevant files into the 1M+ token window for flawless logic tracing.</p>
                                 </div>
                             </div>
 
@@ -197,7 +197,7 @@ export default function CAGComparison() {
                                 </div>
                                 <div>
                                     <h4 className="font-medium text-white text-sm">Smart Agent Selection</h4>
-                                    <p className="text-xs text-zinc-400 mt-1">AI intelligently pulls exact full-file dependencies needed.</p>
+                                    <p className="text-xs text-zinc-200 mt-1">AI intelligently pulls exact full-file dependencies needed.</p>
                                 </div>
                             </div>
                         </div>

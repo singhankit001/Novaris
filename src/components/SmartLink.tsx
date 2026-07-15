@@ -134,7 +134,7 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
 
     if (loading) {
         return (
-            <span className="inline-flex items-center gap-2 text-zinc-400 bg-zinc-900 px-3 py-1 rounded-lg border border-zinc-800">
+            <span className="inline-flex items-center gap-2 text-zinc-200 bg-zinc-900 px-3 py-1 rounded-lg border border-zinc-800">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Loading preview...
             </span>

@@ -159,7 +159,7 @@ export function RepoLoader({ query, initialPrompt }: RepoLoaderProps) {
             <div className="flex flex-col items-center justify-center h-screen bg-black text-white gap-4">
                 <AlertCircle className="w-16 h-16 text-red-500" />
                 <h1 className="text-2xl font-bold">Error Loading Repository</h1>
-                <p className="text-zinc-400">{error}</p>
+                <p className="text-zinc-200">{error}</p>
                 <Link href="/" className="mt-4 px-6 py-3 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors">
                     Back to Home
                 </Link>
@@ -180,7 +180,7 @@ export function RepoLoader({ query, initialPrompt }: RepoLoaderProps) {
                             <GitBranch className="w-10 h-10 text-cyan-400" />
                         </motion.div>
                         <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-white via-cyan-100 to-zinc-400 bg-clip-text text-transparent">Loading Repository</h2>
-                        <p className="text-sm text-zinc-400">{query}</p>
+                        <p className="text-sm text-zinc-200">{query}</p>
                     </div>
 
                     <div className="space-y-3">

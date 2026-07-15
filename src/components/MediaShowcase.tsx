@@ -33,7 +33,7 @@ export default function MediaShowcase() {
                     <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
                         Deep Dives & <span className="text-blue-500">Demos</span>
                     </h2>
-                    <p className="text-zinc-400 text-lg max-w-2xl">
+                    <p className="text-zinc-200 text-lg max-w-2xl">
                         Explore the stories and technical deep dives behind Novaris&apos;s creation.
                     </p>
                 </div>
@@ -56,7 +56,7 @@ export default function MediaShowcase() {
                                     <div className={`p-2.5 rounded-xl bg-${item.color}-500/10`}>
                                         {item.icon}
                                     </div>
-                                    <span className="text-sm font-bold text-zinc-500 uppercase tracking-widest">
+                                    <span className="text-sm font-bold text-zinc-300 uppercase tracking-widest">
                                         {item.platform} {item.type}
                                     </span>
                                 </div>
@@ -64,7 +64,7 @@ export default function MediaShowcase() {
                                 <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-400 transition-colors">
                                     {item.title}
                                 </h3>
-                                <p className="text-zinc-400 leading-relaxed mb-8 flex-1">
+                                <p className="text-zinc-200 leading-relaxed mb-8 flex-1">
                                     {item.description}
                                 </p>
 

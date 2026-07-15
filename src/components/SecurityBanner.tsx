@@ -13,14 +13,14 @@ export default function SecurityBanner() {
                         </div>
                         <div>
                             <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Zero Data Retention. Period.</h3>
-                            <p className="text-zinc-400 text-sm leading-relaxed max-w-lg">
+                            <p className="text-zinc-200 text-sm leading-relaxed max-w-lg">
                                 Your codebase is your intellectual property. Our models do not train on your private code. Scan findings are stored securely for your history, while code analysis remains private.
                             </p>
                         </div>
                     </div>
 
                     <div className="shrink-0 bg-black/40 border border-zinc-800 rounded-xl px-5 py-3 flex items-center justify-center gap-2 relative z-10 m-auto md:m-0 w-full md:w-auto">
-                        <Lock className="w-4 h-4 text-zinc-500" />
+                        <Lock className="w-4 h-4 text-zinc-300" />
                         <span className="text-sm font-semibold text-zinc-300">SOC2 Ready</span>
                     </div>
                 </div>

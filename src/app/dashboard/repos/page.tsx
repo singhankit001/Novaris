@@ -88,7 +88,7 @@ export default function MyReposPage() {
                         {session.user.image ? (
                             <Image src={session.user.image} alt="User" width={64} height={64} className="object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center font-bold text-xl text-zinc-500">
+                            <div className="w-full h-full flex items-center justify-center font-bold text-xl text-zinc-300">
                                 {session.user.name?.[0] || "U"}
                             </div>
                         )}
@@ -97,7 +97,7 @@ export default function MyReposPage() {
                         <h1 className="text-3xl font-bold flex items-center gap-3">
                             My Repositories
                         </h1>
-                        <p className="text-zinc-400 mt-1">
+                        <p className="text-zinc-200 mt-1">
                             {session.user.name} (@{username})
                         </p>
                     </div>
@@ -122,7 +122,7 @@ export default function MyReposPage() {
             </div>
 
             <div className="relative">
-                <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300" />
                 <input
                     type="text"
                     placeholder="Search your repositories by name or description..."
@@ -135,13 +135,13 @@ export default function MyReposPage() {
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-zinc-900 border border-white/5 rounded-3xl">
                     <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-4" />
-                    <p className="text-zinc-400">Loading your repositories...</p>
+                    <p className="text-zinc-200">Loading your repositories...</p>
                 </div>
             ) : filteredRepos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-zinc-900 border border-white/5 rounded-3xl text-center px-4">
                     <BookOpen className="w-12 h-12 text-zinc-600 mb-4" />
                     <h3 className="text-xl font-semibold mb-2">No repositories found</h3>
-                    <p className="text-zinc-500 max-w-sm">
+                    <p className="text-zinc-300 max-w-sm">
                         {searchQuery ? "Try adjusting your search query." : "You don't have any public repositories yet."}
                     </p>
                 </div>
@@ -158,18 +158,18 @@ export default function MyReposPage() {
                                         {repo.name}
                                     </h3>
                                     {repo.private ? (
-                                        <Lock className="w-5 h-5 text-zinc-500 shrink-0" />
+                                        <Lock className="w-5 h-5 text-zinc-300 shrink-0" />
                                     ) : (
-                                        <Globe className="w-5 h-5 text-zinc-500 shrink-0" />
+                                        <Globe className="w-5 h-5 text-zinc-300 shrink-0" />
                                     )}
                                 </div>
-                                <p className="text-zinc-400 text-sm mb-6 line-clamp-2 min-h-[40px]">
+                                <p className="text-zinc-200 text-sm mb-6 line-clamp-2 min-h-[40px]">
                                     {repo.description || "No description provided."}
                                 </p>
                             </div>
 
                             <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
-                                <div className="flex items-center gap-4 text-xs text-zinc-500">
+                                <div className="flex items-center gap-4 text-xs text-zinc-300">
                                     {repo.language && (
                                         <div className="flex items-center gap-1.5">
                                             <span className="w-2 h-2 rounded-full bg-blue-500" />

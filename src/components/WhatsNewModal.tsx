@@ -122,7 +122,7 @@ export function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
                             </div>
                             <div>
                                 <h2 className="text-xl md:text-2xl font-bold text-white">What&apos;s New</h2>
-                                <p className="text-xs md:text-sm text-zinc-400">Latest updates and improvements</p>
+                                <p className="text-xs md:text-sm text-zinc-200">Latest updates and improvements</p>
                             </div>
                         </div>
                         <button
@@ -172,7 +172,7 @@ export function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
 
                     {/* Footer */}
                     <div className="p-4 border-t border-white/10 bg-zinc-900/80 backdrop-blur-sm text-center">
-                        <p className="text-sm text-zinc-500">
+                        <p className="text-sm text-zinc-300">
                             More features coming soon! Stay tuned 🚀
                         </p>
                     </div>

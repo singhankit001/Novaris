@@ -201,7 +201,7 @@ function TopicSection({
             >
               {item.title}
             </Link>
-            <p className="text-sm text-zinc-400">{item.summary}</p>
+            <p className="text-sm text-zinc-200">{item.summary}</p>
           </li>
         ))}
       </ul>
@@ -217,7 +217,7 @@ export default function ExplorePage() {
       <JsonLdScript data={faqSchema} />
 
       <div className="mx-auto max-w-6xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <span className="text-zinc-200">Explore</span>
@@ -229,7 +229,7 @@ export default function ExplorePage() {
             Explore is your fastest route to the full Novaris content hub for repository analysis,
             AI code review, security scanning, and decision-focused workflow comparisons.
           </p>
-          <p className="text-zinc-400 max-w-5xl leading-relaxed">
+          <p className="text-zinc-200 max-w-5xl leading-relaxed">
             Each page in this hub is built for organic discovery and practical execution, with direct
             pathways to deeper analysis and actionable next steps.
           </p>
@@ -259,7 +259,7 @@ export default function ExplorePage() {
           <TopicSection title="Comparison Pages" items={grouped.Comparison} />
           <section className="rounded-2xl border border-white/10 bg-zinc-900/40 p-6">
             <h2 className="text-2xl font-semibold mb-4">Related hubs and actions</h2>
-            <p className="text-zinc-400 mb-5">
+            <p className="text-zinc-200 mb-5">
               Continue through solutions, comparisons, and live analysis workflows.
             </p>
             <div className="flex flex-wrap gap-3">

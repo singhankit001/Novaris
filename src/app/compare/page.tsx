@@ -50,7 +50,7 @@ export default function ComparePage() {
       <JsonLdScript data={itemListSchema} />
 
       <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <span className="text-zinc-200">Compare</span>
@@ -75,7 +75,7 @@ export default function ComparePage() {
           {comparisonPages.map((track) => (
             <Link key={track.title} href={track.href} className="block rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 hover:bg-zinc-900/60 transition-colors">
               <h2 className="text-xl font-semibold mb-2">{track.title}</h2>
-              <p className="text-zinc-400">{track.summary}</p>
+              <p className="text-zinc-200">{track.summary}</p>
             </Link>
           ))}
         </div>

@@ -122,7 +122,7 @@ export default function SolutionsPage() {
       <JsonLdScript data={softwareSchema} />
 
       <div className="mx-auto max-w-6xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <span className="text-zinc-200">Solutions</span>
@@ -138,7 +138,7 @@ export default function SolutionsPage() {
             context-aware workflow family to understand architecture, review implementation, and
             prioritize security remediation.
           </p>
-          <p className="text-zinc-400 leading-relaxed max-w-4xl">
+          <p className="text-zinc-200 leading-relaxed max-w-4xl">
             Choose a starting point based on your immediate goal, then connect workflows to build a
             repeatable operating model for onboarding, release readiness, and technical risk reduction.
           </p>
@@ -162,7 +162,7 @@ export default function SolutionsPage() {
               className="block rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 hover:bg-zinc-900/70 hover:border-zinc-700 transition-colors"
             >
               <h2 className="text-xl font-semibold mb-2">{card.title}</h2>
-              <p className="text-zinc-400 mb-4 leading-relaxed">{card.description}</p>
+              <p className="text-zinc-200 mb-4 leading-relaxed">{card.description}</p>
               <span className="text-sm text-cyan-300">Open workflow</span>
             </Link>
           ))}
@@ -189,7 +189,7 @@ export default function SolutionsPage() {
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-12">
           <h2 className="text-2xl font-semibold mb-5">Comparison guides for tool selection</h2>
-          <p className="text-zinc-400 mb-5 leading-relaxed">
+          <p className="text-zinc-200 mb-5 leading-relaxed">
             Use these comparison pages to evaluate workflow fit by context depth, triage quality, and remediation clarity.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -219,7 +219,7 @@ export default function SolutionsPage() {
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-3">Take the next step</h2>
-          <p className="text-zinc-400 mb-6">
+          <p className="text-zinc-200 mb-6">
             Start with one repository, then scale the workflow that delivers the fastest measurable impact for your team.
           </p>
           <div className="flex flex-wrap gap-3">

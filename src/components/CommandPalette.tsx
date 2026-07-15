@@ -107,7 +107,7 @@ export default function CommandPalette() {
                     >
                         {/* Search Input block */}
                         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-white/[0.02]">
-                            <Search className="w-5 h-5 text-zinc-400 shrink-0" />
+                            <Search className="w-5 h-5 text-zinc-200 shrink-0" />
                             <input
                                 ref={inputRef}
                                 type="text"
@@ -131,7 +131,7 @@ export default function CommandPalette() {
                         {/* Options List */}
                         <div className="flex-1 overflow-y-auto p-2 space-y-1">
                             {filteredOptions.length === 0 ? (
-                                <div className="p-8 text-center text-sm text-zinc-500">
+                                <div className="p-8 text-center text-sm text-zinc-300">
                                     No results found matching &ldquo;{search}&rdquo;
                                 </div>
                             ) : (
@@ -153,7 +153,7 @@ export default function CommandPalette() {
                                                 <span>{opt.label}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-[10px] text-zinc-500 uppercase tracking-widest px-1.5 py-0.5 rounded bg-white/5">
+                                                <span className="text-[10px] text-zinc-300 uppercase tracking-widest px-1.5 py-0.5 rounded bg-white/5">
                                                     {opt.category}
                                                 </span>
                                                 {isSelected && (
@@ -169,7 +169,7 @@ export default function CommandPalette() {
                         </div>
 
                         {/* Footer Help */}
-                        <div className="px-4 py-2 border-t border-white/5 bg-white/[0.01] flex items-center justify-between text-[10px] text-zinc-500">
+                        <div className="px-4 py-2 border-t border-white/5 bg-white/[0.01] flex items-center justify-between text-[10px] text-zinc-300">
                             <div className="flex items-center gap-3">
                                 <span>↑↓ Navigate</span>
                                 <span>↵ Select</span>

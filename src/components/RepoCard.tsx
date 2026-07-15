@@ -33,11 +33,11 @@ export function RepoCard({ name, owner, description, stars, forks, language }: R
 
                     {/* Description */}
                     {description && (
-                        <p className="text-zinc-400 text-sm mb-4 line-clamp-2">{description}</p>
+                        <p className="text-zinc-200 text-sm mb-4 line-clamp-2">{description}</p>
                     )}
 
                     {/* Stats */}
-                    <div className="flex items-center gap-4 mb-4 text-xs text-zinc-500">
+                    <div className="flex items-center gap-4 mb-4 text-xs text-zinc-300">
                         {language && (
                             <span className="flex items-center gap-1">
                                 <span className="w-2 h-2 rounded-full bg-cyan-400"></span>

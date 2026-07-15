@@ -37,7 +37,7 @@ export default async function AdminDashboardPage() {
           <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">
             Admin Command Center
           </h1>
-          <p className="text-zinc-400 max-w-2xl">
+          <p className="text-zinc-200 max-w-2xl">
             Unified management for Novaris content, analytics, and system performance.
           </p>
         </div>
@@ -56,7 +56,7 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
             <div className="text-2xl font-bold mb-1">{stat.value}</div>
-            <div className="text-zinc-500 text-sm font-medium">{stat.label}</div>
+            <div className="text-zinc-300 text-sm font-medium">{stat.label}</div>
           </div>
         ))}
       </div>
@@ -73,7 +73,7 @@ export default async function AdminDashboardPage() {
             <FileText className="text-purple-400" />
             Blog CMS
           </h2>
-          <p className="text-zinc-400 mb-6 relative z-10 max-w-md text-sm leading-relaxed">
+          <p className="text-zinc-200 mb-6 relative z-10 max-w-md text-sm leading-relaxed">
             Manage your articles and drafts. Published {publishedCount} posts across {posts.length} total.
           </p>
           <div className="flex items-center gap-2 text-zinc-300 font-bold group-hover:gap-4 transition-all mt-auto pt-4 shadow-sm">
@@ -92,7 +92,7 @@ export default async function AdminDashboardPage() {
             <Database className="text-pink-400" />
             Index Manager
           </h2>
-          <p className="text-zinc-400 mb-6 relative z-10 max-w-md text-sm leading-relaxed">
+          <p className="text-zinc-200 mb-6 relative z-10 max-w-md text-sm leading-relaxed">
             Audit {catalogStats.totalRepos.toLocaleString()} repositories and {catalogStats.totalTopics.toLocaleString()} topics across multiple tiers.
           </p>
           <div className="flex items-center gap-2 text-zinc-300 font-bold group-hover:gap-4 transition-all mt-auto pt-4 shadow-sm">
@@ -111,7 +111,7 @@ export default async function AdminDashboardPage() {
             <BarChart2 className="text-blue-400" />
             Analytics
           </h2>
-          <p className="text-zinc-400 mb-6 relative z-10 max-w-md text-sm leading-relaxed">
+          <p className="text-zinc-200 mb-6 relative z-10 max-w-md text-sm leading-relaxed">
             Monitor real-time visitor activity, storage usage, and engagement metrics.
           </p>
           <div className="flex items-center gap-2 text-zinc-300 font-bold group-hover:gap-4 transition-all mt-auto pt-4 shadow-sm">

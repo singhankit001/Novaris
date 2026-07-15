@@ -46,7 +46,7 @@ const Feature = ({ icon: Icon, title, description, gradient, delay }: FeaturePro
                 <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-zinc-400 transition-all duration-300">
                     {title}
                 </h3>
-                <p className="text-zinc-400 text-sm leading-relaxed">
+                <p className="text-zinc-200 text-sm leading-relaxed">
                     {description}
                 </p>
 
@@ -128,7 +128,7 @@ export default function FeatureTiles() {
                 <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
                     Supercharge Your Development
                 </h2>
-                <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+                <p className="text-zinc-200 text-lg max-w-2xl mx-auto">
                     Powerful AI-driven features to analyze, understand, and improve any codebase
                 </p>
             </motion.div>

@@ -91,7 +91,7 @@ export default function SecurityScannerPage() {
       <JsonLdScript data={softwareSchema} />
 
       <div className="relative z-10 mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <Link href="/solutions" className="hover:text-white transition-colors">Solutions</Link>
@@ -107,7 +107,7 @@ export default function SecurityScannerPage() {
             Novaris helps teams identify and prioritize repository security risks using architecture-aware
             analysis so remediation work starts with the issues most likely to impact real systems.
           </p>
-          <p className="text-zinc-400 leading-relaxed">
+          <p className="text-zinc-200 leading-relaxed">
             Instead of handling alerts in isolation, teams get context-rich guidance that improves triage confidence,
             security-to-engineering handoff, and fix execution speed.
           </p>
@@ -142,25 +142,25 @@ export default function SecurityScannerPage() {
         <section className="grid gap-4 md:grid-cols-2 mb-10">
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Pre-release hardening</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Run a focused scan before release milestones to catch and prioritize high-impact risks.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Open-source package evaluation</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Assess dependency risk posture before introducing new repositories into your stack.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Backlog reduction</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Use context-rich triage to reduce unresolved findings and improve remediation throughput.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Cross-team alignment</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Build a shared understanding between AppSec and engineering with clearer prioritization rationale.
             </p>
           </article>
@@ -198,7 +198,7 @@ export default function SecurityScannerPage() {
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-2">Take the next step</h2>
-          <p className="text-zinc-400 mb-6">
+          <p className="text-zinc-200 mb-6">
             Run one high-priority security scan and convert findings into a ranked remediation plan this week.
           </p>
           <div className="flex flex-wrap gap-3">

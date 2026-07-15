@@ -47,8 +47,8 @@ function SharedLinkFailureState({ reason }: { reason: SharedLinkFailureReason })
         <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
             <div className="max-w-lg w-full rounded-2xl border border-white/10 bg-zinc-900 p-8 space-y-4">
                 <h1 className="text-2xl font-semibold">{content.title}</h1>
-                <p className="text-zinc-400">{content.body}</p>
-                <p className="text-sm text-zinc-500">
+                <p className="text-zinc-200">{content.body}</p>
+                <p className="text-sm text-zinc-300">
                     Novaris uses signed, expiring report URLs to protect sensitive scan details.
                 </p>
                 <Link

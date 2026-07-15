@@ -68,10 +68,10 @@ export default function QuickStats() {
                         <div className={`p-2 rounded-lg ${stat.bg}/10 ${stat.color}`}>
                             <stat.icon className="w-5 h-5" />
                         </div>
-                        <Activity className="w-4 h-4 text-zinc-700 group-hover:text-zinc-500 transition-colors" />
+                        <Activity className="w-4 h-4 text-zinc-700 group-hover:text-zinc-300 transition-colors" />
                     </div>
                     <div>
-                        <p className="text-zinc-500 text-sm font-medium">{stat.label}</p>
+                        <p className="text-zinc-300 text-sm font-medium">{stat.label}</p>
                         <p className="text-2xl font-bold text-white">{stat.value}</p>
                     </div>
                 </motion.div>
@@ -84,7 +84,7 @@ export default function QuickStats() {
                 className="p-6 rounded-2xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/20"
             >
                 <h3 className="font-semibold text-white mb-2 italic">Pro Tip</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed">
+                <p className="text-zinc-200 text-sm leading-relaxed">
                     Try scanning a repo with <strong>Deep Scan</strong> enabled for better architectural insights and flowcharts.
                 </p>
             </motion.div>

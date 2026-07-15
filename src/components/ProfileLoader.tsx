@@ -191,7 +191,7 @@ export function ProfileLoader({ username }: ProfileLoaderProps) {
             <div className="flex flex-col items-center justify-center h-screen bg-black text-white gap-4">
                 <UserIcon className="w-16 h-16 text-red-500" />
                 <h1 className="text-2xl font-bold">Error Loading Profile</h1>
-                <p className="text-zinc-400">{error}</p>
+                <p className="text-zinc-200">{error}</p>
             </div>
         );
     }
@@ -216,7 +216,7 @@ export function ProfileLoader({ username }: ProfileLoaderProps) {
                             />
                         </motion.div>
                         <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-white via-cyan-100 to-zinc-400 bg-clip-text text-transparent">Loading @{username}</h2>
-                        <p className="text-sm text-zinc-400">Analyzing profile and repositories...</p>
+                        <p className="text-sm text-zinc-200">Analyzing profile and repositories...</p>
                     </div>
 
                     <div className="space-y-3">

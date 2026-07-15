@@ -50,7 +50,7 @@ export default function TrustedByMarquee({ trendingRepos }: TrustedByMarqueeProp
     return (
         <section className="py-12 border-y border-zinc-900 bg-zinc-950/50 overflow-hidden relative z-10 w-full mb-12">
             <div className="max-w-7xl mx-auto px-4 mb-6">
-                <p className="text-center text-sm font-medium text-zinc-500 uppercase tracking-widest">
+                <p className="text-center text-sm font-medium text-zinc-300 uppercase tracking-widest">
                     Trending Repositories
                 </p>
             </div>

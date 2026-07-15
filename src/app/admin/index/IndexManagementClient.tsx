@@ -73,7 +73,7 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 flex-1">
           {(Object.entries(stats.tierCounts) as [RepoTier, number][]).map(([tier, count]) => (
             <div key={tier} className="bg-zinc-900 shadow-sm border border-white/5 p-4 rounded-2xl">
-              <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-1">{tier}</div>
+              <div className="text-xs font-bold text-zinc-300 uppercase tracking-widest mb-1">{tier}</div>
               <div className="text-xl font-bold">{count.toLocaleString()}</div>
             </div>
           ))}
@@ -129,7 +129,7 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-300" size={18} />
               <input
                 type="text"
                 value={repoSearch}
@@ -156,13 +156,13 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 bg-white/5">
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Rank</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Repository</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Tier</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Trending</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Stars</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Language</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-400 text-right">Action</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-200">Rank</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-200">Repository</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-200">Tier</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-200">Trending</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-200">Stars</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-200">Language</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-200 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -172,7 +172,7 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-white font-medium">{repo.owner}/{repo.repo}</span>
-                        <span className="text-zinc-500 text-xs truncate max-w-[300px]">{repo.description}</span>
+                        <span className="text-zinc-300 text-xs truncate max-w-[300px]">{repo.description}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -196,11 +196,11 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
                         {repo.stars.toLocaleString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-zinc-400">{repo.language || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-zinc-200">{repo.language || '-'}</td>
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/chat?q=${repo.owner}/${repo.repo}`}
-                        className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-white hover:text-black transition-all inline-flex items-center gap-2"
+                        className="p-2 rounded-lg bg-zinc-800 text-zinc-200 hover:bg-white hover:text-black transition-all inline-flex items-center gap-2"
                       >
                          <ArrowUpRight size={14} />
                       </Link>
@@ -210,7 +210,7 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
               </tbody>
             </table>
             {filteredRepos.length === 0 && (
-              <div className="p-12 text-center text-zinc-500 italic">No repositories found matching your query.</div>
+              <div className="p-12 text-center text-zinc-300 italic">No repositories found matching your query.</div>
             )}
             {repos.length > 500 && repoSearch === "" && selectedTier === 'all' && (
               <div className="p-4 text-center text-xs text-zinc-600 bg-white/5 border-t border-white/5">
@@ -222,7 +222,7 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
       ) : (
         <div className="space-y-6">
           <div className="relative">
-            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+            <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-300" size={18} />
             <input
               type="text"
               value={topicSearch}
@@ -245,7 +245,7 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
             ))}
           </div>
           {filteredTopics.length === 0 && (
-            <div className="p-12 text-center text-zinc-500 italic">No topics found matching your query.</div>
+            <div className="p-12 text-center text-zinc-300 italic">No topics found matching your query.</div>
           )}
         </div>
       )}

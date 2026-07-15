@@ -96,7 +96,7 @@ export default function AdvancedVisuals() {
                         <Brain className="w-5 h-5 text-purple-400" />
                         Developer DNA & Intel Analytics
                     </h2>
-                    <p className="text-zinc-500 text-xs">A comprehensive evaluation of repository maturity, depth, and safety.</p>
+                    <p className="text-zinc-300 text-xs">A comprehensive evaluation of repository maturity, depth, and safety.</p>
                 </div>
                 
                 {/* Advanced Framer Motion Tabs */}
@@ -144,7 +144,7 @@ export default function AdvancedVisuals() {
                                 transition={{ duration: 0.2 }}
                                 className="p-6 rounded-2xl bg-zinc-900/30 backdrop-blur-md border border-white/5 hover:border-white/10 transition-all flex flex-col items-center justify-between"
                             >
-                                <h3 className="text-sm font-semibold text-zinc-400 self-start mb-4">DNA Profile Radar</h3>
+                                <h3 className="text-sm font-semibold text-zinc-200 self-start mb-4">DNA Profile Radar</h3>
                                 
                                 <div className="relative w-full max-w-[180px] aspect-square flex items-center justify-center mb-4">
                                     <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
@@ -212,7 +212,7 @@ export default function AdvancedVisuals() {
                                 <div className="w-full space-y-1.5">
                                     {radarMetrics.map((m) => (
                                         <div key={m.name} className="flex items-center justify-between text-xs">
-                                            <span className="text-zinc-500">{m.name}</span>
+                                            <span className="text-zinc-300">{m.name}</span>
                                             <span className="font-semibold text-white font-mono">{m.value}%</span>
                                         </div>
                                     ))}
@@ -229,16 +229,16 @@ export default function AdvancedVisuals() {
                                 transition={{ duration: 0.2 }}
                                 className="p-6 rounded-2xl bg-zinc-900/30 backdrop-blur-md border border-white/5 hover:border-white/10 transition-all flex flex-col justify-between"
                             >
-                                <h3 className="text-sm font-semibold text-zinc-400 mb-4">Tech Stack Breakdown</h3>
+                                <h3 className="text-sm font-semibold text-zinc-200 mb-4">Tech Stack Breakdown</h3>
                                 <div className="space-y-6 flex-1 py-2">
                                     {techStack.map((item) => (
                                         <div key={item.name} className="space-y-2">
                                             <div className="flex justify-between items-center text-xs">
                                                 <div className="flex items-center gap-2 text-zinc-300">
-                                                    <item.icon className="w-3.5 h-3.5 text-zinc-500" />
+                                                    <item.icon className="w-3.5 h-3.5 text-zinc-300" />
                                                     <span className="font-medium">{item.name}</span>
                                                 </div>
-                                                <span className="text-zinc-400 font-mono">{item.usage}%</span>
+                                                <span className="text-zinc-200 font-mono">{item.usage}%</span>
                                             </div>
                                             <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                                                 <motion.div
@@ -251,7 +251,7 @@ export default function AdvancedVisuals() {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="text-[10px] text-zinc-500 mt-4 pt-4 border-t border-white/5 text-center">
+                                <div className="text-[10px] text-zinc-300 mt-4 pt-4 border-t border-white/5 text-center">
                                     Determined dynamically from packages and dependency trees.
                                 </div>
                             </motion.div>
@@ -266,11 +266,11 @@ export default function AdvancedVisuals() {
                                 transition={{ duration: 0.2 }}
                                 className="p-6 rounded-2xl bg-zinc-900/30 backdrop-blur-md border border-white/5 hover:border-white/10 transition-all flex flex-col justify-between"
                             >
-                                <h3 className="text-sm font-semibold text-zinc-400 mb-4">Technical Depth Metrics</h3>
+                                <h3 className="text-sm font-semibold text-zinc-200 mb-4">Technical Depth Metrics</h3>
                                 <div className="space-y-4 flex-1">
                                     <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5">
                                         <div>
-                                            <span className="text-xs text-zinc-500">Refactoring Index</span>
+                                            <span className="text-xs text-zinc-300">Refactoring Index</span>
                                             <h4 className="text-sm font-bold text-white mt-0.5">Optimal (Low Debt)</h4>
                                         </div>
                                         <div className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">98%</div>
@@ -278,7 +278,7 @@ export default function AdvancedVisuals() {
                                     
                                     <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5">
                                         <div>
-                                            <span className="text-xs text-zinc-500">Duplication Density</span>
+                                            <span className="text-xs text-zinc-300">Duplication Density</span>
                                             <h4 className="text-sm font-bold text-white mt-0.5">Very Low Duplication</h4>
                                         </div>
                                         <div className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">2.1%</div>
@@ -286,13 +286,13 @@ export default function AdvancedVisuals() {
 
                                     <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5">
                                         <div>
-                                            <span className="text-xs text-zinc-500">Dependency Risk</span>
+                                            <span className="text-xs text-zinc-300">Dependency Risk</span>
                                             <h4 className="text-sm font-bold text-white mt-0.5">Minimal (Up-to-date)</h4>
                                         </div>
                                         <div className="text-xs font-mono text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">Clean</div>
                                     </div>
                                 </div>
-                                <div className="text-[10px] text-zinc-500 mt-4 pt-4 border-t border-white/5 text-center flex items-center justify-center gap-1.5">
+                                <div className="text-[10px] text-zinc-300 mt-4 pt-4 border-t border-white/5 text-center flex items-center justify-center gap-1.5">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                                     No code health alerts raised.
                                 </div>
@@ -308,7 +308,7 @@ export default function AdvancedVisuals() {
                                 transition={{ duration: 0.2 }}
                                 className="p-6 rounded-2xl bg-zinc-900/30 backdrop-blur-md border border-white/5 hover:border-white/10 transition-all flex flex-col justify-between h-[360px]"
                             >
-                                <h3 className="text-sm font-semibold text-zinc-400 mb-2">Live EKG Knowledge Graph</h3>
+                                <h3 className="text-sm font-semibold text-zinc-200 mb-2">Live EKG Knowledge Graph</h3>
                                 <div className="relative flex-1 bg-black/20 border border-white/5 rounded-xl overflow-hidden min-h-[220px]">
                                     <svg viewBox="0 0 200 240" className="w-full h-full">
                                         {/* Pulse Data Streams (Edges) */}
@@ -374,7 +374,7 @@ export default function AdvancedVisuals() {
                                         ))}
                                     </svg>
                                 </div>
-                                <div className="text-[10px] text-zinc-500 mt-3 pt-3 border-t border-white/5 text-center flex items-center justify-center gap-1">
+                                <div className="text-[10px] text-zinc-300 mt-3 pt-3 border-t border-white/5 text-center flex items-center justify-center gap-1">
                                     <Sparkles className="w-3 h-3 text-purple-400" />
                                     <span>Real-time AST call flow mapping is active.</span>
                                 </div>
@@ -399,9 +399,9 @@ export default function AdvancedVisuals() {
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 uppercase tracking-widest border border-red-500/20">Secure</span>
                         </div>
                         <div className="mt-4">
-                            <p className="text-zinc-500 text-xs font-medium">Security Posture Rating</p>
+                            <p className="text-zinc-300 text-xs font-medium">Security Posture Rating</p>
                             <p className="text-2xl font-bold text-white tracking-tight">A+ High Grade</p>
-                            <p className="text-zinc-400 text-xs mt-0.5">0 Exposed Secrets detected recently.</p>
+                            <p className="text-zinc-200 text-xs mt-0.5">0 Exposed Secrets detected recently.</p>
                         </div>
                     </motion.div>
 
@@ -419,9 +419,9 @@ export default function AdvancedVisuals() {
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 uppercase tracking-widest border border-blue-500/20">Cohesive</span>
                         </div>
                         <div className="mt-4">
-                            <p className="text-zinc-500 text-xs font-medium">Architecture Cohesion</p>
+                            <p className="text-zinc-300 text-xs font-medium">Architecture Cohesion</p>
                             <p className="text-2xl font-bold text-white tracking-tight">88% Maturity</p>
-                            <p className="text-zinc-400 text-xs mt-0.5">High coupling efficiency observed.</p>
+                            <p className="text-zinc-200 text-xs mt-0.5">High coupling efficiency observed.</p>
                         </div>
                     </motion.div>
 
@@ -437,12 +437,12 @@ export default function AdvancedVisuals() {
                                 <Award className="w-4.5 h-4.5 text-yellow-500" />
                                 <span className="text-sm font-semibold text-zinc-300">Technical Depth Insight</span>
                             </div>
-                            <div className="text-[10px] text-zinc-500 font-mono">Debt Ratio: 3.4%</div>
+                            <div className="text-[10px] text-zinc-300 font-mono">Debt Ratio: 3.4%</div>
                         </div>
                         <div className="mt-4 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                             <div>
                                 <p className="text-white text-sm font-medium">Excellent module decoupling</p>
-                                <p className="text-zinc-500 text-xs mt-0.5">Circular dependencies are extremely low. Clean component relationships.</p>
+                                <p className="text-zinc-300 text-xs mt-0.5">Circular dependencies are extremely low. Clean component relationships.</p>
                             </div>
                             <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 whitespace-nowrap">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -468,7 +468,7 @@ export default function AdvancedVisuals() {
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
+                            <div className="flex justify-between text-xs text-zinc-200 mb-1.5">
                                 <span>Framework Adaptability</span>
                                 <span>94%</span>
                             </div>
@@ -482,7 +482,7 @@ export default function AdvancedVisuals() {
                             </div>
                         </div>
                         <div>
-                            <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
+                            <div className="flex justify-between text-xs text-zinc-200 mb-1.5">
                                 <span>Legacy Code Reduction</span>
                                 <span>80%</span>
                             </div>
@@ -507,7 +507,7 @@ export default function AdvancedVisuals() {
                 >
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="text-sm font-semibold text-zinc-300">Production Readiness Index</h4>
-                        <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest bg-zinc-800/80 px-2 py-0.5 border border-white/5 rounded">Beta</span>
+                        <span className="text-[10px] text-zinc-300 uppercase font-bold tracking-widest bg-zinc-800/80 px-2 py-0.5 border border-white/5 rounded">Beta</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
@@ -515,10 +515,10 @@ export default function AdvancedVisuals() {
                         </div>
                         <div>
                             <p className="text-white text-sm font-semibold">96% Deployment Score</p>
-                            <p className="text-zinc-500 text-xs">Your workspace features are optimized for stable cloud integrations.</p>
+                            <p className="text-zinc-300 text-xs">Your workspace features are optimized for stable cloud integrations.</p>
                         </div>
                     </div>
-                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-xs text-zinc-500">
+                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center text-xs text-zinc-300">
                         <span>Latest release check: 100% green</span>
                         <Link href="/trending" className="text-purple-400 hover:text-purple-300 flex items-center gap-1">
                             Explore <ArrowUpRight className="w-3 h-3" />

@@ -113,12 +113,12 @@ export default function HomeClient({
             <header className="sticky top-0 z-[100] w-full border-b border-white/5 bg-[#050505]/75 backdrop-blur-md">
                 <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-6">
                     <div className="flex items-center gap-8">
-                        <Link href="/" className="flex items-center gap-2">
-                            <span className="font-display font-bold text-lg tracking-wider text-white">
+                        <Link href="/" className="flex items-center gap-2.5 group">
+                            <span className="font-display font-extrabold text-xl tracking-[0.25em] bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-zinc-100 to-purple-500 hover:opacity-90 transition-opacity">
                                 NOVARIS
                             </span>
                         </Link>
-                        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
+                        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-200">
                             <Link href="/solutions" className="hover:text-white transition-colors">
                                 Solutions
                             </Link>
@@ -170,14 +170,14 @@ export default function HomeClient({
                             />
                         </div>
                         <div className="inline-flex items-center justify-center gap-2 md:gap-3 w-full">
-                            <p className="whitespace-nowrap text-[10px] md:text-xs font-semibold tracking-[0.35em] uppercase text-zinc-500 leading-none">
-                                Novaris
+                            <p className="whitespace-nowrap text-xs md:text-sm font-extrabold tracking-[0.4em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 leading-none">
+                                NOVARIS
                             </p>
                             <WhatsNewBadge />
                         </div>
                     </div>
 
-                    <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white to-zinc-400 relative leading-none max-w-5xl animate-fade-in-up-blur">
+                    <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-100 to-zinc-300 relative leading-none max-w-5xl animate-fade-in-up-blur drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
                         GitHub Repository Analysis,
                         <br />
                         Code Review & Security Scanning
@@ -185,7 +185,7 @@ export default function HomeClient({
 
                     <CAGBadge />
 
-                    <p className="text-base sm:text-lg md:text-xl text-zinc-400 mb-4 max-w-3xl mx-auto leading-relaxed animate-fade-in-up-blur [animation-delay:200ms]">
+                    <p className="text-base sm:text-lg md:text-xl text-zinc-200 mb-4 max-w-3xl mx-auto leading-relaxed animate-fade-in-up-blur [animation-delay:200ms] font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                         Understand repositories faster with context-aware AI. Go from URL to architecture, code review, and security triage.
                     </p>
 
@@ -233,27 +233,27 @@ export default function HomeClient({
                     <div className="grid grid-cols-1 gap-10 items-start">
                         <div>
                             <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">Use Cases That Drive Decisions</h2>
-                            <p className="text-zinc-400 text-lg mb-8">
+                            <p className="text-zinc-200 text-lg mb-8">
                                 Novaris helps teams reduce uncertainty before adoption, release, and remediation decisions.
                             </p>
                             <div className="space-y-4">
                                 <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
                                     <h3 className="text-xl font-semibold mb-2 group-hover:text-cyan-400 transition-colors">Repository Due Diligence</h3>
-                                    <p className="text-zinc-400 text-sm mb-4">Evaluate unfamiliar repositories before adopting dependencies or onboarding teams. Get system-level snapshots for immediate clarity.</p>
+                                    <p className="text-zinc-200 text-sm mb-4">Evaluate unfamiliar repositories before adopting dependencies or onboarding teams. Get system-level snapshots for immediate clarity.</p>
                                     <Link href="/github-repository-analysis" className="text-cyan-400 text-xs font-bold hover:text-cyan-300 transition-colors flex items-center gap-1">
                                         Exploration Workflow <ArrowRight size={12} />
                                     </Link>
                                 </article>
                                 <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
                                     <h3 className="text-xl font-semibold mb-2 group-hover:text-purple-400 transition-colors">Context-Aware Code Review</h3>
-                                    <p className="text-zinc-400 text-sm mb-4">Review implementation quality with repository context, not isolated snippets. Surface logic flaws and blind spots.</p>
+                                    <p className="text-zinc-200 text-sm mb-4">Review implementation quality with repository context, not isolated snippets. Surface logic flaws and blind spots.</p>
                                     <Link href="/ai-code-review-tool" className="text-purple-400 text-xs font-bold hover:text-purple-300 transition-colors flex items-center gap-1">
                                         Review Workflow <ArrowRight size={12} />
                                     </Link>
                                 </article>
                                 <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
                                     <h3 className="text-xl font-semibold mb-2 group-hover:text-red-400 transition-colors">Security Prioritization</h3>
-                                    <p className="text-zinc-400 text-sm mb-4">Surface actionable risk signals and triage findings with engineering context. Get severity-framed remediation direction.</p>
+                                    <p className="text-zinc-200 text-sm mb-4">Surface actionable risk signals and triage findings with engineering context. Get severity-framed remediation direction.</p>
                                     <Link href="/security-scanner" className="text-red-400 text-xs font-bold hover:text-red-300 transition-colors flex items-center gap-1">
                                         Triage Workflow <ArrowRight size={12} />
                                     </Link>
@@ -268,26 +268,26 @@ export default function HomeClient({
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-12">
                         <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-white via-cyan-100 to-zinc-400 bg-clip-text text-transparent">How Novaris Works</h2>
-                        <p className="text-zinc-400 text-lg max-w-3xl mx-auto">
+                        <p className="text-zinc-200 text-lg max-w-3xl mx-auto">
                             Intent-first workflows for repository analysis, architecture clarity, code review, and security prioritization.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] transition-all duration-300">
                             <h3 className="font-semibold mb-2 text-white">1. Start with a URL</h3>
-                            <p className="text-zinc-400 text-sm">Paste a GitHub repository URL and select your goal.</p>
+                            <p className="text-zinc-200 text-sm">Paste a GitHub repository URL and select your goal.</p>
                         </article>
                         <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-purple-500/40 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-300">
                             <h3 className="font-semibold mb-2 text-white">2. Build context</h3>
-                            <p className="text-zinc-400 text-sm">Agentic CAG gathers full-file context needed for reliable understanding.</p>
+                            <p className="text-zinc-200 text-sm">Agentic CAG gathers full-file context needed for reliable understanding.</p>
                         </article>
                         <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-blue-500/40 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300">
                             <h3 className="font-semibold mb-2 text-white">3. Analyze deeply</h3>
-                            <p className="text-zinc-400 text-sm">Map architecture, review implementation, and identify risk hotspots.</p>
+                            <p className="text-zinc-200 text-sm">Map architecture, review implementation, and identify risk hotspots.</p>
                         </article>
                         <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-emerald-500/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all duration-300">
                             <h3 className="font-semibold mb-2 text-white">4. Take action</h3>
-                            <p className="text-zinc-400 text-sm">Get outputs you can use immediately in engineering and security workflows.</p>
+                            <p className="text-zinc-200 text-sm">Get outputs you can use immediately in engineering and security workflows.</p>
                         </article>
                     </div>
                 </div>
@@ -337,7 +337,7 @@ export default function HomeClient({
                                     className="overflow-hidden will-change-[height,opacity]"
                                 >
                                     <div className="px-6 pb-6">
-                                        <p className="text-zinc-400 leading-relaxed">{item.answer}</p>
+                                        <p className="text-zinc-200 leading-relaxed">{item.answer}</p>
                                     </div>
                                 </motion.div>
                             </article>
@@ -355,7 +355,7 @@ export default function HomeClient({
                                 <TrendingUp className="inline-block text-cyan-400 mb-1 mr-2 md:mr-3" size={32} />
                                 Explore Trending <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Repositories</span>
                             </h2>
-                            <p className="text-zinc-400 text-lg max-w-2xl mx-auto mb-8">
+                            <p className="text-zinc-200 text-lg max-w-2xl mx-auto mb-8">
                                 Explore the projects getting the most heat on GitHub. Instantly analyze any of them with Novaris.
                             </p>
 
@@ -401,20 +401,20 @@ export default function HomeClient({
                                                 />
                                                 <span className="truncate max-w-[150px]">{repo.owner}</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-zinc-500 uppercase">
+                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-zinc-300 uppercase">
                                                 <Globe size={10} /> {repo.language || 'Code'}
                                             </div>
                                         </div>
                                         <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
                                             {repo.repo}
                                         </h3>
-                                        <p className="text-zinc-500 text-sm line-clamp-2 mb-6 min-h-[40px]">
+                                        <p className="text-zinc-300 text-sm line-clamp-2 mb-6 min-h-[40px]">
                                             {repo.description || 'Experience high-context AI analysis for this repository.'}
                                         </p>
                                     </div>
 
                                     <div className="flex items-center justify-between mt-auto">
-                                        <div className="flex items-center gap-4 text-xs text-zinc-500">
+                                        <div className="flex items-center gap-4 text-xs text-zinc-300">
                                             <span className="flex items-center gap-1">
                                                 <Star size={12} className="text-yellow-500" />
                                                 {repo.stars.toLocaleString()}
@@ -477,7 +477,7 @@ export default function HomeClient({
                                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
                                     Engineering <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Insights</span>
                                 </h2>
-                                <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+                                <p className="text-zinc-200 text-lg max-w-2xl mx-auto">
                                     Latest updates from the lab on AI-driven code intelligence and security.
                                 </p>
                             </div>
@@ -515,12 +515,12 @@ export default function HomeClient({
                                     <h3 className="text-xl font-bold mb-3 group-hover:text-purple-400 transition-colors line-clamp-2">
                                         {post.title}
                                     </h3>
-                                    <p className="text-zinc-400 text-sm italic opacity-80 line-clamp-2 mb-6">
+                                    <p className="text-zinc-200 text-sm italic opacity-80 line-clamp-2 mb-6">
                                         {post.excerpt}
                                     </p>
                                     <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
                                         <span className="text-xs font-bold text-zinc-300">Read insight</span>
-                                        <ArrowRight size={14} className="text-zinc-500 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
+                                        <ArrowRight size={14} className="text-zinc-300 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
                                     </div>
                                 </Link>
                             ))}

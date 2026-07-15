@@ -107,17 +107,17 @@ export function DeveloperCard({ username, name: initialName, avatar: initialAvat
                             <h3 className="text-lg font-semibold text-white truncate">
                                 {profile.name || username}
                             </h3>
-                            {loading && <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />}
+                            {loading && <Loader2 className="w-3 h-3 animate-spin text-zinc-300" />}
                         </div>
-                        <p className="text-sm text-zinc-400 mb-2 truncate">@{username}</p>
+                        <p className="text-sm text-zinc-200 mb-2 truncate">@{username}</p>
 
                         {/* Bio */}
                         {profile.bio && (
-                            <p className="text-zinc-400 text-sm mb-3 line-clamp-2">{profile.bio}</p>
+                            <p className="text-zinc-200 text-sm mb-3 line-clamp-2">{profile.bio}</p>
                         )}
 
                         {/* Additional info */}
-                        <div className="flex flex-wrap gap-3 text-xs text-zinc-500 mb-4">
+                        <div className="flex flex-wrap gap-3 text-xs text-zinc-300 mb-4">
                             {profile.location && (
                                 <span className="flex items-center gap-1">
                                     <MapPin className="w-3 h-3" />

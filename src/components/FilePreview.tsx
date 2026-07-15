@@ -229,7 +229,7 @@ export function FilePreview({ isOpen, filePath, repoOwner, repoName, onClose }: 
                         {loading && (
                             <div className="flex flex-col items-center justify-center flex-1 py-20">
                                 <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
-                                <p className="mt-4 text-zinc-400 animate-pulse">Fetching content...</p>
+                                <p className="mt-4 text-zinc-200 animate-pulse">Fetching content...</p>
                             </div>
                         )}
 
@@ -238,7 +238,7 @@ export function FilePreview({ isOpen, filePath, repoOwner, repoName, onClose }: 
                                 <AlertCircle className="w-16 h-16 text-zinc-700" />
                                 <div>
                                     <h3 className="text-white text-xl font-medium mb-2">{error}</h3>
-                                    <p className="text-zinc-500 max-w-md">
+                                    <p className="text-zinc-300 max-w-md">
                                         We couldn't render this file directly. You can try viewing it on GitHub or downloading it.
                                     </p>
                                 </div>
@@ -344,7 +344,7 @@ export function FilePreview({ isOpen, filePath, repoOwner, repoName, onClose }: 
                     </div>
 
                     {/* Footer */}
-                    <div className="p-3 border-t border-white/10 bg-zinc-900/80 backdrop-blur-sm flex items-center justify-between text-xs text-zinc-500">
+                    <div className="p-3 border-t border-white/10 bg-zinc-900/80 backdrop-blur-sm flex items-center justify-between text-xs text-zinc-300">
                         <div className="flex items-center gap-4">
                             <span>{fileType.toUpperCase()} FILE</span>
                             {content && <span>{content.split('\n').length} lines</span>}

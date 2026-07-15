@@ -15,7 +15,7 @@ export default function PublicStats({ stats }: { stats: PublicStatsData }) {
     };
 
     return (
-        <div className="flex flex-wrap justify-center gap-2 md:gap-4 mt-2 md:mt-4 text-[10px] md:text-sm text-zinc-400">
+        <div className="flex flex-wrap justify-center gap-2 md:gap-4 mt-2 md:mt-4 text-[10px] md:text-sm text-zinc-200">
             <div className="flex items-center gap-1.5 md:gap-2 bg-zinc-900/50 border border-white/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full backdrop-blur-sm shadow-xl">
                 <Users className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
                 <span className="font-semibold text-zinc-200">{formatStat(stats.totalVisitors)}</span>

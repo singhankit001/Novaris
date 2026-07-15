@@ -52,7 +52,7 @@ export default function ChatError({
                                  isRateLimit ? "API Rate Limit Exceeded" : 
                                  "Failed to Load Repository"}
                             </h2>
-                            <p className="text-zinc-400 max-w-md mx-auto leading-relaxed">
+                            <p className="text-zinc-200 max-w-md mx-auto leading-relaxed">
                                 {isAuthError 
                                     ? "Your GitHub token is invalid or expired. To analyze repositories, please sign in with GitHub."
                                     : isRateLimit

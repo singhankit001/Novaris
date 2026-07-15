@@ -126,7 +126,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       </div>
 
       <main className="max-w-4xl mx-auto px-6 py-16">
-        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <Link href="/blog" className="hover:text-white transition-colors">Insights</Link>
@@ -147,7 +147,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 <span className="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold border border-purple-500/20 uppercase tracking-widest">
                     {post.category}
                 </span>
-                <span className="text-zinc-500 text-xs flex items-center gap-1">
+                <span className="text-zinc-300 text-xs flex items-center gap-1">
                     <Clock size={12} /> 5 min read
                 </span>
             </div>
@@ -161,12 +161,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     </div>
                     <div>
                         <p className="text-sm font-bold">{post.author}</p>
-                        <p className="text-xs text-zinc-500">{post.date}</p>
+                        <p className="text-xs text-zinc-300">{post.date}</p>
                     </div>
                 </div>
                 <div className="flex gap-4">
                     <button className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                        <Share2 size={18} className="text-zinc-400" />
+                        <Share2 size={18} className="text-zinc-200" />
                     </button>
                 </div>
             </div>

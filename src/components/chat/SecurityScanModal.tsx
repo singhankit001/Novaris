@@ -50,7 +50,7 @@ export function SecurityScanModal({
                         <Shield className="w-6 h-6 text-red-400" />
                         Security Check
                     </h2>
-                    <p className="text-zinc-400 text-sm mb-6">Choose the depth of your security analysis.</p>
+                    <p className="text-zinc-200 text-sm mb-6">Choose the depth of your security analysis.</p>
 
                     <div className="space-y-4">
                         <button
@@ -61,9 +61,9 @@ export function SecurityScanModal({
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <h3 className="text-white font-medium group-hover:text-red-300 transition-colors">Quick Scan</h3>
-                                <span className="text-xs font-mono bg-zinc-950 px-2 py-0.5 rounded text-zinc-400">~ 30 sec</span>
+                                <span className="text-xs font-mono bg-zinc-950 px-2 py-0.5 rounded text-zinc-200">~ 30 sec</span>
                             </div>
-                            <p className="text-xs text-zinc-400 leading-relaxed">
+                            <p className="text-xs text-zinc-200 leading-relaxed">
                                 Analyzes up to {QUICK_SCAN_FILE_LIMIT} files. Automatically flags potential secrets and common injection points. Fast and low-latency.
                             </p>
                         </button>
@@ -80,9 +80,9 @@ export function SecurityScanModal({
                                     <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                                 </h3>
                                 <div className="flex flex-col items-end">
-                                    <span className="text-xs font-mono bg-zinc-950 px-2 py-0.5 rounded text-zinc-400">~ 2 min</span>
+                                    <span className="text-xs font-mono bg-zinc-950 px-2 py-0.5 rounded text-zinc-200">~ 2 min</span>
                                     {isAuthenticated && deepScansData && (
-                                        <span className="text-[10px] text-zinc-500 mt-1">
+                                        <span className="text-[10px] text-zinc-300 mt-1">
                                             {deepScansData.isUnlimited
                                                 ? "Unlimited (Admin)"
                                                 : `${deepScansData.total - deepScansData.used} / ${deepScansData.total} remaining`}
@@ -90,7 +90,7 @@ export function SecurityScanModal({
                                     )}
                                 </div>
                             </div>
-                            <p className="text-xs text-zinc-400 leading-relaxed">
+                            <p className="text-xs text-zinc-200 leading-relaxed">
                                 Analyzes up to {DEEP_SCAN_FILE_LIMIT} files. Runs broader deterministic analysis with required thinking AI assistance.
                             </p>
                         </button>
@@ -106,9 +106,9 @@ export function SecurityScanModal({
                                         Coming soon
                                     </span>
                                 </h3>
-                                <span className="text-xs font-mono bg-zinc-950 px-2 py-0.5 rounded text-zinc-500">3/month</span>
+                                <span className="text-xs font-mono bg-zinc-950 px-2 py-0.5 rounded text-zinc-300">3/month</span>
                             </div>
-                            <p className="text-xs text-zinc-400 leading-relaxed">
+                            <p className="text-xs text-zinc-200 leading-relaxed">
                                 Recommended for repositories with more than 500 files.
                             </p>
                         </div>
@@ -128,7 +128,7 @@ export function SecurityScanModal({
                                         Required
                                     </span>
                                 </div>
-                                <span className="text-xs text-zinc-400 leading-relaxed">
+                                <span className="text-xs text-zinc-200 leading-relaxed">
                                     Security scans always run with AI assist enabled for deeper reasoning and verification quality.
                                 </span>
                             </div>

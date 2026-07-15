@@ -630,10 +630,10 @@ export function ReportContent({
                                 </span>
                             </div>
                             <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-                                <span className="font-normal text-zinc-500">{scan.owner} / </span>
+                                <span className="font-normal text-zinc-300">{scan.owner} / </span>
                                 {scan.repo}
                             </h1>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-400">
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-200">
                                 <span>Scanned on {date.toLocaleDateString()} at {date.toLocaleTimeString()}</span>
                                 <span className="hidden sm:inline">•</span>
                                 <span className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-xs">
@@ -661,7 +661,7 @@ export function ReportContent({
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <h3 className="text-lg font-medium text-zinc-100">Security Health Score</h3>
-                            <p className="mt-1 text-sm text-zinc-400">
+                            <p className="mt-1 text-sm text-zinc-200">
                                 Posture score based on verified severity mix, high-exploitability signals, and scan trend.
                             </p>
                         </div>
@@ -701,7 +701,7 @@ export function ReportContent({
                 <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-6 space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <h3 className="text-lg font-medium text-zinc-100">Shareable Verified Snippets</h3>
-                        <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-400">
+                        <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200">
                             For README, issues, and team updates
                         </span>
                     </div>
@@ -723,13 +723,13 @@ export function ReportContent({
                     </div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Badge Markdown</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-200">Badge Markdown</p>
                             <pre className="overflow-auto rounded-xl border border-white/10 bg-zinc-950/70 p-4 text-xs text-zinc-300 whitespace-pre-wrap">
                                 {verifiedBadgeSnippet}
                             </pre>
                         </div>
                         <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Report Summary Snippet</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-200">Report Summary Snippet</p>
                             <pre className="overflow-auto rounded-xl border border-white/10 bg-zinc-950/70 p-4 text-xs text-zinc-300 whitespace-pre-wrap">
                                 {verifiedReportSnippet}
                             </pre>
@@ -758,11 +758,11 @@ export function ReportContent({
                 <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-6">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <h3 className="text-lg font-medium text-zinc-100">What Changed Since Last Scan</h3>
-                        <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-400">
+                        <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200">
                             {hasPreviousScan ? "Compared to previous scan" : "Baseline scan"}
                         </span>
                     </div>
-                    <p className="mt-2 text-sm text-zinc-400">
+                    <p className="mt-2 text-sm text-zinc-200">
                         {hasPreviousScan
                             ? "Use this delta to prioritize newly introduced risk, then resolve historical findings."
                             : "No earlier scan found for this repository yet. This report is your baseline for future change tracking."}
@@ -787,12 +787,12 @@ export function ReportContent({
                     <div className="rounded-2xl border border-white/10 bg-zinc-900 p-6 space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <h3 className="text-lg font-medium text-zinc-100">Fix These First</h3>
-                            <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-zinc-400">
+                            <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-zinc-200">
                                 Ranked by impact, confidence, and exploitability
                             </span>
                         </div>
                         {topFixesByFingerprint.length === 0 ? (
-                            <div className="rounded-xl border border-white/5 bg-zinc-950/60 p-4 text-sm text-zinc-400">
+                            <div className="rounded-xl border border-white/5 bg-zinc-950/60 p-4 text-sm text-zinc-200">
                                 No vulnerabilities to prioritize in this scan.
                             </div>
                         ) : (
@@ -809,11 +809,11 @@ export function ReportContent({
                                                 <VerificationBadge status={view.finding.verificationStatus} />
                                             </div>
                                             <p className="text-sm font-medium text-zinc-100">{view.finding.title}</p>
-                                            <p className="text-xs text-zinc-400">
+                                            <p className="text-xs text-zinc-200">
                                                 {view.finding.file}{view.finding.line ? `:${view.finding.line}` : ""} • Triage score {view.triageScore}
                                             </p>
                                             {view.finding.exploitabilityTag && (
-                                                <p className="text-xs text-zinc-400">Exploitability: {view.finding.exploitabilityTag}</p>
+                                                <p className="text-xs text-zinc-200">Exploitability: {view.finding.exploitabilityTag}</p>
                                             )}
                                             <p className="text-sm text-zinc-300">{view.impact}</p>
                                         </div>
@@ -829,7 +829,7 @@ export function ReportContent({
                         <div className="rounded-xl border border-white/5 bg-zinc-900/50 p-8 text-center">
                             <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500 opacity-50" />
                             <h4 className="mb-1 font-medium text-zinc-300">No vulnerabilities found</h4>
-                            <p className="text-sm text-zinc-500">This repository looks clean based on the scan configuration.</p>
+                            <p className="text-sm text-zinc-300">This repository looks clean based on the scan configuration.</p>
                         </div>
                     ) : (
                         findingViews.map((view) => {
@@ -857,7 +857,7 @@ export function ReportContent({
                                                     {exploitabilityBadge.label}
                                                 </span>
                                                 {(view.finding.cwe || view.finding.cvss) && (
-                                                    <span className="flex items-center gap-2 text-xs text-zinc-500">
+                                                    <span className="flex items-center gap-2 text-xs text-zinc-300">
                                                         {view.finding.cwe && <span>{view.finding.cwe}</span>}
                                                         {view.finding.cvss && <span>CVSS: {view.finding.cvss}</span>}
                                                     </span>
@@ -879,7 +879,7 @@ export function ReportContent({
 
                                     <div className="space-y-6 p-5">
                                         <div className="space-y-3">
-                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Evidence</h5>
+                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Evidence</h5>
                                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                                 {evidenceItems.map((evidence, evidenceIndex) => {
                                                     const style = evidenceTypeConfig[evidence.type] ?? evidenceTypeConfig.context;
@@ -946,31 +946,31 @@ export function ReportContent({
                                                 )}
                                             </div>
                                             <div className="space-y-2 rounded-lg border border-white/10 bg-zinc-950/70 p-4">
-                                                <h6 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Proof Summary</h6>
+                                                <h6 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">Proof Summary</h6>
                                                 <pre className="whitespace-pre-wrap text-sm text-zinc-300">{view.proof}</pre>
                                             </div>
-                                            <p className="text-xs text-zinc-500">{view.confidenceRationale}</p>
+                                            <p className="text-xs text-zinc-300">{view.confidenceRationale}</p>
                                             {view.finding.verificationRationale && (
-                                                <p className="text-xs text-zinc-500">
+                                                <p className="text-xs text-zinc-300">
                                                     Verification: {view.finding.verificationRationale}
                                                 </p>
                                             )}
                                             {view.finding.exploitabilityTag && (
-                                                <p className="text-xs text-zinc-500">
+                                                <p className="text-xs text-zinc-300">
                                                     Exploitability tag: {view.finding.exploitabilityTag}
                                                 </p>
                                             )}
                                         </div>
 
                                         <div className="space-y-2">
-                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Impact</h5>
+                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Impact</h5>
                                             <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">
                                                 {view.impact}
                                             </div>
                                         </div>
 
                                         <div className="flex flex-col space-y-2">
-                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Recommendation</h5>
+                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Recommendation</h5>
                                             <div className="rounded-lg border border-indigo-500/10 bg-indigo-500/5 p-4">
                                                 <p className="text-sm text-indigo-200">{view.finding.recommendation}</p>
                                             </div>
@@ -978,7 +978,7 @@ export function ReportContent({
 
                                         {view.finding.snippet && (
                                             <div className="space-y-2 pt-2">
-                                                <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Context Snippet</h5>
+                                                <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Context Snippet</h5>
                                                 <CodeBlock
                                                     language={view.finding.file.split(".").pop() || "text"}
                                                     value={view.finding.snippet}
@@ -993,7 +993,7 @@ export function ReportContent({
                 </div>
 
                 <div className="no-export pt-8 text-center text-sm text-zinc-600">
-                    <p>Generated by <a href={baseUrl} className="font-semibold text-zinc-500 transition-colors hover:text-indigo-400">Novaris</a> — The AI developer sidekick.</p>
+                    <p>Generated by <a href={baseUrl} className="font-semibold text-zinc-300 transition-colors hover:text-indigo-400">Novaris</a> — The AI developer sidekick.</p>
                 </div>
             </div>
 
@@ -1011,7 +1011,7 @@ export function ReportContent({
                                     AI Remediation
                                 </div>
                                 <h3 className="text-xl font-semibold text-white">Remediate with AI</h3>
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-zinc-200">
                                     Review the remediation prompt, then copy it to continue fixing vulnerabilities in chat.
                                 </p>
                             </div>
@@ -1069,7 +1069,7 @@ export function ReportContent({
                                     Deep Scan
                                 </div>
                                 <h3 className="text-xl font-semibold text-white">Scan Another Repository</h3>
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-zinc-200">
                                     Enter any GitHub repository and launch a deep verified scan flow in chat.
                                 </p>
                             </div>
@@ -1083,16 +1083,16 @@ export function ReportContent({
                                     value={deepScanRepoInput}
                                     onChange={(event) => setDeepScanRepoInput(event.target.value)}
                                     placeholder="owner/repo or https://github.com/owner/repo"
-                                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none"
+                                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-300 focus:border-indigo-500/50 focus:outline-none"
                                     autoFocus
                                 />
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-zinc-300">
                                     We normalize GitHub URLs automatically and start the deep scan prompt for that repository.
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Try examples</p>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Try examples</p>
                                 <div className="flex flex-wrap gap-2">
                                     {["vercel/next.js", "supabase/supabase", "langchain-ai/langchainjs"].map((exampleRepo) => (
                                         <button
@@ -1156,7 +1156,7 @@ export function ReportContent({
                                     <span className="text-xs font-semibold uppercase tracking-[0.2em]">False Positive Report</span>
                                 </div>
                                 <h3 className="text-xl font-semibold text-white">{activeFalsePositiveView.finding.title}</h3>
-                                <p className="text-sm text-zinc-400">
+                                <p className="text-sm text-zinc-200">
                                     {activeFalsePositiveView.finding.file}
                                     {activeFalsePositiveView.finding.line ? `:${activeFalsePositiveView.finding.line}` : ""}
                                     {" • "}
@@ -1180,7 +1180,7 @@ export function ReportContent({
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-zinc-300">
                                     {falsePositiveReasonOptions.find((option) => option.value === falsePositiveReason)?.description}
                                 </p>
                             </div>
@@ -1195,9 +1195,9 @@ export function ReportContent({
                                     onChange={(event) => setFalsePositiveDetails(event.target.value)}
                                     rows={5}
                                     placeholder="Explain why this finding is incorrect, what controls already exist, and anything the reviewer should verify."
-                                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none"
+                                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-300 focus:border-indigo-500/50 focus:outline-none"
                                 />
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-xs text-zinc-300">
                                     Include enough context for review. This field is required.
                                 </p>
                             </div>

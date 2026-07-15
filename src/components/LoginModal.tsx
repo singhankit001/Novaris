@@ -39,7 +39,7 @@ export function LoginModal({
                     <h2 className="text-xl font-bold text-white mb-2 pr-8">
                         {title}
                     </h2>
-                    <p className="text-zinc-400 text-sm mb-8 leading-relaxed">
+                    <p className="text-zinc-200 text-sm mb-8 leading-relaxed">
                         {description}
                     </p>
 

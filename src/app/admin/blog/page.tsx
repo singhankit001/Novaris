@@ -11,7 +11,7 @@ export default async function BlogAdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Blog Posts</h1>
-          <p className="text-zinc-400 text-sm">
+          <p className="text-zinc-200 text-sm">
             Manage your articles, drafts, and published content.
           </p>
         </div>
@@ -29,11 +29,11 @@ export default async function BlogAdminPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/5 bg-white/5">
-                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Title</th>
+                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -44,7 +44,7 @@ export default async function BlogAdminPage() {
                       <span className="font-bold text-zinc-200 group-hover:text-white transition-colors">
                         {post.title}
                       </span>
-                      <span className="text-xs text-zinc-500 mt-0.5">/{post.slug}</span>
+                      <span className="text-xs text-zinc-300 mt-0.5">/{post.slug}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -57,10 +57,10 @@ export default async function BlogAdminPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-zinc-400">{post.category}</span>
+                    <span className="text-sm text-zinc-200">{post.category}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm text-zinc-400">{post.date}</span>
+                    <span className="text-sm text-zinc-200">{post.date}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -68,7 +68,7 @@ export default async function BlogAdminPage() {
                         <Link 
                           href={`/blog/${post.slug}`}
                           target="_blank"
-                          className="p-1.5 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/5 rounded-lg transition-all"
+                          className="p-1.5 text-zinc-300 hover:text-blue-400 hover:bg-blue-400/5 rounded-lg transition-all"
                           title="View Live"
                         >
                           <Eye size={16} />
@@ -83,7 +83,7 @@ export default async function BlogAdminPage() {
                       )}
                       <Link 
                         href={`/admin/blog/${post.id}`}
-                        className="p-1.5 text-zinc-500 hover:text-purple-400 hover:bg-purple-400/5 rounded-lg transition-all"
+                        className="p-1.5 text-zinc-300 hover:text-purple-400 hover:bg-purple-400/5 rounded-lg transition-all"
                         title="Edit"
                       >
                         <Edit3 size={16} />
@@ -95,7 +95,7 @@ export default async function BlogAdminPage() {
               ))}
               {posts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 italic">
+                  <td colSpan={5} className="px-6 py-12 text-center text-zinc-300 italic">
                     No posts found. Create your first post to get started!
                   </td>
                 </tr>

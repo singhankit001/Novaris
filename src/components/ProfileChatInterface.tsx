@@ -840,16 +840,16 @@ export function ProfileChatInterface({
 
                             <button
                                 onClick={() => setShowClearConfirm(true)}
-                                className="p-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="p-2 text-zinc-200 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
                                 title="Clear Chat"
                             >
                                 <Trash2 className="w-5 h-5" />
                             </button>
                         </div>
                         {profile.bio && (
-                            <p className="text-zinc-400 mb-3 line-clamp-2 hidden md:block">{profile.bio}</p>
+                            <p className="text-zinc-200 mb-3 line-clamp-2 hidden md:block">{profile.bio}</p>
                         )}
-                        <div className="flex w-full justify-between md:justify-start md:gap-4 text-sm text-zinc-500">
+                        <div className="flex w-full justify-between md:justify-start md:gap-4 text-sm text-zinc-300">
                             <span className="flex items-center gap-1">
                                 <BookMarked className="w-4 h-4" />
                                 {profile.public_repos} repos
@@ -964,7 +964,7 @@ export function ProfileChatInterface({
                                         {msg.role === "model" && msg.content && !loading && (
                                             <button
                                                 onClick={() => handleCopyMessage(msg)}
-                                                className="absolute top-2 right-2 p-1.5 text-zinc-600 hover:text-zinc-400 hover:bg-white/10 rounded-md transition-colors"
+                                                className="absolute top-2 right-2 p-1.5 text-zinc-600 hover:text-zinc-200 hover:bg-white/10 rounded-md transition-colors"
                                                 title="Copy response"
                                             >
                                                 <CopySquaresIcon
@@ -1005,7 +1005,7 @@ export function ProfileChatInterface({
                                     </div>
                                 )}
                                 {msg.role === "model" && (msg.commitFreshnessLabel || (msg.toolsUsed && msg.toolsUsed.length > 0) || msg.sourceScope || (msg.processingSummary && msg.processingSummary.length > 0)) && (
-                                    <div className="hidden md:block text-[11px] text-zinc-500 pl-1">
+                                    <div className="hidden md:block text-[11px] text-zinc-300 pl-1">
                                         {msg.sourceScope && <span>Scope: {msg.sourceScope}</span>}
                                         {msg.commitFreshnessLabel && <span>{msg.commitFreshnessLabel}</span>}
                                         {msg.toolsUsed && msg.toolsUsed.length > 0 && (
@@ -1034,7 +1034,7 @@ export function ProfileChatInterface({
                 {referenceText && (
                     <div className="max-w-3xl mx-auto">
                         <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-300">
-                            <span className="text-zinc-400">Ask NovarisAI</span>
+                            <span className="text-zinc-200">Ask NovarisAI</span>
                             <span className="truncate">{referenceText}</span>
                             <button
                                 onClick={clearReference}
@@ -1055,7 +1055,7 @@ export function ProfileChatInterface({
                     >
                         <div className="flex items-center gap-2 mb-2">
                             <Sparkles className="w-4 h-4 text-purple-400" />
-                            <span className="text-sm text-zinc-400">Suggested questions:</span>
+                            <span className="text-sm text-zinc-200">Suggested questions:</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {PROFILE_SUGGESTIONS.map((suggestion, index) => (

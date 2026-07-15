@@ -202,7 +202,7 @@ export function EnhancedMarkdown({ content, components, currentOwner, currentRep
                             className="inline-flex items-baseline gap-1 underline decoration-dashed decoration-zinc-500/50 underline-offset-[3px] hover:decoration-zinc-400 text-sm font-mono text-zinc-300 hover:text-zinc-100 transition-all cursor-pointer group"
                             title={`Open ${fullPath}`}
                         >
-                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
+                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-200 transition-colors" />
                             {children}
                         </button>
                     );
@@ -227,7 +227,7 @@ export function EnhancedMarkdown({ content, components, currentOwner, currentRep
                             className="inline-flex items-baseline gap-1 underline decoration-dashed decoration-zinc-500/50 underline-offset-[3px] hover:decoration-zinc-400 text-sm font-mono text-zinc-300 hover:text-zinc-100 transition-all cursor-pointer group"
                             title={`Reveal ${fullFolderPath}`}
                         >
-                            <FolderIcon name={childrenStr} isExpanded={false} className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-400 transition-colors" />
+                            <FolderIcon name={childrenStr} isExpanded={false} className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-200 transition-colors" />
                             {children}
                         </button>
                     );

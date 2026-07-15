@@ -183,7 +183,7 @@ export default function ShareButton({
                 </button>
             )}
             {activeLink && (
-                <span className="text-xs text-zinc-400 border border-white/10 rounded-full px-2.5 py-1">
+                <span className="text-xs text-zinc-200 border border-white/10 rounded-full px-2.5 py-1">
                     Expires on {new Date(activeLink.expiresAt).toLocaleDateString()}
                 </span>
             )}

@@ -94,7 +94,7 @@ export default function RecentScans({ userId, limit, showViewAll = false }: { us
                         </Link>
                     )}
                     {scans.length > 0 && (
-                    <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-zinc-400">
+                    <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-zinc-200">
                         {scans.length} {scans.length === 1 ? 'Scan' : 'Scans'}
                     </span>
                     )}
@@ -103,11 +103,11 @@ export default function RecentScans({ userId, limit, showViewAll = false }: { us
 
             {scans.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center">
-                    <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4 text-zinc-500">
+                    <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4 text-zinc-300">
                         <Search className="w-8 h-8" />
                     </div>
                     <h3 className="text-white font-medium mb-1">No scans yet</h3>
-                    <p className="text-zinc-500 text-sm mb-6 max-w-[240px]">
+                    <p className="text-zinc-300 text-sm mb-6 max-w-[240px]">
                         Start exploring repositories to see them listed here.
                     </p>
                     <Link
@@ -142,7 +142,7 @@ export default function RecentScans({ userId, limit, showViewAll = false }: { us
                                             {scan.depth}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-3 text-xs text-zinc-500">
+                                    <div className="flex items-center gap-3 text-xs text-zinc-300">
                                         <span>{new Date(scan.timestamp).toLocaleDateString()}</span>
                                         <span className="w-1 h-1 rounded-full bg-zinc-800" />
                                         <div className="flex gap-2">

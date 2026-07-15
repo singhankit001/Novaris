@@ -89,7 +89,7 @@ export default function GitHubRepositoryAnalysisPage() {
       <JsonLdScript data={softwareSchema} />
 
       <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <Link href="/solutions" className="hover:text-white transition-colors">Solutions</Link>
@@ -105,7 +105,7 @@ export default function GitHubRepositoryAnalysisPage() {
             Novaris helps teams evaluate unfamiliar repositories by mapping architecture, tracing
             implementation behavior, and surfacing risk hotspots that affect delivery confidence.
           </p>
-          <p className="text-zinc-400 leading-relaxed">
+          <p className="text-zinc-200 leading-relaxed">
             The workflow is designed for practical decisions: whether to adopt a dependency, how to
             onboard quickly, and where to focus review effort when timelines are tight.
           </p>
@@ -140,25 +140,25 @@ export default function GitHubRepositoryAnalysisPage() {
         <section className="grid gap-4 md:grid-cols-2 mb-10">
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Due diligence</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Evaluate open-source or third-party repositories for maintainability and risk before integration.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Onboarding</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Help new engineers understand architecture faster and contribute with fewer review cycles.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Migration planning</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Identify critical module dependencies and likely migration friction before planning execution.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
             <h2 className="text-xl font-semibold mb-2">Security preparation</h2>
-            <p className="text-zinc-400">
+            <p className="text-zinc-200">
               Establish repository context first so security findings can be prioritized with better confidence.
             </p>
           </article>
@@ -196,7 +196,7 @@ export default function GitHubRepositoryAnalysisPage() {
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
           <h2 className="text-2xl font-semibold mb-2">Take the next step</h2>
-          <p className="text-zinc-400 mb-6">
+          <p className="text-zinc-200 mb-6">
             Analyze one critical repository and convert context into a prioritized review and security plan.
           </p>
           <div className="flex flex-wrap gap-3">

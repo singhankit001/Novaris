@@ -154,7 +154,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
         <div className="flex items-center gap-4">
           <Link
             href="/admin/blog"
-            className="p-2 hover:bg-white/5 rounded-full transition-colors text-zinc-400"
+            className="p-2 hover:bg-white/5 rounded-full transition-colors text-zinc-200"
           >
             <ArrowLeft size={20} />
           </Link>
@@ -211,9 +211,9 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
           {!isPreview && (
             <div className="space-y-2">
               <div className="flex items-center justify-between pl-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Content (Markdown)</label>
+                <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest">Content (Markdown)</label>
                 {/* Toolbar */}
-                <div className="flex items-center gap-1 text-zinc-400 bg-zinc-900/50 px-3 py-1.5 rounded-lg border border-white/5 flex-wrap">
+                <div className="flex items-center gap-1 text-zinc-200 bg-zinc-900/50 px-3 py-1.5 rounded-lg border border-white/5 flex-wrap">
                   <button type="button" onClick={() => handleInsertMarkdown("# ")} className="hover:text-white transition-colors px-1 font-bold text-sm" title="Heading 1">H1</button>
                   <button type="button" onClick={() => handleInsertMarkdown("## ")} className="hover:text-white transition-colors px-1 font-bold text-sm" title="Heading 2">H2</button>
                   <button type="button" onClick={() => handleInsertMarkdown("### ")} className="hover:text-white transition-colors px-1 font-bold text-sm" title="Heading 3">H3</button>
@@ -279,7 +279,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
           <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-6">
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1">Title</label>
+              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Title</label>
               <input
                 type="text"
                 name="title"
@@ -291,7 +291,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1">Slug</label>
+              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Slug</label>
               <input
                 type="text"
                 name="slug"
@@ -302,14 +302,14 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-purple-500/50 transition-colors disabled:opacity-50"
               />
               {Boolean(post.id && (post.published || post.publishedAt)) && (
-                <p className="text-[11px] text-zinc-500">
+                <p className="text-[11px] text-zinc-300">
                   Slug is locked after first publish to preserve canonical URLs.
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1">Category</label>
+              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Category</label>
               <select
                 name="category"
                 value={post.category ?? "Engineering"}
@@ -324,7 +324,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1">Excerpt</label>
+              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Excerpt</label>
               <textarea
                 name="excerpt"
                 value={post.excerpt ?? ""}
@@ -336,7 +336,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
 
             {/* SEO Keywords — admin-only, written to DB and used in <meta keywords> */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1 flex items-center gap-2">
+              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1 flex items-center gap-2">
                 <Tag size={12} />
                 SEO Keywords
               </label>
@@ -354,7 +354,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
             </div>
 
             <div className="space-y-4">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-1 flex items-center gap-2">
+              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1 flex items-center gap-2">
                 <ImageIcon size={12} /> Cover Image
               </label>
 
@@ -393,7 +393,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
                     </div>
                     <div className="text-center px-4">
                       <p className="text-xs font-bold text-zinc-300">Click or Drag Image</p>
-                      <p className="text-[10px] text-zinc-500 mt-1">Recommended 1200×630px</p>
+                      <p className="text-[10px] text-zinc-300 mt-1">Recommended 1200×630px</p>
                     </div>
                   </>
                 )}
@@ -433,7 +433,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
             </div>
 
             <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Status</span>
+                <span className="text-xs text-zinc-300">Status</span>
                 <span className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${post.published ? "text-green-400" : "text-yellow-400"}`}>
                     {post.published ? <Globe size={14} /> : <Lock size={14} />}
                     {post.published ? "Published" : "Draft"}

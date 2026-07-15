@@ -53,7 +53,7 @@ export function ReasoningBlock({ steps, isStreaming }: ReasoningBlockProps) {
             return (
                 <div>
                     <span className="font-semibold text-zinc-300">{match[1]}</span>
-                    {match[2] && <div className="mt-1 text-zinc-500">{match[2].trim()}</div>}
+                    {match[2] && <div className="mt-1 text-zinc-300">{match[2].trim()}</div>}
                 </div>
             );
         }
@@ -102,7 +102,7 @@ export function ReasoningBlock({ steps, isStreaming }: ReasoningBlockProps) {
                         <motion.span
                             animate={{ rotate: isExpanded ? 180 : 0 }}
                             transition={{ duration: 0.15 }}
-                            className="inline-flex shrink-0 text-zinc-500 group-hover:text-zinc-400 transition-colors"
+                            className="inline-flex shrink-0 text-zinc-500 group-hover:text-zinc-200 transition-colors"
                         >
                             <ChevronDown className="w-3.5 h-3.5" />
                         </motion.span>
@@ -111,7 +111,7 @@ export function ReasoningBlock({ steps, isStreaming }: ReasoningBlockProps) {
 
                 {/* Inline current reasoning step (shown when collapsed) */}
                 {!isExpanded && currentStep && (
-                    <div className="text-xs text-zinc-500 w-full min-w-0 pr-2 whitespace-normal break-words [overflow-wrap:anywhere] sm:truncate sm:whitespace-nowrap sm:pr-4">
+                    <div className="text-xs text-zinc-300 w-full min-w-0 pr-2 whitespace-normal break-words [overflow-wrap:anywhere] sm:truncate sm:whitespace-nowrap sm:pr-4">
                         {getCurrentStepTitle(currentStep)}
                     </div>
                 )}

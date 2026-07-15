@@ -25,7 +25,7 @@ export function ComingSoonOverlay() {
                     <h2 className="text-2xl font-bold bg-white bg-clip-text text-transparent mb-2">
                         Settings Locked
                     </h2>
-                    <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+                    <p className="text-zinc-200 text-sm leading-relaxed mb-6">
                         We&apos;re currently fine-tuning your experience. This feature will be available in the next major update.
                     </p>
 

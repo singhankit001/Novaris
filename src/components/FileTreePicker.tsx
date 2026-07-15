@@ -207,7 +207,7 @@ export function FileTreePicker({ files, selected, onChange }: FileTreePickerProp
                     />
                 ))}
             </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <div className="flex items-center gap-2 text-xs text-zinc-200">
                 <button
                     type="button"
                     onClick={() => onChange(allPaths)}

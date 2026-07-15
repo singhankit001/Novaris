@@ -52,7 +52,7 @@ export default async function BlogIndex() {
       </div>
 
       <main className="max-w-7xl mx-auto px-6 py-16">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span>/</span>
           <span className="text-zinc-200">Insights</span>
@@ -63,7 +63,7 @@ export default async function BlogIndex() {
           <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
             Engineering <span className="bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">Insights</span>
           </h1>
-          <p className="text-zinc-400 text-lg max-w-2xl">
+          <p className="text-zinc-200 text-lg max-w-2xl">
             Deep dives into GitHub repository analysis, AI code review strategy, and security-first engineering workflows.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -88,7 +88,7 @@ export default async function BlogIndex() {
               <Calendar className="text-purple-400" size={32} />
             </div>
             <h2 className="text-3xl font-bold mb-4">Insights Coming Soon</h2>
-            <p className="text-zinc-400 max-w-md mx-auto italic">
+            <p className="text-zinc-200 max-w-md mx-auto italic">
               We&apos;re currently deep in the lab building the future of code intelligence. Check back soon for our first deep dives and engineering updates.
             </p>
           </div>
@@ -114,14 +114,14 @@ export default async function BlogIndex() {
                             <span className="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-bold border border-purple-500/20">
                               {featuredPost.category}
                             </span>
-                            <span className="text-zinc-500 text-xs flex items-center gap-1">
+                            <span className="text-zinc-300 text-xs flex items-center gap-1">
                               <Calendar size={12} /> {featuredPost.date}
                             </span>
                           </div>
                           <h2 className="text-3xl font-bold mb-4 group-hover:text-purple-400 transition-colors">
                             {featuredPost.title}
                           </h2>
-                          <p className="text-zinc-400 mb-6 line-clamp-3 italic">
+                          <p className="text-zinc-200 mb-6 line-clamp-3 italic">
                             &ldquo;{featuredPost.excerpt}&rdquo;
                           </p>
                           <div className="flex items-center justify-between">
@@ -164,11 +164,11 @@ export default async function BlogIndex() {
                     <h3 className="text-xl font-bold mb-3 group-hover:text-purple-400 transition-colors line-clamp-2">
                       {post.title}
                     </h3>
-                    <p className="text-zinc-400 text-sm mb-6 line-clamp-2 italic opacity-80">
+                    <p className="text-zinc-200 text-sm mb-6 line-clamp-2 italic opacity-80">
                       {post.excerpt}
                     </p>
                     <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                      <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-tighter">
+                      <span className="text-zinc-300 text-[10px] font-bold uppercase tracking-tighter">
                         {post.date}
                       </span>
                       <span className="flex items-center gap-1 text-zinc-300 text-xs font-bold">

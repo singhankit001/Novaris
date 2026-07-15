@@ -29,7 +29,7 @@ export default function FAQPage() {
             <JsonLdScript data={faqSchema} />
             <JsonLdScript data={breadcrumbSchema} />
 
-            <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-400 flex items-center gap-2">
+            <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
                 <Link href="/" className="hover:text-white transition-colors">Home</Link>
                 <span>/</span>
                 <span className="text-zinc-200">FAQ</span>
@@ -37,14 +37,14 @@ export default function FAQPage() {
             
             <div className="mb-12">
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">Frequently Asked Questions</h1>
-                <p className="text-lg text-zinc-400">Everything you need to know about analyzing, visualizing, and querying GitHub repositories with Novaris.</p>
+                <p className="text-lg text-zinc-200">Everything you need to know about analyzing, visualizing, and querying GitHub repositories with Novaris.</p>
             </div>
 
             <div className="space-y-8">
                 {FAQ_PAGE_ITEMS.map((faq, index) => (
                     <div key={index} className="border-b border-white/10 pb-6 last:border-0">
                         <h2 className="text-xl font-semibold mb-3 text-white">{faq.question}</h2>
-                        <p className="text-zinc-400 leading-relaxed">{faq.answer}</p>
+                        <p className="text-zinc-200 leading-relaxed">{faq.answer}</p>
                     </div>
                 ))}
             </div>

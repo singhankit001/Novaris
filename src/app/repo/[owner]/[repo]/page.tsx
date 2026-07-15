@@ -64,7 +64,7 @@ function RepoUnavailableState({ owner, repo }: { owner: string; repo: string }) 
                     <p className="text-zinc-300 leading-relaxed mb-6">
                         Repo path: <span className="font-semibold text-white">{owner}/{repo}</span>
                     </p>
-                    <p className="text-zinc-400 leading-relaxed mb-8">
+                    <p className="text-zinc-200 leading-relaxed mb-8">
                         The repository may not exist, may be private, or the owner/repository name may be typed incorrectly.
                         Double-check the owner and repository name. To view private repositories, sign in with GitHub first.
                     </p>
@@ -177,7 +177,7 @@ export default async function RepoPage({ params }: Props) {
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                         <div className="w-full">
                             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                                <span className="text-zinc-400">{owner} / </span>
+                                <span className="text-zinc-200">{owner} / </span>
                                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">{repoData.name}</span>
                             </h1>
                             {repoDescription && (
@@ -195,7 +195,7 @@ export default async function RepoPage({ params }: Props) {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-6 mt-8 text-sm text-zinc-400">
+                    <div className="flex flex-wrap items-center gap-6 mt-8 text-sm text-zinc-200">
                         <div className="flex items-center">
                             <Star className="w-4 h-4 mr-2 text-yellow-500" />
                             {repoData.stargazers_count.toLocaleString()} stars
@@ -251,7 +251,7 @@ export default async function RepoPage({ params }: Props) {
                             href={`/chat?q=${owner}/${repo}&prompt=explain`}
                             className="inline-flex items-center justify-center px-6 py-3.5 border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-700 text-sm font-medium rounded-xl text-white transition-colors"
                         >
-                            <Search className="w-4 h-4 mr-2 text-zinc-400" />
+                            <Search className="w-4 h-4 mr-2 text-zinc-200" />
                             Explain Codebase
                         </Link>
                     </div>
@@ -266,11 +266,11 @@ export default async function RepoPage({ params }: Props) {
                         This repository is indexed by Novaris. By analyzing <strong>{owner}/{repo}</strong> in our AI interface,
                         you can instantly generate complete architecture diagrams, visualize control flows, and perform automated security audits across the entire codebase.
                     </p>
-                    <p className="text-zinc-400 mb-6">
+                    <p className="text-zinc-200 mb-6">
                         Our Agentic Context Augmented Generation (Agentic CAG) engine loads full source files into context on-demand, avoiding the fragmentation of traditional RAG systems.
                         Ask questions about the architecture, dependencies, or specific features to see it in action.
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 mb-6 bg-zinc-800/30 w-fit px-3 py-1.5 rounded-lg border border-zinc-700/30">
+                    <div className="flex items-center gap-2 text-xs text-zinc-300 mb-6 bg-zinc-800/30 w-fit px-3 py-1.5 rounded-lg border border-zinc-700/30">
                         <Clock className="w-3.5 h-3.5" />
                         <span>Source files are only loaded when you start an analysis to optimize performance.</span>
                     </div>
@@ -293,7 +293,7 @@ export default async function RepoPage({ params }: Props) {
                     <section className="bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-8 mb-12">
                         <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-6">
                             <h2 className="text-xl font-medium text-zinc-300 uppercase tracking-wider text-sm">Repository Summary (README)</h2>
-                            <span className="text-xs text-zinc-500 bg-zinc-800/50 px-2 py-1 rounded">Preview</span>
+                            <span className="text-xs text-zinc-300 bg-zinc-800/50 px-2 py-1 rounded">Preview</span>
                         </div>
 
                         <div className="relative max-h-[400px] overflow-hidden">

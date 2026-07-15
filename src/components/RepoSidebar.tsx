@@ -226,19 +226,19 @@ export function RepoSidebar({ fileTree, repoName, isOpen, onClose, onFileDoubleC
                             onClick={onClose}
                             className="md:hidden p-1 hover:bg-white/10 rounded transition-colors shrink-0"
                         >
-                            <X className="w-4 h-4 text-zinc-400" />
+                            <X className="w-4 h-4 text-zinc-200" />
                         </button>
                     </div>
 
                     {repoData && (
                         <div className="space-y-3">
                             {repoData.description && (
-                                <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+                                <p className="text-xs text-zinc-200 line-clamp-2 leading-relaxed">
                                     {repoData.description}
                                 </p>
                             )}
 
-                            <div className="flex items-center justify-between text-xs text-zinc-500">
+                            <div className="flex items-center justify-between text-xs text-zinc-300">
                                 <div className="flex items-center gap-1" title="Stars">
                                     <Star className="w-3 h-3 text-yellow-500/70" />
                                     <span>{repoData.stargazers_count}</span>
@@ -300,17 +300,17 @@ export function RepoSidebar({ fileTree, repoName, isOpen, onClose, onFileDoubleC
                                 onClick={() => setShowHiddenFiles(false)}
                                 className="p-1 hover:bg-white/10 rounded transition-colors"
                             >
-                                <X className="w-4 h-4 text-zinc-400" />
+                                <X className="w-4 h-4 text-zinc-200" />
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                            <p className="text-sm text-zinc-400 mb-4">
+                            <p className="text-sm text-zinc-200 mb-4">
                                 The following files and directories are hidden from the file tree to reduce noise and improve performance.
                             </p>
                             {hiddenFiles.map((file, i) => (
                                 <div key={i} className="flex items-start justify-between gap-4 p-2 rounded bg-zinc-950/50 border border-white/5 text-sm">
                                     <span className="font-mono text-zinc-300 break-all">{file.path}</span>
-                                    <span className="text-xs text-zinc-500 whitespace-nowrap">{file.reason}</span>
+                                    <span className="text-xs text-zinc-300 whitespace-nowrap">{file.reason}</span>
                                 </div>
                             ))}
                         </div>

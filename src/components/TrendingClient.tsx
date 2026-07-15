@@ -65,7 +65,7 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="text-sm font-bold">Back to Home</span>
                     </Link>
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-white/5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-white/5 text-[10px] font-bold text-zinc-300 uppercase tracking-widest">
                         {currentTier} Refresh
                     </div>
                 </div>
@@ -89,7 +89,7 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                                 {currentTier === 'all-time' ? 'All-Time' : currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}
                             </span>
                         </h1>
-                        <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                        <p className="text-zinc-200 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
                             Discover projects getting the most heat on GitHub {currentTier === 'all-time' ? 'ever' : `this ${currentTier.replace('ly', '')}`}.
                             Analyze any of them instantly with AI.
                         </p>
@@ -120,7 +120,7 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
             <section className="sticky top-16 z-40 bg-black/80 backdrop-blur-md border-b border-white/5 py-3 px-4 md:px-6 mb-12">
                 <div className="max-w-7xl mx-auto flex flex-row items-center gap-2 md:gap-4">
                     <div className="relative flex-1 group">
-                        <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-3.5 h-3.5 group-focus-within:text-blue-400 transition-colors" />
+                        <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-zinc-300 w-3.5 h-3.5 group-focus-within:text-blue-400 transition-colors" />
                         <input 
                             type="text"
                             placeholder="Find..."
@@ -130,7 +130,7 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                         />
                     </div>
                     <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide shrink-0 max-w-[60%] md:max-w-none">
-                        <Filter size={12} className="text-zinc-500 shrink-0 hidden sm:block" />
+                        <Filter size={12} className="text-zinc-300 shrink-0 hidden sm:block" />
                         <button
                             onClick={() => setSelectedLanguage(null)}
                             className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold whitespace-nowrap transition-all border ${
@@ -182,20 +182,20 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                                         />
                                         <span className="truncate max-w-[150px]">{repo.owner}</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-zinc-500 uppercase">
+                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-zinc-300 uppercase">
                                         <Globe size={10} /> {repo.language || 'Code'}
                                     </div>
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
                                     {repo.repo}
                                 </h3>
-                                <p className="text-zinc-500 text-sm line-clamp-2 mb-6 min-h-[40px]">
+                                <p className="text-zinc-300 text-sm line-clamp-2 mb-6 min-h-[40px]">
                                     {repo.description || 'Experience high-context AI analysis for this repository.'}
                                 </p>
                             </div>
 
                             <div className="flex items-center justify-between mt-auto">
-                                <div className="flex items-center gap-4 text-xs text-zinc-500">
+                                <div className="flex items-center gap-4 text-xs text-zinc-300">
                                     <span className="flex items-center gap-1">
                                         <Star size={12} className="text-yellow-500" />
                                         {repo.stars.toLocaleString()}
@@ -221,10 +221,10 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                 {filteredRepos.length === 0 && (
                     <div className="py-24 text-center">
                         <div className="inline-flex p-4 rounded-full bg-zinc-900 border border-white/5 mb-6">
-                            <Search size={32} className="text-zinc-500" />
+                            <Search size={32} className="text-zinc-300" />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2">No trending projects found</h3>
-                        <p className="text-zinc-500">Try adjusting your search or filters.</p>
+                        <p className="text-zinc-300">Try adjusting your search or filters.</p>
                         <button 
                             onClick={() => {setSearchQuery(""); setSelectedLanguage(null);}}
                             className="mt-6 text-blue-400 font-bold hover:underline"

@@ -208,7 +208,7 @@ export default function AboutPage() {
       <section className="relative z-10 px-6 pt-20 pb-16">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 border border-white/10 rounded-full px-4 py-1 text-xs uppercase tracking-[0.3em] text-zinc-400 mb-6">
+            <div className="inline-flex items-center gap-2 border border-white/10 rounded-full px-4 py-1 text-xs uppercase tracking-[0.3em] text-zinc-200 mb-6">
               Open Source - Live at novaris.in
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
@@ -217,10 +217,10 @@ export default function AboutPage() {
             <p className="text-lg text-zinc-300 leading-relaxed mb-6">
               Novaris is an open-source, browser-first platform for understanding GitHub repositories and developer profiles through Agentic Context-Augmented Generation (CAG). It lets developers build full mental models without cloning, running, or spelunking through endless files.
             </p>
-            <p className="text-zinc-400 leading-relaxed mb-8">
+            <p className="text-zinc-200 leading-relaxed mb-8">
               The mission is simple: stop reading code in fragments and start understanding it end-to-end. Novaris connects architecture, dependencies, and behavior into answers you can act on quickly.
             </p>
-            <p className="text-sm text-zinc-500 mb-8">
+            <p className="text-sm text-zinc-300 mb-8">
               Built by{" "}
               <a
                 href="https://www.linkedin.com/in/singhankit001/"
@@ -254,7 +254,7 @@ export default function AboutPage() {
                   <Globe className="w-5 h-5 text-blue-400" />
                   <span className="font-semibold">Browser-first workflow</span>
                 </div>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-zinc-200">
                   Go from URL to understanding without cloning or local setup.
                 </p>
               </div>
@@ -263,7 +263,7 @@ export default function AboutPage() {
                   <BookOpen className="w-5 h-5 text-purple-400" />
                   <span className="font-semibold">Full-file context</span>
                 </div>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-zinc-200">
                   Agentic CAG loads entire, relevant files to preserve logic and architecture.
                 </p>
               </div>
@@ -289,7 +289,7 @@ export default function AboutPage() {
                   <BrainCircuit className="w-4 h-4 text-cyan-400" />
                   Agentic CAG
                 </div>
-                <p className="text-xs text-zinc-400 mt-2">
+                <p className="text-xs text-zinc-200 mt-2">
                   Full-context analysis instead of fragmented chunk retrieval.
                 </p>
               </div>
@@ -298,7 +298,7 @@ export default function AboutPage() {
                   <ShieldCheck className="w-4 h-4 text-green-400" />
                   Security scanning
                 </div>
-                <p className="text-xs text-zinc-400 mt-2">
+                <p className="text-xs text-zinc-200 mt-2">
                   Context-aware risk discovery built into the workflow.
                 </p>
               </div>
@@ -313,7 +313,7 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
               Who Novaris Is For
             </h2>
-            <p className="text-zinc-400 text-lg">
+            <p className="text-zinc-200 text-lg">
               Built for developers who need fast clarity, not another slow setup cycle.
             </p>
           </div>
@@ -329,7 +329,7 @@ export default function AboutPage() {
                     <Icon className="w-6 h-6 text-blue-300" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed">{item.description}</p>
+                  <p className="text-zinc-200 text-sm leading-relaxed">{item.description}</p>
                 </div>
               );
             })}
@@ -343,7 +343,7 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
               What Novaris Does
             </h2>
-            <p className="text-zinc-400 text-lg mb-8">
+            <p className="text-zinc-200 text-lg mb-8">
               From architecture clarity to security insights, Novaris turns entire repositories into an understandable, actionable narrative.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -358,7 +358,7 @@ export default function AboutPage() {
                       <Icon className="w-5 h-5 text-purple-300" />
                       <span className="font-semibold text-sm">{item.title}</span>
                     </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed">{item.description}</p>
+                    <p className="text-xs text-zinc-200 leading-relaxed">{item.description}</p>
                   </div>
                 );
               })}
@@ -371,7 +371,7 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">How Novaris Works</h2>
-            <p className="text-zinc-400 text-lg">
+            <p className="text-zinc-200 text-lg">
               A workflow designed for understanding, not just retrieval.
             </p>
           </div>
@@ -381,9 +381,9 @@ export default function AboutPage() {
                 key={step.title}
                 className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5"
               >
-                <div className="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-2">Step {index + 1}</div>
+                <div className="text-xs uppercase tracking-[0.3em] text-zinc-300 mb-2">Step {index + 1}</div>
                 <h3 className="font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-zinc-400 leading-relaxed">{step.description}</p>
+                <p className="text-sm text-zinc-200 leading-relaxed">{step.description}</p>
               </div>
             ))}
           </div>
@@ -402,10 +402,10 @@ export default function AboutPage() {
                 <GitBranch className="w-5 h-5 text-cyan-400" />
                 <h3 className="text-xl font-semibold">Architecture-first answers</h3>
               </div>
-              <p className="text-zinc-400 text-sm leading-relaxed">
+              <p className="text-zinc-200 text-sm leading-relaxed">
                 Novaris connects entrypoints, services, and dependencies so you can reason about behavior end-to-end, not just isolated files.
               </p>
-              <div className="mt-4 flex items-center gap-2 text-xs text-zinc-500">
+              <div className="mt-4 flex items-center gap-2 text-xs text-zinc-300">
                 <Rocket className="w-4 h-4" />
                 Designed for onboarding, due diligence, and decision-making.
               </div>
@@ -418,7 +418,7 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Product Visuals</h2>
-            <p className="text-zinc-400 text-lg">
+            <p className="text-zinc-200 text-lg">
               Screens and flows from Novaris in action.
             </p>
           </div>
@@ -439,7 +439,7 @@ export default function AboutPage() {
                 </div>
                 <div className="mt-4">
                   <h3 className="text-lg font-semibold mb-1">{item.title}</h3>
-                  <p className="text-zinc-400 text-sm">{item.description}</p>
+                  <p className="text-zinc-200 text-sm">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -466,7 +466,7 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
               Full Context Beats Fragmented Retrieval
             </h2>
-            <p className="text-zinc-400 text-lg mb-6">
+            <p className="text-zinc-200 text-lg mb-6">
               Standard "chat with your code" tools often rely on RAG-style chunking. Novaris uses Agentic CAG to pull complete, relevant files so the model sees the real architecture and logic flow.
             </p>
             <ul className="space-y-3 text-sm text-zinc-300">
@@ -492,7 +492,7 @@ export default function AboutPage() {
       <section className="relative z-10 px-6 py-20 border-t border-white/5">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-1 border border-white/10 rounded-full text-xs uppercase tracking-[0.3em] text-zinc-500 mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1 border border-white/10 rounded-full text-xs uppercase tracking-[0.3em] text-zinc-300 mb-4">
               Founder Story
             </div>
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
@@ -501,7 +501,7 @@ export default function AboutPage() {
             <p className="text-zinc-300 text-lg leading-relaxed mb-4">
               Ankit Singh is GitHub <span className="text-white font-semibold">@singhankit001</span> and a software developer. Novaris started as a personal project when he needed a faster way to understand GitHub repositories without hitting paywalls or waiting endlessly for fragmented answers.
             </p>
-            <p className="text-zinc-400 leading-relaxed mb-6">
+            <p className="text-zinc-200 leading-relaxed mb-6">
               The result is Novaris (novaris.in): a fully open-source tool that uses Agentic CAG instead of RAG to keep codebase context intact and make repository understanding dramatically faster.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -539,11 +539,11 @@ export default function AboutPage() {
                 className="rounded-2xl"
               />
               <div>
-                <div className="text-sm uppercase tracking-[0.3em] text-zinc-500">Open Source</div>
+                <div className="text-sm uppercase tracking-[0.3em] text-zinc-300">Open Source</div>
                 <div className="text-xl font-semibold">MIT Licensed</div>
               </div>
             </div>
-            <div className="space-y-4 text-sm text-zinc-400">
+            <div className="space-y-4 text-sm text-zinc-200">
               <p>
                 Novaris is live and free to use for public repository analysis, with fair-use limits on heavy tool calls to keep the platform fast and accessible.
               </p>
@@ -551,7 +551,7 @@ export default function AboutPage() {
                 Anonymous users can run Lite analysis, while signed-in users unlock higher limits and Thinking mode for deeper context.
               </p>
             </div>
-            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs text-zinc-500">
+            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-xs text-zinc-300">
               <span className="text-zinc-300 font-semibold">Open source repo:</span> github.com/singhankit001/novaris
             </div>
           </div>
@@ -565,7 +565,7 @@ export default function AboutPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Frequently Asked</h2>
-            <p className="text-zinc-400 text-lg">Quick answers from the Novaris workflow.</p>
+            <p className="text-zinc-200 text-lg">Quick answers from the Novaris workflow.</p>
           </div>
           <div className="space-y-4">
             {aboutFaqItems.map((item) => (
@@ -574,7 +574,7 @@ export default function AboutPage() {
                 className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6"
               >
                 <h3 className="text-lg font-semibold mb-2">{item.question}</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed">{item.answer}</p>
+                <p className="text-zinc-200 text-sm leading-relaxed">{item.answer}</p>
               </div>
             ))}
           </div>
@@ -583,13 +583,13 @@ export default function AboutPage() {
 
       <section className="relative z-10 px-6 py-20 bg-zinc-950 border-t border-white/5">
         <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1 border border-white/10 rounded-full text-xs uppercase tracking-[0.3em] text-zinc-500 mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1 border border-white/10 rounded-full text-xs uppercase tracking-[0.3em] text-zinc-300 mb-4">
             Ready to explore
           </div>
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
             Try Novaris on your next repository
           </h2>
-          <p className="text-zinc-400 text-lg mb-8">
+          <p className="text-zinc-200 text-lg mb-8">
             Paste a GitHub URL and get architecture, review, and security insights instantly.
           </p>
           <div className="flex flex-wrap justify-center gap-3">

@@ -27,7 +27,7 @@ export function ReportExpiredState({ owner, repo, expiresAt }: ReportExpiredStat
                     This report is no longer current. Security reports expire after 7 days. Run a fresh scan in Repo Chat to regenerate it.
                 </p>
                 {formattedExpiry && (
-                    <p className="text-sm text-zinc-500">
+                    <p className="text-sm text-zinc-300">
                         Expired at: {formattedExpiry}
                     </p>
                 )}

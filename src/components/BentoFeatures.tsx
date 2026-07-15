@@ -10,7 +10,7 @@ export default function BentoFeatures() {
                 <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
                     Everything you need to understand code
                 </h2>
-                <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto mb-12">
+                <p className="text-zinc-200 text-lg md:text-xl max-w-2xl mx-auto mb-12">
                     Novaris gives you superpowers to digest entire repositories in seconds.
                 </p>
             </div>
@@ -31,7 +31,7 @@ export default function BentoFeatures() {
                             <Code2 className="w-6 h-6 text-blue-400" />
                         </div>
                         <h3 className="text-2xl font-bold text-white mb-3">Deep Code Analysis</h3>
-                        <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
+                        <p className="text-zinc-200 text-sm leading-relaxed max-w-sm">
                             Our AI ingests millions of tokens to give you expert-level understanding of any repository structure, completely eliminating the clone-and-browse phase.
                         </p>
                     </div>
@@ -61,12 +61,12 @@ export default function BentoFeatures() {
                                 <MessageSquare className="w-5 h-5 text-purple-400" />
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">Ask Your Repo</h3>
-                            <p className="text-zinc-400 text-sm leading-relaxed">
+                            <p className="text-zinc-200 text-sm leading-relaxed">
                                 Chat naturally to find bugs, logic, or missing pieces.
                             </p>
                         </div>
                         <div className="w-full sm:w-48 bg-black/50 border border-zinc-800 rounded-xl p-3 shadow-inner">
-                            <div className="text-xs text-zinc-500 font-mono mb-2">Prompt:</div>
+                            <div className="text-xs text-zinc-300 font-mono mb-2">Prompt:</div>
                             <div className="text-sm text-zinc-300">Where is the DB schema?</div>
                         </div>
                     </div>
@@ -85,7 +85,7 @@ export default function BentoFeatures() {
                     </div>
                     <div className="relative z-10">
                         <h3 className="text-lg font-bold text-white mb-2">Architecture</h3>
-                        <p className="text-zinc-400 text-xs leading-relaxed">
+                        <p className="text-zinc-200 text-xs leading-relaxed">
                             Generate interactive flowcharts and dependency graphs instantly.
                         </p>
                     </div>
@@ -107,7 +107,7 @@ export default function BentoFeatures() {
                     </div>
                     <div className="relative z-10 mt-auto">
                         <h3 className="text-lg font-bold text-white mb-2">Security Audit</h3>
-                        <p className="text-zinc-400 text-xs leading-relaxed">
+                        <p className="text-zinc-200 text-xs leading-relaxed">
                             Detect exposed secrets and code vulnerabilities silently.
                         </p>
                     </div>
@@ -126,7 +126,7 @@ export default function BentoFeatures() {
                     </div>
                     <div className="relative z-10">
                         <h3 className="text-xl font-bold text-white mb-2">Developer Intel</h3>
-                        <p className="text-zinc-400 text-sm leading-relaxed max-w-sm">
+                        <p className="text-zinc-200 text-sm leading-relaxed max-w-sm">
                             Analyze any developer&apos;s coding profile, expertise, and their highest impact open-source contributions.
                         </p>
                     </div>
@@ -147,7 +147,7 @@ export default function BentoFeatures() {
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-white mb-1">Tech Stack Analyzer</h3>
-                            <p className="text-zinc-400 text-sm leading-relaxed">
+                            <p className="text-zinc-200 text-sm leading-relaxed">
                                 Instantly identify all frameworks, dependencies, and their versions used inside the repository.
                             </p>
                         </div>

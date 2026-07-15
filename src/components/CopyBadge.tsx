@@ -35,7 +35,7 @@ export function CopyBadge({ owner, repo }: CopyBadgeProps) {
                     </div>
                     <div>
                         <h3 className="text-base font-semibold text-zinc-200">Embed this Badge</h3>
-                        <p className="text-xs text-zinc-400 mt-0.5">Showcase Novaris&apos;s analysis directly in your repository&apos;s README.</p>
+                        <p className="text-xs text-zinc-200 mt-0.5">Showcase Novaris&apos;s analysis directly in your repository&apos;s README.</p>
                     </div>
                 </div>
                 <button
@@ -59,13 +59,13 @@ export function CopyBadge({ owner, repo }: CopyBadgeProps) {
 
             <div className="relative group mt-2">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative p-4 bg-black/60 border border-zinc-800/80 rounded-lg font-mono text-xs text-zinc-400 break-all select-all">
+                <div className="relative p-4 bg-black/60 border border-zinc-800/80 rounded-lg font-mono text-xs text-zinc-200 break-all select-all">
                     {markdownSnippet}
                 </div>
             </div>
 
             <div className="flex items-center gap-4 mt-1 bg-black/20 p-3 rounded-lg border border-white/5">
-                <span className="text-zinc-500 uppercase tracking-wider text-xs font-semibold">Preview:</span>
+                <span className="text-zinc-300 uppercase tracking-wider text-xs font-semibold">Preview:</span>
                 <a href={`${baseUrl}/repo/${owner}/${repo}`} target="_blank" rel="noopener noreferrer" className="block transform hover:scale-105 transition-transform drop-shadow-[0_0_12px_rgba(79,70,229,0.2)] hover:drop-shadow-[0_0_16px_rgba(79,70,229,0.4)]">
                     <Image
                         src="https://img.shields.io/badge/Analyzed%20by-Novaris-4F46E5?style=for-the-badge"

@@ -78,10 +78,10 @@ export function ToolQuotaModal({
                         </div>
                     </div>
 
-                    <p className="text-zinc-400 text-sm mt-4 leading-relaxed">
+                    <p className="text-zinc-200 text-sm mt-4 leading-relaxed">
                         {authNote}
                     </p>
-                    <p className="text-zinc-500 text-xs mt-2 leading-relaxed">
+                    <p className="text-zinc-300 text-xs mt-2 leading-relaxed">
                         Need extended limits? Contact {supportEmail}.
                     </p>
 

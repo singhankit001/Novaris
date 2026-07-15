@@ -1397,7 +1397,7 @@ export const Mermaid = ({ chart, isStreaming = false, rawCode }: MermaidProps) =
 
                 {showOverlay && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/55 backdrop-blur-sm rounded-lg z-10">
-                        <div className="flex items-center gap-2 text-zinc-400">
+                        <div className="flex items-center gap-2 text-zinc-200">
                             <Sparkles className="w-5 h-5 animate-pulse text-purple-400" />
                             <span className="text-sm font-medium">
                                 {isFixing ? "Fixing diagram..." : "Generating diagram..."}
@@ -1445,7 +1445,7 @@ export const Mermaid = ({ chart, isStreaming = false, rawCode }: MermaidProps) =
                             >
                                 {/* Header */}
                                 <div className="flex shrink-0 items-center justify-between p-4 bg-transparent">
-                                    <h3 className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                                    <h3 className="text-sm font-medium text-zinc-200 flex items-center gap-2">
                                         <ZoomIn className="w-4 h-4" />
                                         {isRawView ? "Mermaid Raw Code" : "Diagram Preview"}
                                     </h3>

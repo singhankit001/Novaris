@@ -39,7 +39,7 @@ export default function WelcomeBanner({ user }: { user: WelcomeBannerUser }) {
                         />
                     ) : (
                         <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                            <User className="w-8 h-8 text-zinc-400" />
+                            <User className="w-8 h-8 text-zinc-200" />
                         </div>
                     )}
                 </div>
@@ -48,7 +48,7 @@ export default function WelcomeBanner({ user }: { user: WelcomeBannerUser }) {
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/60 mb-2">
                         Welcome back, {user.name?.split(' ')[0]}!
                     </h1>
-                    <div className="flex flex-wrap justify-center md:justify-start gap-4 text-zinc-400 text-sm">
+                    <div className="flex flex-wrap justify-center md:justify-start gap-4 text-zinc-200 text-sm">
                         <div className="flex items-center gap-1.5">
                             <Calendar className="w-4 h-4 text-purple-400" />
                             <span>{date}</span>
