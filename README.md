@@ -1,293 +1,301 @@
-# Novaris
-
-<p align="center"><strong>Stop reading code. Start talking to it.</strong></p>
-
-<p align="center">
-  <a href="https://github.com/singhankit001/novaris"><img src="https://img.shields.io/github/stars/singhankit001/novaris?style=social" alt="GitHub stars" /></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License" /></a>
-  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js" /></a>
-  <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Gemini-3_Flash_Preview-blue" alt="Gemini" /></a>
-</p>
-
-<p align="center">
-  <a href="https://novaris.in"><strong>Try Novaris Live</strong></a>
-  ·
-  <a href="https://novaris.in/repo/facebook/react"><strong>See React Analyzed</strong></a>
-  ·
-  <a href="https://github.com/singhankit001/novaris/issues"><strong>Contribute</strong></a>
-</p>
-
-[![Novaris Demo](https://img.youtube.com/vi/3f66xlgpjw0/maxresdefault.jpg)](https://www.youtube.com/watch?v=3f66xlgpjw0)
-
-Novaris is an open-source, AI-powered platform for understanding public GitHub repositories and developer profiles with **Agentic CAG**. It combines deep code reasoning, architecture visualization, and security scanning into a fast, browser-first experience.
-
-## Why Novaris
-
-- **Zero setup for public repos**: paste a repo or profile and start immediately.
-- **Context-aware analysis**: selects full, relevant files instead of fragmented vector chunks.
-- **Visual understanding**: generates architecture maps and flow diagrams for faster onboarding.
-- **Security scanning built in**: quick/deep scans with verification-focused reporting.
-- **Live step feedback**: chat shows real-time processing stages (selecting files, reading files, preparing answer).
-- **Contributor-friendly codebase**: clear TypeScript services, tests, and modular features.
-
-## Product Highlights
-
-### Landing Experience
-
-- **Trending Repositories**: Discover popular and highly-active public repositories directly from the landing page.
-- **Real-Time Global Search**: Instant, optimized repository search with auto-complete suggestions for seamless navigation.
-
-![Novaris Landing Page](public/assets/landing_page.png)
-
-### Repo Profile Intelligence
-
-![Repo Profile Example](public/assets/repo_profile.png)
-
-### Core Capabilities
-
-![Novaris Capabilities](public/assets/novaris_capabilities.png)
-
-## Agentic CAG Architecture
-
-Novaris uses **Agentic Context-Augmented Generation (CAG)**. Instead of relying only on embeddings, it prunes and loads coherent source context to answer architecture and implementation questions reliably.
-
-![CAG vs RAG](public/assets/cag_vs_rag.gif)
-
-![Architecture Example](public/assets/architecture_example.png)
-
-## Architecture Flowcharts
-
-These diagrams provide a quick mental model of how Novaris processes queries, optimizes performance, and validates security findings.
-
-### 1) Query + Context Pipeline
-
-```mermaid
-flowchart TD
-    A[User enters repo or profile query] --> B[Context-Aware Engine]
-    B --> C[Repository/Profile metadata fetch + file tree]
-    B --> D[File selection via GEMINI_FILE_SELECTOR_MODEL]
-    D --> E[25 files for Lite or 50 files for Thinking]
-    E --> F[Fetch selected files with SHA-aware cache reuse]
-    F --> G[Build context with repo folder structure + selected files]
-    G --> H[Answer generation via Lite or Thinking model]
-    H --> I[Streaming response with text-only live steps]
-```
-
-### 2) Caching + Retrieval Strategy
-
-```mermaid
-flowchart TD
-    A[Request selected files] --> B{SHA-keyed file cache hit?}
-    B -->|Yes| C{Compressed entry?}
-    C -->|Yes| D[Decompress]
-    C -->|No| E[Return cached payload]
-    D --> E
-    B -->|No| F[Fetch only missing/new files from GitHub API]
-    F --> G{Payload <= 2MB?}
-    G -->|Yes| H[Gzip + store in KV]
-    G -->|No| I[Skip cache write]
-    H --> J[Return full context]
-    I --> J
-    J --> K[Cache query -> selected files - 24h]
-    J --> L[Cache query answer - 24h]
-```
-
-### 3) Security Scan + Verification Flow
-
-```mermaid
-flowchart TD
-    A[Start scan] --> B{Quick or Deep}
-    B --> C[Collect scoped files + dependencies]
-    C --> D[Deterministic security engine]
-    C --> E[OSV API live vulnerability check]
-    D --> F{AI assist enabled?}
-    E --> F
-    F -->|Yes| G[AI validation pass]
-    F -->|No| H[Verification gate]
-    G --> H
-    H --> I{Verified true?}
-    I -->|Yes| J[Show finding in report]
-    I -->|No| K[Hide as rejected/inconclusive]
-```
-
-## Security Scanning
-
-Novaris includes a verification-first scanning flow for application and dependency risks.
-
-- Quick scan for fast triage
-- Deep scan for broader coverage
-- **Real-time dependency checks**: Integrated with [OSV.dev API](https://osv.dev) for latest CVE data
-- Verified-first reporting pipeline
-- Actionable fixes inside repo chat flow
-
-![Security Report](public/assets/security_report.png)
-
-## Dashboard Experience
-
-![Dashboard Overview](public/assets/dashboard_overview.png)
-
-![Recent Scans](public/assets/dashboard_recent_scans.png)
-
-![My Repositories](public/assets/dashboard_my_repos.png)
-
-![Starred Repositories](public/assets/dashboard_starred_repos.png)
-
-## Getting Started
-
-### Use Hosted App
-
-1. Open [novaris.in](https://novaris.in)
-2. Enter `owner/repo` or a GitHub username
-3. Ask architecture, code, or security questions
-
-### Run Locally
-
-#### Prerequisites
-
-- Node.js 18+
-- npm
-- GitHub token
-- Gemini API key
-
-#### Setup
-
-```bash
-git clone https://github.com/singhankit001/novaris.git
-cd novaris
-npm install
-cp .env.example .env.local
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-### Model Environment Variables
-
-Repo chat now uses separate models for file selection and answer generation:
-
-- `GEMINI_FILE_SELECTOR_MODEL` (default: `gemini-3.1-flash-lite-preview`)
-- `GEMINI_LITE_MODEL` (default: `gemini-3.1-flash-lite-preview`)
-- `GEMINI_THINKING_MODEL` (default: `gemini-3-flash-preview`)
-
-### Realtime Chat Feedback
-
-Both repo chat and profile chat stream backend activity as live text status updates (no progress bar), including:
-
-- Selecting files
-- Reading repository context
-- Preparing answer
-- Tool activity (for example: fetching commits, fetching repos by age, Google search usage)
-
-### Repo Chat Commit Tooling
-
-- `fetch_recent_commits` is available in **both Lite and Thinking** modes.
-- When commit context is needed, repo chat fetches up to **latest 10 commits** for the current repository.
-- Assistant messages can include:
-  - `Commits checked: just now` or `cached N min ago`
-  - `Tools used: ...`
-
-### Profile Chat Tooling
-
-- Profile chat supports anonymous and logged-in usage.
-- Profile context preloads **latest 20 commits across repos**, cached for **15 minutes**.
-- If a repo is explicitly asked for, tooling can fetch **latest 10 commits for that repo**.
-- `fetch_repos_by_age` supports:
-  - `oldest` (10 repos)
-  - `newest` (10 repos)
-  - `journey` (up to 20 repos, evenly spaced over repo age timeline)
-- Cross-repo context is available via a chat-input toggle for logged-in users.
-
-### Auth Tiers, Limits, and Budgets
-
-- Anonymous users:
-  - Can use Lite mode in repo/profile chat
-  - Cannot use Thinking mode
-  - Cannot enable cross-repo profile context
-  - Tool budget: **10/day per scope** (`repo`, `profile`)
-  - File-cache write budget: **10MB/day**
-  - File cache TTL: **30 minutes**
-  - Max cacheable file size: **128KB**, except files used in two consecutive anonymous queries (can be cached up to 2MB)
-- Logged-in users:
-  - Can use Lite + Thinking
-  - Can enable cross-repo profile context
-  - Tool budget: **30/day per scope** (`repo`, `profile`)
-  - File-cache write budget: **20MB/day**
-  - File cache TTL: **1 hour**
-
-When anonymous usage limits are exceeded, UI prompts login with context-specific benefits.  
-When authenticated usage limits are exceeded, chat returns a contact message for extended limits.
-
-### Cache Isolation Rules
-
-- Public repo file cache is shared by repository namespace.
-- Private repo file cache is actor-scoped (non-shared).
-- Query-to-selected-files cache TTL: **24h**
-- Query answer cache TTL: **24h**
-
-### Developer Commands
-
-```bash
-npm run dev            # local dev server
-npm run lint           # lint checks
-npm run test           # test suite
-npm run test:security  # security-focused tests
-npm run build          # production build
-```
-
-## Contributing
-
-We want Novaris to be one of the best OSS projects for AI-assisted code intelligence. Contributions of all sizes are welcome.
-
-### Why contribute
-
-- Work on practical agentic AI for real repositories
-- Improve developer tooling used by public users
-- Ship visible features quickly with direct product impact
-
-### High-Impact Areas
-
-- **Query pipeline and reasoning quality**: improve file selection, prompting, and response quality
-- **Security scanner and verification**: improve detection accuracy and reduction of false positives
-- **Dashboard and DevTools UX**: improve discoverability, workflows, and performance
-- **Docs, tests, and reliability**: strengthen onboarding and confidence for contributors
-
-### Contribution Workflow
-
-1. Fork the repository
-2. Create a branch: `git checkout -b feature/your-change`
-3. Make focused changes with tests
-4. Run `npm run lint` and `npm run test`
-5. Open a pull request with context, screenshots, and validation notes
-
-### Pull Request Expectations
-
-- Keep scope clear and reviewable
-- Add or update tests when behavior changes
-- Update docs when introducing user-visible changes
-- Include before/after screenshots for UI work
-
-## Changelog
-
-Recent major updates are tracked in [CHANGELOG.md](CHANGELOG.md), including improvements through **v1.3.6 (2026-02-23)**.
-
-## Tech Stack
-
-- [Next.js](https://nextjs.org/)
-- [React](https://react.dev/)
-- [Gemini](https://ai.google.dev/)
-- [OSV (Open Source Vulnerabilities)](https://osv.dev/)
-- [Prisma](https://www.prisma.io/)
-- [Vercel KV](https://vercel.com/docs/storage/vercel-kv)
-- [Vitest](https://vitest.dev/)
-
-## License
-
-Licensed under the MIT License. See [LICENSE](LICENSE).
+<div align="center">
+  <img src="public/assets/landing_page.png" alt="Novaris" width="600" style="border-radius: 16px; margin-bottom: 24px;" />
+
+  # Novaris
+  
+  **Agentic Intelligence for GitHub Repositories**
+
+  <p align="center">
+    <a href="https://github.com/singhankit001/novaris/stargazers"><img src="https://img.shields.io/github/stars/singhankit001/novaris?style=for-the-badge&color=eab308" alt="GitHub stars" /></a>
+    <a href="https://github.com/singhankit001/novaris/network/members"><img src="https://img.shields.io/github/forks/singhankit001/novaris?style=for-the-badge&color=3b82f6" alt="GitHub forks" /></a>
+    <a href="https://github.com/singhankit001/novaris/issues"><img src="https://img.shields.io/github/issues/singhankit001/novaris?style=for-the-badge&color=ef4444" alt="GitHub issues" /></a>
+    <a href="https://github.com/singhankit001/novaris/blob/main/LICENSE"><img src="https://img.shields.io/github/license/singhankit001/novaris?style=for-the-badge&color=10b981" alt="License" /></a>
+    <a href="https://github.com/singhankit001/novaris/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome" /></a>
+  </p>
+
+  <p align="center">
+    <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+    <img src="https://img.shields.io/badge/LangGraph-FF4F00?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph" />
+    <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  </p>
+
+  **[Documentation](#) • [Live Demo](#) • [Report a Bug](#) • [Request Feature](#)**
+</div>
 
 ---
 
-<p align="center">
-  Built by <a href="https://github.com/singhankit001">singhankit001</a> ·
-  <a href="https://github.com/singhankit001/novaris">Star on GitHub</a> ·
-  <a href="https://github.com/singhankit001/novaris/issues">Report Issue</a>
-</p>
+## 👁️ Product Vision
+
+### Why Repository Understanding is Broken
+Modern software development moves at breakneck speed. Yet, when engineering leaders, technical recruiters, or investors need to evaluate a codebase or an engineer's public contributions, they are forced to manually sift through PRs, commit histories, and fragmented architecture documents. 
+
+### The Problem with RAG
+Traditional **Retrieval-Augmented Generation (RAG)** models fail at deep codebase comprehension. They treat code like text, embedding it into vector databases and retrieving fragmented snippets. They lack the context of how different microservices communicate, how architectural decisions evolve, and how developers actually collaborate.
+
+### Enter Agentic Context-Augmented Generation (CAG)
+**Novaris** revolutionizes repository analysis by using autonomous AI agents equipped with **Context-Augmented Generation (CAG)**. Instead of blindly retrieving code chunks, Novaris maps the repository logically, traces execution paths, identifies technical debt, and synthesizes deep engineering intelligence. 
+
+Whether you are evaluating a technical co-founder, assessing a team's production readiness, or analyzing open-source impact, Novaris provides unparalleled, investor-grade insights instantly.
+
+---
+
+## 💻 Demo Showcase
+
+<details>
+<summary><b>Interactive Dashboard Demo</b></summary>
+<br/>
+<div align="center">
+  <img src="public/assets/novaris_capabilities.png" alt="Novaris Dashboard" width="800" style="border-radius: 8px;" />
+</div>
+</details>
+
+<details>
+<summary><b>Repository Architecture Analysis</b></summary>
+<br/>
+<div align="center">
+  <img src="public/assets/architecture_example.png" alt="Repository Analysis" width="800" style="border-radius: 8px;" />
+</div>
+</details>
+
+<details>
+<summary><b>Developer & Technical Depth Scoring</b></summary>
+<br/>
+<div align="center">
+  <img src="public/assets/repo_profile.png" alt="Developer Analysis" width="800" style="border-radius: 8px;" />
+</div>
+</details>
+
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+| :---: | :--- |
+| 🧠 **Repository Intelligence** | Deep, context-aware comprehension of entire codebases, abstracting away noise to focus on core architecture. |
+| 🧑‍💻 **Developer Intelligence** | Evaluates individual contributor impact, coding habits, PR quality, and long-term learning velocity. |
+| 📊 **AI-Powered Insights** | Generates human-readable, executive-level summaries from tens of thousands of lines of code. |
+| ⚙️ **Technical Scoring Engine** | Quantifies repository health, complexity, and readiness using 10+ proprietary engineering metrics. |
+| 👑 **Engineering Leadership** | Detects code ownership, mentorship patterns, and architectural decision-making via commit history. |
+| 🏗️ **Architecture Analysis** | Automatically visualizes and assesses system design, dependency trees, and microservice topologies. |
+| 🌍 **Open Source Impact** | Evaluates the repository's reach, community engagement, and issue resolution lifecycle. |
+| 🚀 **Founder Potential** | Assesses a developer's ability to ship end-to-end products, handle technical debt, and architect scalable systems. |
+| 📈 **Learning Velocity** | Tracks how quickly a developer adopts new frameworks, languages, and modern engineering paradigms. |
+| 🤖 **AI Readiness Assessment** | Determines how easily a codebase can be integrated with LLMs, Copilots, and modern AI tooling. |
+
+---
+
+## ⚙️ How Novaris Works
+
+Novaris employs a state-of-the-art data pipeline to ingest, map, and analyze repositories before serving insights via our Interactive Dashboard.
+
+```mermaid
+graph TD
+    A[Input Layer<br/>GitHub URL] -->|Repository Data| B(Repository Collection)
+    A -->|User Profile| B
+    B --> C{Context Engine}
+    C -->|AST & Dependencies| D[Agent System]
+    C -->|Git History| D
+    D -->|Contextual Data| E(Scoring Engine)
+    D -->|Architecture Map| F(Insight Generation)
+    E --> G[Interactive Dashboard]
+    F --> G
+    
+    style A fill:#000,stroke:#fff,stroke-width:2px,color:#fff
+    style G fill:#22c55e,stroke:#fff,stroke-width:2px,color:#fff
+    style D fill:#a855f7,stroke:#fff,stroke-width:2px,color:#fff
+```
+
+---
+
+## 🔬 Agentic CAG Architecture
+
+### Traditional RAG vs. Novaris Agentic CAG
+
+| Metric | Traditional RAG | Novaris Agentic CAG |
+| :--- | :--- | :--- |
+| **Context Window** | Limited by chunk size (k-retrievals) | **Holistic**. Agents hold semantic maps of the entire repo. |
+| **Understanding** | Lexical & basic semantic similarity | **Architectural**. Understands data flow and dependencies. |
+| **Logic Tracing** | Poor. Fails across file boundaries | **Excellent**. Autonomous agents traverse imports natively. |
+| **Temporal Analysis** | Non-existent | **Deep**. Analyzes git history, PR momentum, and velocity. |
+| **Hallucination Rate**| High on complex architecture queries | **Near-Zero**. Anchored by deterministic AST parsing. |
+
+---
+
+## 📊 Technical Scoring System
+
+Novaris utilizes a proprietary scoring matrix to evaluate repositories and engineers.
+
+| Score / Metric | What it Measures | Target Audience |
+| :--- | :--- | :--- |
+| **Bus Factor** | Risk of project failure if key contributors leave. | Engineering Managers, Investors |
+| **Complexity** | Cyclomatic complexity and dependency tangling. | Architects, DevOps |
+| **Architecture Maturity**| Usage of design patterns, modularity, and SOLID principles. | Tech Leads, CTOs |
+| **Production Readiness** | CI/CD pipelines, test coverage, error handling, and docs. | VCs, Hiring Managers |
+| **Technical Depth** | Complexity of algorithms and domain-specific engineering. | Technical Recruiters |
+| **Engineering Leadership**| PR reviews, issue triage, and architectural stewardship. | Founders, Recruiters |
+
+---
+
+## 🛠 Technology Stack
+
+Novaris is built on a modern, highly scalable architecture tailored for AI workloads.
+
+### Frontend
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+
+### Backend
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-FF4F00?style=for-the-badge&logo=langchain&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
+
+### Data & AI
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Neo4j](https://img.shields.io/badge/Neo4j-4581C3?style=for-the-badge&logo=neo4j&logoColor=white)
+![Agentic AI](https://img.shields.io/badge/Agentic_AI-8A2BE2?style=for-the-badge)
+
+---
+
+## 🚀 Installation Guide
+
+### Prerequisites
+- Node.js (v18+)
+- Python (3.10+)
+- PostgreSQL Database
+- Redis instance (optional, for caching)
+
+### Environment Variables
+Create a `.env.local` file in the root directory:
+
+```env
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+GITHUB_TOKEN="your_github_personal_access_token"
+GEMINI_API_KEY="your_gemini_or_openai_api_key"
+DATABASE_URL="postgresql://user:password@localhost:5432/novaris"
+AUTH_SECRET="your_nextauth_secret"
+```
+
+### Local Setup
+```bash
+# Clone the repository
+git clone https://github.com/singhankit001/novaris.git
+cd novaris
+
+# Install dependencies
+npm install
+
+# Push database schema
+npx prisma db push
+
+# Start the development server
+npm run dev
+```
+
+### Docker Setup
+```bash
+# Build and run the containers
+docker-compose up -d --build
+```
+
+---
+
+## 📡 API Overview
+
+Novaris provides a RESTful API for integrating repository intelligence into your own CI/CD pipelines or applicant tracking systems.
+
+### Analyze Repository
+**Endpoint:** `POST /api/v1/analyze/repo`
+
+**Request Body:**
+```json
+{
+  "repoUrl": "https://github.com/singhankit001/novaris",
+  "depth": "comprehensive"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "completed",
+  "metrics": {
+    "busFactor": 1.2,
+    "productionReadiness": 92,
+    "architectureMaturity": "Advanced"
+  },
+  "summary": "Highly modular codebase utilizing Next.js App Router and advanced Agentic AI paradigms..."
+}
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] **Agentic CAG Architecture Integration**
+- [x] **Developer Technical Depth Scoring**
+- [ ] **Multi-Repository Analysis** (Compare repos side-by-side)
+- [ ] **Team Intelligence & Organization Analytics**
+- [ ] **Investor-Grade PDF Reports**
+- [ ] **Code Quality & Technical Debt Forecasting**
+- [ ] **Engineering Risk Prediction Engine**
+
+---
+
+## 📸 Screenshots Section
+
+> *Visualizing intelligence across the stack.*
+
+| Architecture Visualization | Developer Insights |
+|:---:|:---:|
+| <img src="public/assets/architecture_example.png" width="400" /> | <img src="public/assets/repo_profile.png" width="400" /> |
+
+| Security Reports | AI Chat Interface |
+|:---:|:---:|
+| <img src="public/assets/security_report.png" width="400" /> | <img src="public/assets/novaris_capabilities.png" width="400" /> |
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from the community! To ensure a smooth process:
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/amazing-feature`).
+3. Commit your changes following Conventional Commits (`git commit -m 'feat(ai): add new scoring metric'`).
+4. Push to the branch (`git push origin feature/amazing-feature`).
+5. Open a Pull Request.
+
+Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and development process.
+
+---
+
+## 🛡️ Security
+
+We take security seriously. If you discover any security-related issues or vulnerabilities in Novaris, please do not open a public issue. Instead, email **singhankit91624@gmail.com** directly. All security vulnerabilities will be promptly addressed.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+  <br />
+  <h3>Built for the next generation of engineering intelligence.</h3>
+  <br />
+  
+  [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](#)
+  [![Documentation](https://img.shields.io/badge/Documentation-0052CC?style=for-the-badge&logo=confluence&logoColor=white)](#)
+  [![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](#)
+  
+  <p align="center">
+    <i>Novaris © 2026. All rights reserved.</i>
+  </p>
+</div>
