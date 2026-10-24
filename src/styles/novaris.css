@@ -219,7 +219,6 @@
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
-  font-feature-settings: "ss01", "cv11";
   color-scheme: light;
 }
 [data-nv-root] ::selection { background: #d6dcff; color: var(--nv-ivory-50); }
@@ -235,7 +234,7 @@
   color: var(--nv-text-3);
 }
 /* Display: tight grotesk; wrap emphasised words in <em> for the serif italic accent. */
-.nv-display { font-family: var(--nv-font-display); letter-spacing: -0.035em; line-height: 0.98; font-weight: 600; }
+.nv-display { font-family: var(--nv-font-display); letter-spacing: -0.045em; line-height: 0.98; font-weight: 600; }
 .nv-display em, .nv-serif {
   font-family: var(--nv-font-serif);
   font-style: italic;

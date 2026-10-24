@@ -51,3 +51,4 @@ public/workbox-*.js.map
 # local artifacts
 /playwright-report
 /test-results
+/.claude/worktrees
