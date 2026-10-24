@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { ArrowRight, Loader2, Search } from "lucide-react";
 import { getRepoSuggestions } from "@/app/actions";
 import SuggestionsList, { suggestionOptionId } from "./SuggestionsList";
@@ -8,6 +8,8 @@ import type { RepoSuggestion } from "@/lib/services/repo-suggestions";
 import type { CatalogRepoEntry } from "@/lib/repo-catalog";
 import type { SearchHistoryItem } from "@/lib/services/history-service";
 import Link from "next/link";
+import { cn } from "@/components/nv/cn";
+import s from "./RepoSearch.module.css";
 
 interface RepoSearchProps {
     onSearchSubmit: (query: string) => void;
@@ -15,6 +17,10 @@ interface RepoSearchProps {
     trendingRepos: CatalogRepoEntry[];
     recentSearches: SearchHistoryItem[];
     isSessionActive: boolean;
+    /** Set while the portal-activation exit plays before navigation. */
+    activating?: boolean;
+    /** Id for the input so the page can focus it. */
+    inputId?: string;
 }
 
 export default function RepoSearch({
@@ -23,6 +29,8 @@ export default function RepoSearch({
     trendingRepos,
     recentSearches,
     isSessionActive,
+    activating = false,
+    inputId,
 }: RepoSearchProps) {
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<RepoSuggestion[]>([]);
@@ -31,6 +39,20 @@ export default function RepoSearch({
     const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
     const [emptyError, setEmptyError] = useState(false);
     const listId = useId();
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // "/" focuses the field from anywhere that is not already a text control.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            const el = e.target as HTMLElement | null;
+            if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+            if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+            e.preventDefault();
+            inputRef.current?.focus();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, []);
 
     useEffect(() => {
         let isCancelled = false;
@@ -137,44 +159,45 @@ export default function RepoSearch({
     return (
         <div className="w-full">
             <form onSubmit={handleFormSubmit} className="relative" noValidate>
-                <div
-                    className={`flex min-h-14 items-stretch gap-2 rounded-nv-md border bg-nv-graphite-850 p-1.5 transition-colors duration-150 focus-within:border-nv-copper-400 ${
-                        emptyError ? "border-nv-danger" : "border-nv-graphite-500 hover:border-nv-ivory-300"
-                    }`}
-                >
-                    <Search aria-hidden className="my-auto ml-2.5 size-5 shrink-0 text-nv-ivory-300" />
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => handleInputChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onFocus={() => input.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
-                        onBlur={() => setShowSuggestions(false)}
-                        placeholder="owner/repo, URL or username"
-                        aria-label="GitHub URL, username, or repository"
-                        aria-controls={showSuggestions ? listId : undefined}
-                        aria-activedescendant={activeId}
-                        aria-invalid={emptyError || undefined}
-                        aria-describedby={emptyError ? `${listId}-err` : undefined}
-                        autoComplete="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                        className="min-w-0 flex-1 border-0 bg-transparent px-1 font-mono text-nv-body text-nv-ivory-50 outline-none placeholder:font-sans placeholder:text-nv-graphite-400 focus-visible:!shadow-none focus-visible:!outline-none"
-                    />
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        aria-label={loading ? "Analyzing" : "Analyze"}
-                        className="inline-flex min-h-11 shrink-0 touch-manipulation items-center justify-center gap-2 rounded-nv-sm bg-nv-copper-400 px-4 font-medium text-nv-graphite-950 transition-colors duration-150 hover:bg-nv-copper-300 active:bg-nv-copper-500 disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                        <span aria-hidden className="hidden sm:inline">
-                            {loading ? "Analyzing" : "Analyze"}
+                <div className={s.shell} data-activating={activating}>
+                    <div className={cn(s.field, "nv-holo-ring", emptyError && s.fieldError)}>
+                        <Search aria-hidden className={cn(s.icon, "size-6")} />
+                        <input
+                            ref={inputRef}
+                            id={inputId}
+                            type="text"
+                            role="combobox"
+                            aria-expanded={showSuggestions}
+                            aria-autocomplete="list"
+                            value={input}
+                            onChange={(e) => handleInputChange(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onFocus={() => input.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
+                            onBlur={() => setShowSuggestions(false)}
+                            placeholder="owner/repo, URL or username"
+                            aria-label="GitHub URL, username, or repository"
+                            aria-controls={showSuggestions ? listId : undefined}
+                            aria-activedescendant={activeId}
+                            aria-invalid={emptyError || undefined}
+                            aria-describedby={emptyError ? `${listId}-err` : undefined}
+                            autoComplete="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                            className={s.input}
+                        />
+                        <span aria-hidden className={s.hint}>
+                            {input ? <><kbd className={s.kbd}>↵</kbd> to analyze</> : <><kbd className={s.kbd}>/</kbd> to focus</>}
                         </span>
-                        {busy ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <ArrowRight aria-hidden className="size-4" />}
-                    </button>
+                        <button type="submit" disabled={loading} aria-label={loading ? "Analyzing" : "Analyze"} className={s.submit}>
+                            <span aria-hidden className={s.submitLabel}>
+                                {loading ? "Analyzing" : "Analyze"}
+                            </span>
+                            {busy ? <Loader2 aria-hidden className="size-5 animate-spin" /> : <ArrowRight aria-hidden className="size-5" />}
+                        </button>
+                    </div>
                 </div>
                 {emptyError && (
-                    <p id={`${listId}-err`} role="alert" className="mt-2 text-nv-small text-nv-danger">
+                    <p id={`${listId}-err`} role="alert" className={s.err}>
                         Enter a GitHub URL, a username, or owner/repo to analyze.
                     </p>
                 )}
@@ -186,7 +209,7 @@ export default function RepoSearch({
                 </p>
             </form>
 
-            <div className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-nv-small text-nv-ivory-300">
+            <div className={s.picks}>
                 <span className="mr-1">{picks.label}</span>
                 {picks.items.map((item) => (
                     <button
@@ -196,12 +219,12 @@ export default function RepoSearch({
                             setInput(item.query);
                             onSearchSubmit(item.query);
                         }}
-                        className="min-h-11 max-w-[14rem] truncate rounded-nv-sm px-2 font-mono text-nv-ivory-100 underline decoration-nv-graphite-500 underline-offset-4 hover:decoration-nv-copper-400"
+                        className={s.pick}
                     >
                         {item.text}
                     </button>
                 ))}
-                <Link href="/trending" className="inline-flex min-h-11 items-center rounded-nv-sm px-2 text-nv-copper-400 hover:text-nv-copper-300">
+                <Link href="/trending" className={s.browse}>
                     Browse trending
                 </Link>
             </div>

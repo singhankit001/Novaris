@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import JsonLdScript from "@/components/JsonLdScript";
+import s from "@/components/seo/seo.module.css";
+import { cn } from "@/components/nv/cn";
 import SiteChrome from "@/components/seo/SiteChrome";
 import { ActionLink, BulletList, FaqList, H2, Page, PageHeader, Prose } from "@/components/seo/blocks";
 import { FAQ_PAGE_ITEMS } from "@/lib/faq-data";
@@ -80,12 +82,12 @@ export default function AboutPage() {
           lead="Novaris is an open-source web tool that reads public GitHub repositories and developer profiles and answers questions about them, naming the files it used."
         />
 
-        <div className="space-y-16">
-          <section aria-labelledby="ab-does-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
+        <div className={s.stack}>
+          <section aria-labelledby="ab-does-h" className={s.grid12}>
+            <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="ab-does-h">What it does</H2>
             </div>
-            <div className="lg:col-span-6 lg:col-start-7">
+            <div className={s.rightFrom7}>
               <Prose>
                 <p>
                   You give it a repository URL, <code>owner/repo</code>, or a GitHub username. Novaris fetches public data
@@ -105,11 +107,11 @@ export default function AboutPage() {
             </div>
           </section>
 
-          <section aria-labelledby="ab-not-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
+          <section aria-labelledby="ab-not-h" className={s.grid12}>
+            <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="ab-not-h">What it does not do</H2>
             </div>
-            <div className="lg:col-span-6 lg:col-start-7">
+            <div className={s.rightFrom7}>
               <BulletList
                 items={[
                   "It does not clone or run your code.",
@@ -121,11 +123,11 @@ export default function AboutPage() {
             </div>
           </section>
 
-          <section aria-labelledby="ab-who-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
+          <section aria-labelledby="ab-who-h" className={s.grid12}>
+            <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="ab-who-h">Who built it</H2>
             </div>
-            <div className="lg:col-span-6 lg:col-start-7">
+            <div className={s.rightFrom7}>
               <Prose>
                 <p>
                   Novaris is built by{" "}
@@ -143,11 +145,11 @@ export default function AboutPage() {
             </div>
           </section>
 
-          <section aria-labelledby="ab-faq-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
+          <section aria-labelledby="ab-faq-h" className={s.grid12}>
+            <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="ab-faq-h">Common questions</H2>
             </div>
-            <div className="lg:col-span-6 lg:col-start-7">
+            <div className={s.rightFrom7}>
               <FaqList items={aboutFaqItems} />
             </div>
           </section>

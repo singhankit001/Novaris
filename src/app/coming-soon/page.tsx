@@ -64,8 +64,8 @@ export default async function ComingSoonPage({
           lead="This page is not built yet. The pages that exist today are under Solutions and Insights."
         />
         <div className="flex flex-wrap gap-3">
-          <ActionLink href="/solutions" variant="primary">Explore solutions</ActionLink>
-          <ActionLink href="/blog">Read insights</ActionLink>
+          <ActionLink href="/solutions" variant="primary" large>Explore solutions</ActionLink>
+          <ActionLink href="/blog" large>Read insights</ActionLink>
         </div>
       </Page>
     </SiteChrome>

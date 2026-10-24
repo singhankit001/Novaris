@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import JsonLdScript from "@/components/JsonLdScript";
+import s from "@/components/seo/seo.module.css";
+import { cn } from "@/components/nv/cn";
 import SiteChrome from "@/components/seo/SiteChrome";
-import { ActionLink, FaqList, H2, LinkRow, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { ActionLink, CtaBand, FaqList, H2, LinkRow, Page, PageHeader, Prose } from "@/components/seo/blocks";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -157,9 +159,11 @@ const faqSchema = buildFaqStructuredData(faqItems);
 
 function TopicSection({ title, items }: { title: string; items: TopicEntry[] }) {
   return (
-    <section aria-label={title} className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-10">
-      <h2 className="nv-display text-nv-display-md text-balance text-nv-ivory-50 lg:col-span-4">{title}</h2>
-      <div className="border-t border-nv-graphite-700 lg:col-span-7 lg:col-start-6">
+    <section aria-label={title} className={s.grid12}>
+      <div className={cn(s.left, s.stickyLeft)}>
+        <H2>{title}</H2>
+      </div>
+      <div className={cn(s.right, s.rows)}>
         {items.map((item) => (
           <LinkRow key={item.slug} href={item.slug} title={item.title} summary={item.summary} />
         ))}
@@ -187,25 +191,25 @@ export default function ExplorePage() {
           </Prose>
         </PageHeader>
 
-        <div className="space-y-14">
+        <div className={s.stack}>
           <TopicSection title="Code analysis" items={grouped.Analysis} />
           <TopicSection title="Security" items={grouped.Security} />
           <TopicSection title="Comparison guides" items={grouped.Comparison} />
 
-          <section aria-labelledby="ex-faq-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-4">
+          <section aria-labelledby="ex-faq-h" className={s.grid12}>
+            <div className={cn(s.left, s.stickyLeft)}>
               <H2 id="ex-faq-h">Frequently asked questions</H2>
             </div>
-            <div className="lg:col-span-7 lg:col-start-6">
+            <div className={s.right}>
               <FaqList items={faqItems} />
             </div>
           </section>
 
-          <section aria-label="Related" className="flex flex-wrap gap-3 border-t border-nv-copper-600 pt-8">
-            <ActionLink href="/chat" variant="primary">Start analysis</ActionLink>
-            <ActionLink href="/solutions">Solutions</ActionLink>
-            <ActionLink href="/compare">Compare workflows</ActionLink>
-          </section>
+          <CtaBand id="ex-next-h" title={<>Start with <em>one repository</em></>} text="Open the analysis workspace, or keep reading the guides.">
+            <ActionLink href="/chat" variant="primary" large>Start analysis</ActionLink>
+            <ActionLink href="/solutions" large>Solutions</ActionLink>
+            <ActionLink href="/compare" large>Compare workflows</ActionLink>
+          </CtaBand>
         </div>
       </Page>
     </SiteChrome>

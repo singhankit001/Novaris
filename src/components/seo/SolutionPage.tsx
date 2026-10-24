@@ -1,7 +1,9 @@
 import JsonLdScript from "@/components/JsonLdScript";
 import SeoVisual, { type SeoVisualVariant } from "@/components/seo/SeoVisual";
 import SiteChrome from "@/components/seo/SiteChrome";
-import { ActionLink, FaqList, H2, LinkRow, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { ActionLink, CtaBand, FaqList, H2, LinkRow, Page, PageHeader, Prose, Rows } from "@/components/seo/blocks";
+import { cn } from "@/components/nv/cn";
+import s from "./seo.module.css";
 
 export interface SolutionPageProps {
   crumbTitle: string;
@@ -40,25 +42,25 @@ export default function SolutionPage(p: SolutionPageProps) {
           </Prose>
         </PageHeader>
 
-        <section aria-label="Workflow illustration" className="mb-16 max-w-4xl">
+        <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
           <SeoVisual variant={p.visual.variant} ariaLabel={p.visual.ariaLabel} />
         </section>
 
-        <div className="space-y-14 md:space-y-20">
-          <section aria-labelledby="sol-main-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
+        <div className={s.stack}>
+          <section aria-labelledby="sol-main-h" className={s.grid12}>
+            <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="sol-main-h">{p.mainTitle}</H2>
             </div>
-            <div className="lg:col-span-6 lg:col-start-7">
+            <div className={s.rightFrom7}>
               <Prose>
                 <p>{p.mainIntro}</p>
               </Prose>
               <div className="mt-6 space-y-6">
-                {p.subsections.map((s) => (
-                  <div key={s.title} className="border-t border-nv-graphite-700 pt-4">
-                    <h3 className="mb-2 text-nv-title font-medium text-nv-ivory-50">{s.title}</h3>
+                {p.subsections.map((sub) => (
+                  <div key={sub.title} className={s.sub}>
+                    <h3 className={s.subTitle}>{sub.title}</h3>
                     <Prose>
-                      <p>{s.text}</p>
+                      <p>{sub.text}</p>
                     </Prose>
                   </div>
                 ))}
@@ -66,48 +68,44 @@ export default function SolutionPage(p: SolutionPageProps) {
             </div>
           </section>
 
-          <section aria-label="Use cases" className="grid gap-x-10 gap-y-0 border-t border-nv-graphite-700 md:grid-cols-2">
+          <section aria-label="Use cases" className={s.cols2}>
             {p.cards.map((card) => (
-              <div key={card.title} className="border-b border-nv-graphite-700 py-6 md:pr-6 md:even:border-l md:even:pl-6">
-                <h2 className="text-nv-title font-medium text-nv-ivory-50">{card.title}</h2>
-                <p className="mt-2 max-w-[var(--nv-measure)] text-pretty text-nv-body text-nv-ivory-200">{card.text}</p>
+              <div key={card.title} className={s.col2Item}>
+                <h2 className={s.col2Title}>{card.title}</h2>
+                <p className={s.col2Text}>{card.text}</p>
               </div>
             ))}
           </section>
 
-          <section aria-labelledby="sol-related-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
+          <section aria-labelledby="sol-related-h" className={s.grid12}>
+            <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="sol-related-h">{p.relatedTitle}</H2>
             </div>
-            <div className="lg:col-span-6 lg:col-start-7">
-              <div className="border-t border-nv-graphite-700">
+            <div className={s.rightFrom7}>
+              <Rows>
                 {p.related.map((r) => (
                   <LinkRow key={r.href} href={r.href} title={r.label} />
                 ))}
-              </div>
+              </Rows>
             </div>
           </section>
 
-          <section aria-labelledby="sol-faq-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-5">
+          <section aria-labelledby="sol-faq-h" className={s.grid12}>
+            <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="sol-faq-h">Frequently asked questions</H2>
             </div>
-            <div className="lg:col-span-6 lg:col-start-7">
+            <div className={s.rightFrom7}>
               <FaqList items={p.faqItems} />
             </div>
           </section>
 
-          <section aria-labelledby="sol-next-h" className="border-t border-nv-copper-600 pt-8">
-            <H2 id="sol-next-h">Next step</H2>
-            <p className="mt-3 max-w-[var(--nv-measure)] text-nv-body text-nv-ivory-200">{p.nextText}</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              {p.ctas.map((c) => (
-                <ActionLink key={c.href} href={c.href} variant={c.primary ? "primary" : "secondary"}>
-                  {c.label}
-                </ActionLink>
-              ))}
-            </div>
-          </section>
+          <CtaBand id="sol-next-h" title={<>Next <em>step</em></>} text={p.nextText}>
+            {p.ctas.map((c) => (
+              <ActionLink key={c.href} href={c.href} variant={c.primary ? "primary" : "secondary"} large>
+                {c.label}
+              </ActionLink>
+            ))}
+          </CtaBand>
         </div>
       </Page>
     </SiteChrome>

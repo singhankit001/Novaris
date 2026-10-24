@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Check, Copy, Mail } from "lucide-react";
-import { Wordmark } from "@/components/nv/nav";
+import { Wordmark } from "@/components/seo/SiteHeader";
+import { cn } from "@/components/nv/cn";
+import s from "./Footer.module.css";
 import { Dialog } from "@/components/nv/dialog";
 import { Button } from "@/components/nv/button";
 import { buttonClasses } from "@/components/nv/button-styles";
@@ -37,7 +39,7 @@ export const footerLinks = {
 };
 
 const CONTACT_EMAIL = "singhankit91624@gmail.com";
-const linkClass = "nv-footer-link inline-flex min-h-11 items-center text-nv-small text-nv-ivory-200 hover:text-nv-ivory-50";
+const linkClass = s.link;
 
 export default function Footer() {
     const [isOpen, setIsOpen] = useState(false);
@@ -53,60 +55,67 @@ export default function Footer() {
     };
 
     return (
-        <footer className="border-t border-nv-graphite-700 bg-nv-graphite-900">
-            <div className="mx-auto grid max-w-[var(--nv-page-max)] gap-10 px-[var(--nv-gutter)] py-16 md:grid-cols-[1.3fr_repeat(4,1fr)]">
-                <div className="max-w-xs">
+        <footer className={s.footer}>
+            <div aria-hidden className={cn(s.glow, "nv-aurora")} />
+            <div className={s.top}>
+                <span aria-hidden className={s.rule} />
+                <div>
                     <Link href="/" aria-label="Novaris home" className="inline-block rounded-nv-sm">
                         <Wordmark />
                     </Link>
-                    <p className="mt-3 text-nv-small text-nv-ivory-300">
-                        A clearer view of your code. Explore repositories, understand architecture, and discover what to build next.
+                    <p className={cn(s.statement, "nv-display mt-8")}>
+                        Read the repo. <em>Cite the file.</em>
                     </p>
+                    <p className={s.blurb}>A clearer view of your code. Explore repositories, understand architecture, and see which files back each answer.</p>
                 </div>
-                {(
-                    [
-                        ["Explore", footerLinks.explore],
-                        ["Product", footerLinks.product],
-                        ["Company", footerLinks.company],
-                    ] as const
-                ).map(([title, links]) => (
-                    <nav key={title} aria-label={title}>
-                        <h2 className="mb-3 text-[13px] font-semibold text-nv-ivory-100">{title}</h2>
-                        <ul className="m-0 list-none p-0">
-                            {links.map((link) => (
+                <div className={s.cols}>
+                    {(
+                        [
+                            ["Explore", footerLinks.explore],
+                            ["Product", footerLinks.product],
+                            ["Company", footerLinks.company],
+                        ] as const
+                    ).map(([title, links]) => (
+                        <nav key={title} aria-label={title}>
+                            <h2 className={s.colTitle}>{title}</h2>
+                            <ul className={s.list}>
+                                {links.map((link) => (
+                                    <li key={link.name}>
+                                        <Link href={link.href} className={linkClass}>
+                                            {link.name}
+                                        </Link>
+                                    </li>
+                                ))}
+                                {title === "Company" && (
+                                    <li>
+                                        <button type="button" onClick={() => setIsOpen(true)} className={linkClass}>
+                                            Contact
+                                        </button>
+                                    </li>
+                                )}
+                            </ul>
+                        </nav>
+                    ))}
+                    <nav aria-label="Elsewhere">
+                        <h2 className={s.colTitle}>Elsewhere</h2>
+                        <ul className={s.list}>
+                            {footerLinks.media.map((link) => (
                                 <li key={link.name}>
-                                    <Link href={link.href} className={linkClass}>
+                                    <a href={link.href} target="_blank" rel="noopener noreferrer" className={linkClass}>
                                         {link.name}
-                                    </Link>
+                                        <span className="sr-only"> (opens in a new tab)</span>
+                                    </a>
                                 </li>
                             ))}
-                            {title === "Company" && (
-                                <li>
-                                    <button type="button" onClick={() => setIsOpen(true)} className={linkClass}>
-                                        Contact
-                                    </button>
-                                </li>
-                            )}
                         </ul>
                     </nav>
-                ))}
-                <nav aria-label="Elsewhere">
-                    <h2 className="mb-3 text-[13px] font-semibold text-nv-ivory-100">Elsewhere</h2>
-                    <ul className="m-0 list-none p-0">
-                        {footerLinks.media.map((link) => (
-                            <li key={link.name}>
-                                <a href={link.href} target="_blank" rel="noopener noreferrer" className={linkClass}>
-                                    {link.name}
-                                    <span className="sr-only"> (opens in a new tab)</span>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
+                </div>
             </div>
-            <div className="border-t border-nv-graphite-700">
-                <p className="mx-auto max-w-[var(--nv-page-max)] px-[var(--nv-gutter)] py-4 text-nv-micro text-nv-ivory-300">
-                    © {new Date().getFullYear()} Novaris. Open source, built by Ankit Singh.
+            <span aria-hidden className={cn(s.giant, "nv-display")}>novaris</span>
+            <div className={s.bottom}>
+                <p className={cn(s.bottomIn, "m-0")}>
+                    <span>© {new Date().getFullYear()} Novaris. Open source, built by Ankit Singh.</span>
+                    <span className="nv-eyebrow">Public GitHub data only</span>
                 </p>
             </div>
 
@@ -128,7 +137,7 @@ export default function Footer() {
                     </>
                 }
             >
-                <div className="flex items-center gap-2 rounded-nv-sm border border-nv-graphite-600 bg-nv-graphite-850 p-2 pl-3">
+                <div className={s.contactRow}>
                     <code className="min-w-0 flex-1 truncate font-mono text-nv-small text-nv-ivory-100">{CONTACT_EMAIL}</code>
                     <Button
                         variant="ghost"

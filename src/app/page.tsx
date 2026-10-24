@@ -4,6 +4,8 @@ import HomeClient from "./HomeClient";
 import { getHomepagePosts } from "@/lib/services/blog-service";
 import { getCuratedRepos } from "@/lib/repo-catalog";
 import { getPublicStats } from "@/lib/analytics";
+import { MAX_TOKENS } from "@/lib/tokens";
+import { SECURITY_SCAN_FILE_LIMITS } from "@/lib/security-scan-config";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
@@ -40,7 +42,8 @@ export default async function Home() {
                 initialPosts={latestPosts} 
                 weeklyTrending={weeklyTrending} 
                 monthlyTrending={monthlyTrending}
-                publicStats={publicStats} 
+                publicStats={publicStats}
+                limits={{ contextTokens: MAX_TOKENS, deepScanFiles: SECURITY_SCAN_FILE_LIMITS.deep, quickScanFiles: SECURITY_SCAN_FILE_LIMITS.quick }}
             />
         </Suspense>
     );

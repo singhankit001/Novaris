@@ -1,11 +1,11 @@
-type PublicStatsData = {
+export type PublicStatsData = {
     totalVisitors: number;
     totalQueries: number;
     totalScans: number;
 };
 
 // Floor to a multiple of 5 and mark as a lower bound so the figure never overstates.
-function formatStat(num: number) {
+export function formatStat(num: number) {
     if (num < 10) return num.toString();
     return `${(Math.floor(num / 5) * 5).toLocaleString()}+`;
 }
