@@ -169,7 +169,7 @@ export default function HomeClient({
     };
 
     return (
-        <SiteChrome>
+        <SiteChrome overlayHeader>
             <motion.div animate={portal ? { scale: reduce ? 1 : 0.985, opacity: 0 } : { scale: 1, opacity: 1 }} transition={{ duration: PORTAL_MS / 1000, ease: [0.23, 1, 0.32, 1] }}>
                 {/* ---------- Hero ---------- */}
                 <section aria-labelledby="home-h" className={s.hero}>

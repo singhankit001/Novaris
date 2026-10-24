@@ -91,7 +91,7 @@ function routeOf(href: string) {
   return href.split("?")[0];
 }
 
-export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta: { href: string; label: string }; account?: ReactNode }) {
+export default function SiteHeader({ cta, account, overlay }: { links?: HeaderLink[]; cta: { href: string; label: string }; account?: ReactNode; overlay?: boolean }) {
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const [active, setActive] = useState<string | null>(null);
@@ -149,7 +149,7 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
         )}
       </AnimatePresence>
 
-      <header className="sticky top-0 z-30 px-[var(--nv-gutter)] pt-3 pb-2">
+      <header className={cn("sticky top-0 z-30 px-[var(--nv-gutter)] pt-3 pb-2", overlay && "-mb-[68px]")}>
         <a href="#nv-main" className={s.skip}>
           Skip to content
         </a>
@@ -161,9 +161,9 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
             className="group flex h-12 items-center rounded-full border border-nv-graphite-700 bg-white/85 pl-0.5 pr-5 shadow-nv-card backdrop-blur-xl transition-shadow duration-200 hover:shadow-nv-lift"
           >
             <span className="transition-transform duration-300 ease-nv-out group-hover:scale-[1.06] motion-reduce:transform-none">
-              <BrandMark size={46} />
+              <BrandMark size={44} />
             </span>
-            <BrandWordmark height={13} className="ml-2" />
+            <BrandWordmark height={14} className="ml-2.5" />
           </Link>
 
           {/* Dynamic island */}

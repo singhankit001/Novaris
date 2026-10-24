@@ -14,7 +14,7 @@
 .center .kicker { justify-content: center; }
 
 /* ---------- Hero ---------- */
-.hero { position: relative; isolation: isolate; padding: clamp(40px, 6vw, 88px) 0 0; text-align: center; overflow: clip; }
+.hero { position: relative; isolation: isolate; padding: calc(68px + clamp(40px, 6vw, 88px)) 0 0; /* 68px: floating header overlays the hero */ text-align: center; overflow: clip; }
 .heroBg { position: absolute; inset: -140px 0 0; z-index: -1; pointer-events: none; -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent); mask-image: linear-gradient(to bottom, #000 60%, transparent); }
 .heroGrid { position: absolute; inset: 0; }
 .pillTop { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; margin-bottom: 24px; padding: 4px 6px 4px 18px; border-radius: 999px; background: rgb(255 255 255 / 0.85); border: 1px solid var(--nv-hairline); box-shadow: var(--nv-shadow-xs); font-family: var(--nv-font-mono); font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--nv-text-2); }
