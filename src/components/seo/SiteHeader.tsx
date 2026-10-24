@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ArrowUpRight, ChevronDown, Menu, X } from "lucide-react";
-import { BrandMark } from "@/components/BrandMark";
+import { BrandMark, BrandWordmark } from "@/components/BrandMark";
 import { cn } from "@/components/nv/cn";
 import s from "./seo.module.css";
 
@@ -20,8 +20,8 @@ export { BrandMark };
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <BrandMark />
-      <span className="font-nv-sans text-[14px] font-semibold tracking-[0.28em] text-nv-ivory-50">NOVARIS</span>
+      <BrandMark size={34} />
+      <BrandWordmark height={13} />
     </span>
   );
 }
@@ -160,10 +160,10 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
             aria-label="Novaris home"
             className="group flex h-12 items-center rounded-full border border-nv-graphite-700 bg-white/85 pl-1.5 pr-5 shadow-nv-card backdrop-blur-xl transition-shadow duration-200 hover:shadow-nv-lift"
           >
-            <span className="transition-transform duration-300 ease-nv-out group-hover:rotate-[-6deg] motion-reduce:transform-none">
-              <BrandMark size={36} />
+            <span className="transition-transform duration-300 ease-nv-out group-hover:scale-[1.06] motion-reduce:transform-none">
+              <BrandMark size={40} />
             </span>
-            <span className="ml-3 font-nv-sans text-[13px] font-semibold tracking-[0.3em] text-nv-ivory-50">NOVARIS</span>
+            <BrandWordmark height={13} className="ml-2" />
           </Link>
 
           {/* Dynamic island */}

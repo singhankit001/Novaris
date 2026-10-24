@@ -1,7 +1,9 @@
 import Image from "next/image";
 import { cn } from "@/components/nv/cn";
 
-/** The Novaris "N" mark, cropped from the brand lockup (public/brand). */
+// Brand artwork ships on a white field; multiply blending drops that field on light surfaces.
+
+/** The Novaris "N" mark (public/brand/novaris-mark.png, 820px source). */
 export function BrandMark({ size = 32, className }: { size?: number; className?: string }) {
   return (
     <Image
@@ -10,8 +12,25 @@ export function BrandMark({ size = 32, className }: { size?: number; className?:
       aria-hidden
       width={size}
       height={size}
+      quality={100}
       priority
-      className={cn("shrink-0 rounded-[28%] shadow-nv-xs ring-1 ring-nv-graphite-700", className)}
+      className={cn("shrink-0 object-contain mix-blend-multiply", className)}
+    />
+  );
+}
+
+/** The NOVARIS logotype exactly as drawn in the brand lockup (public/brand/novaris-wordmark.png). */
+export function BrandWordmark({ height = 14, className }: { height?: number; className?: string }) {
+  return (
+    <Image
+      src="/brand/novaris-wordmark.png"
+      alt=""
+      aria-hidden
+      width={Math.round((height * 872) / 122)}
+      height={height}
+      quality={100}
+      priority
+      className={cn("shrink-0 mix-blend-multiply", className)}
     />
   );
 }

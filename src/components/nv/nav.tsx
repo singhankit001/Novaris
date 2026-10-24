@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { ChevronRight, Menu as MenuIcon } from "lucide-react";
-import { BrandMark } from "@/components/BrandMark";
+import { BrandMark, BrandWordmark } from "@/components/BrandMark";
 import { cn } from "./cn";
 import { IconButton } from "./button";
 import { buttonClasses } from "./button-styles";
@@ -19,8 +19,8 @@ export interface NavLink {
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <BrandMark />
-      <span className="font-nv-sans text-[15px] font-medium tracking-[0.24em] text-nv-ivory-50">NOVARIS</span>
+      <BrandMark size={34} />
+      <BrandWordmark height={13} />
     </span>
   );
 }
