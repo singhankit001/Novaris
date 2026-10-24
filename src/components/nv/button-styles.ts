@@ -4,7 +4,7 @@ export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "md" | "lg";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-nv-copper-400 text-nv-graphite-950 hover:bg-nv-copper-300 active:bg-nv-copper-500",
+  primary: "bg-nv-copper-500 text-nv-on-accent shadow-nv-accent hover:bg-nv-copper-300 active:bg-nv-copper-300",
   secondary:
     "bg-nv-graphite-800 text-nv-ivory-100 border border-nv-graphite-600 hover:border-nv-graphite-500 hover:bg-nv-graphite-700 active:bg-nv-graphite-850",
   ghost: "text-nv-ivory-200 hover:bg-nv-graphite-800 hover:text-nv-ivory-50 active:bg-nv-graphite-700",

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import JsonLd from "./components/json-ld";
@@ -7,12 +7,13 @@ import { Providers } from "@/components/Providers";
 import { getCanonicalSiteUrl } from "@/lib/site-url";
 import CommandPalette from "@/components/CommandPalette";
 
-// Novaris type system (DESIGN.md section 4). Both families are SIL Open Font License 1.1.
+// Novaris type system (DESIGN.md). All three families are SIL Open Font License 1.1.
 const nvSans = Geist({ subsets: ["latin"], variable: "--nv-font-sans-face", display: "swap" });
 const nvMono = Geist_Mono({ subsets: ["latin"], variable: "--nv-font-mono-face", display: "swap" });
+const nvSerif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--nv-font-serif-face", display: "swap" });
 
 export const viewport: Viewport = {
-  themeColor: "#f7f9f6",
+  themeColor: "#faf8f3",
   width: "device-width",
   initialScale: 1,
 };
@@ -99,7 +100,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${nvSans.variable} ${nvMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${nvSans.variable} ${nvMono.variable} ${nvSerif.variable}`} suppressHydrationWarning>
       <body
         data-nv-root
         className="antialiased font-nv-sans bg-nv-graphite-950 text-nv-ivory-100"
@@ -117,9 +118,11 @@ export default function RootLayout({
           closeButton
           toastOptions={{
             style: {
-              background: 'var(--nv-graphite-800)',
-              border: '1px solid var(--nv-graphite-600)',
-              color: 'var(--nv-ivory-100)',
+              background: 'var(--nv-surface)',
+              border: '1px solid var(--nv-hairline)',
+              boxShadow: 'var(--nv-shadow-popover)',
+              borderRadius: 'var(--nv-radius-md)',
+              color: 'var(--nv-text)',
             },
           }}
         />
