@@ -19,7 +19,7 @@ const columns: Column<Post>[] = [
     render: (p) => (
       <span className="flex flex-col">
         <span className="text-nv-ivory-50">{p.title}</span>
-        <span className="font-mono text-nv-micro text-nv-ivory-300">/{p.slug}</span>
+        <span className="font-nv-mono text-nv-micro text-nv-ivory-300">/{p.slug}</span>
       </span>
     ),
   },

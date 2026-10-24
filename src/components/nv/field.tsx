@@ -2,10 +2,13 @@ import type { InputHTMLAttributes, ReactNode, Ref, TextareaHTMLAttributes } from
 import { useId } from "react";
 import { cn } from "./cn";
 
-const control =
-  "w-full rounded-nv-sm border bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 placeholder:text-nv-graphite-400 " +
-  "transition-colors duration-150 border-nv-graphite-500 hover:border-nv-ivory-300 " +
-  "disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-nv-danger";
+/* Silver well that lifts to white with an electric-blue ring on focus. */
+export const controlClasses =
+  "w-full rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-3.5 text-nv-body text-nv-ivory-100 " +
+  "shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] placeholder:text-nv-graphite-400 " +
+  "transition-[background-color,border-color,box-shadow] duration-150 ease-nv-out hover:border-nv-graphite-500 " +
+  "focus:border-nv-copper-400 focus:bg-white focus:shadow-[0_0_0_4px_rgb(47_84_255/0.14)] " +
+  "disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-nv-danger aria-[invalid=true]:focus:shadow-[0_0_0_4px_rgb(194_44_37/0.14)]";
 
 interface FieldShellProps {
   label: string;
@@ -18,7 +21,7 @@ interface FieldShellProps {
 function Shell({ label, hint, error, hideLabel, id, children }: FieldShellProps & { id: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className={cn("text-nv-small font-medium text-nv-ivory-200", hideLabel && "sr-only")}>
+      <label htmlFor={id} className={cn("text-nv-small font-medium text-nv-ivory-100", hideLabel && "sr-only")}>
         {label}
       </label>
       {children}
@@ -28,7 +31,7 @@ function Shell({ label, hint, error, hideLabel, id, children }: FieldShellProps 
         </p>
       )}
       {error && (
-        <p id={`${id}-err`} role="alert" className="text-nv-micro text-nv-danger">
+        <p id={`${id}-err`} role="alert" className="text-nv-micro font-medium text-nv-danger">
           {error}
         </p>
       )}
@@ -48,7 +51,7 @@ export function Input({ label, hint, error, hideLabel, leading, className, id, r
     <Shell id={fid} label={label} hint={hint} error={error} hideLabel={hideLabel}>
       <div className="relative">
         {leading && (
-          <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-nv-ivory-300">
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3.5 grid place-items-center text-nv-ivory-300">
             {leading}
           </span>
         )}
@@ -57,7 +60,7 @@ export function Input({ label, hint, error, hideLabel, leading, className, id, r
           id={fid}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${fid}-err` : hint ? `${fid}-hint` : undefined}
-          className={cn(control, "min-h-11", leading && "pl-9", className)}
+          className={cn(controlClasses, "min-h-11", leading && "pl-10", className)}
           {...rest}
         />
       </div>
@@ -80,7 +83,7 @@ export function Textarea({ label, hint, error, hideLabel, className, id, rows = 
         rows={rows}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${fid}-err` : hint ? `${fid}-hint` : undefined}
-        className={cn(control, "min-h-11 py-2.5 leading-relaxed", className)}
+        className={cn(controlClasses, "min-h-11 py-2.5 leading-relaxed", className)}
         {...rest}
       />
     </Shell>

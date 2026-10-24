@@ -77,7 +77,7 @@ export default async function StarredPage() {
                             Older stars are not listed. See the rest on GitHub.
                         </Notice>
                     )}
-                    <ul className="m-0 list-none overflow-hidden rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-0">
+                    <ul className="m-0 list-none overflow-hidden nv-card p-0">
                         {starredRepos.map((repo) => (
                             <li key={repo.full_name}>
                                 <DataRow

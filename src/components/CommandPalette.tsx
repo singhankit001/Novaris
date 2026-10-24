@@ -96,7 +96,7 @@ export default function CommandPalette() {
 
     return (
         <Dialog open={isOpen} onClose={() => setIsOpen(false)} title="Quick navigation" description="Jump to a page. Press Escape to close.">
-            <div className="flex items-center gap-3 rounded-nv-md border border-nv-graphite-500 bg-nv-graphite-950 px-4 focus-within:border-nv-copper-400">
+            <div className="flex items-center gap-3 rounded-nv-md border border-nv-graphite-500/70 bg-nv-graphite-850 px-4 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] transition-[background-color,border-color,box-shadow] focus-within:border-nv-copper-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgb(47_84_255/0.14)]">
                 <Search aria-hidden className="size-4 shrink-0 text-nv-ivory-300" />
                 <input
                     ref={inputRef}
@@ -131,7 +131,7 @@ export default function CommandPalette() {
                             onMouseEnter={() => setSelectedIndex(idx)}
                             className={cn(
                                 "flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-nv-md px-3 text-nv-body transition-colors duration-150",
-                                selected ? "bg-nv-copper-wash text-nv-ivory-50 shadow-[inset_3px_0_0_var(--nv-copper-400)]" : "text-nv-ivory-200",
+                                selected ? "bg-nv-copper-wash text-nv-ivory-50 shadow-[inset_0_0_0_1px_rgb(47_84_255/0.14)]" : "text-nv-ivory-200",
                             )}
                         >
                             <span className="flex items-center gap-3">

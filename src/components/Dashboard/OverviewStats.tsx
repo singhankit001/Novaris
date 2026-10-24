@@ -2,7 +2,7 @@
 
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/nv/button";
-import { Metric, MetricGroup } from "@/components/nv/data";
+import { MetricStrip } from "@/components/nv/data";
 import { Notice } from "@/components/nv/notice";
 import { LoadingRegion, Skeleton } from "@/components/nv/skeleton";
 import { useApi, type ApiState } from "./use-api";
@@ -19,14 +19,13 @@ export default function OverviewStats() {
 }
 
 export function OverviewStatsView({ state, retry }: { state: ApiState<{ stats?: Stats }>; retry: () => void }) {
-
     if (state.status === "loading") {
         return (
-            <LoadingRegion label="Loading your totals" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <LoadingRegion label="Loading your totals" className="grid grid-cols-1 border-y border-nv-graphite-700 sm:grid-cols-3 sm:divide-x sm:divide-nv-graphite-700">
                 {[0, 1, 2].map((i) => (
-                    <div key={i} className="space-y-2 rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-5">
+                    <div key={i} className="space-y-4 px-6 py-8">
                         <Skeleton className="h-3 w-24" />
-                        <Skeleton className="h-9 w-16" />
+                        <Skeleton className="h-12 w-20" />
                         <Skeleton className="h-3 w-32" />
                     </div>
                 ))}
@@ -51,12 +50,15 @@ export function OverviewStatsView({ state, retry }: { state: ApiState<{ stats?: 
     }
 
     const { reposScanned, issuesFound, deepScans } = state.data.stats;
-    const source = "your saved scans that have not expired";
+    const note = "From saved scans that have not expired";
     return (
-        <MetricGroup className="grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-3">
-            <Metric className="rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-5 sm:p-6" label="Repositories scanned" value={reposScanned} source={source} />
-            <Metric className="rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-5 sm:p-6" label="Findings in saved reports" value={issuesFound} source={source} />
-            <Metric className="rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-5 sm:p-6" label="Deep scans" value={deepScans} source={source} />
-        </MetricGroup>
+        <MetricStrip
+            label="Account totals"
+            items={[
+                { label: "Repositories scanned", value: reposScanned, note },
+                { label: "Findings in saved reports", value: issuesFound, note },
+                { label: "Deep scans", value: deepScans, note },
+            ]}
+        />
     );
 }

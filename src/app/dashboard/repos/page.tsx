@@ -36,7 +36,7 @@ function grantRepositoryAccess() {
 
 function ReposSkeleton() {
     return (
-        <LoadingRegion label="Loading your repositories" className="rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900">
+        <LoadingRegion label="Loading your repositories" className="nv-card">
             {[0, 1, 2, 3, 4].map((i) => (
                 <div key={i} className="flex items-center gap-4 border-b border-nv-graphite-700 p-4 last:border-0">
                     <div className="flex-1 space-y-2">
@@ -128,7 +128,7 @@ export default function MyReposPage() {
                         <p>{needle ? "Try a different name or clear the filter." : "GitHub returned no repositories for this account."}</p>
                     </EmptyState>
                 ) : (
-                    <ul className="m-0 list-none overflow-hidden rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-0">
+                    <ul className="m-0 list-none overflow-hidden nv-card p-0">
                         {shown.map((repo) => (
                             <li key={repo.full_name}>
                                 <DataRow

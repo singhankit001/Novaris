@@ -1,7 +1,7 @@
 import { Badge, BasisTag, StatusPill } from "@/components/nv/badge";
-import { BarList, Sparkline, StackedBar } from "@/components/nv/charts";
+import { BarList, RingChart, Sparkline, StackedBar } from "@/components/nv/charts";
 import { CodeBlock } from "@/components/nv/code-block";
-import { DataRow, DataTable, Metric, MetricGroup } from "@/components/nv/data";
+import { DataRow, DataTable, Metric, MetricGroup, MetricStrip } from "@/components/nv/data";
 import { Citation, EvidencePanel } from "@/components/nv/evidence";
 import { Notice } from "@/components/nv/notice";
 import { Panel } from "@/components/nv/panel";
@@ -37,6 +37,12 @@ export function DataSections() {
       </Section>
 
       <Section id="data" title="Metrics, rows, tables and charts" lede="Charts show only values the product holds: commit counts per week, language bytes, finding counts by severity. Each has a text alternative and a visible value.">
+        <MetricStrip label="Sample totals" items={[
+          { label: "Commits in the last 12 months", value: "1,204", note: "GitHub REST, 14 Oct", visual: <Sparkline values={[4, 6, 5, 9, 12, 8, 14, 11, 19, 22, 17, 31]} label="Commits per week" summary="Twelve weeks, rising from 4 to 31." /> },
+          { label: "Repositories analysed", value: 8, note: "GitHub REST" },
+          { label: "Open findings", value: 3, note: "Deep scan #418" },
+          { label: "Pull requests merged", value: 214, note: "GitHub REST" },
+        ]} />
         <MetricGroup>
           <Metric label="Commits" value="1,204" source="GitHub REST, 14 Oct" />
           <Metric label="Repositories" value={8} source="GitHub REST" />
@@ -54,10 +60,14 @@ export function DataSections() {
           </Panel>
           <Panel title="Findings" eyebrow="By severity">
             <StackedBar caption="Open findings" segments={[
-              { label: "High", value: 1, tone: "copper" }, { label: "Medium", value: 2, tone: "patina" }, { label: "Low", value: 4, tone: "ivory" }]} />
+              { label: "High", value: 1, tone: "warning" }, { label: "Medium", value: 2, tone: "copper" }, { label: "Low", value: 4, tone: "ion" }]} />
           </Panel>
         </div>
-        <div className="overflow-hidden rounded-nv-md border border-nv-graphite-700">
+        <Panel title="Severity distribution" eyebrow="Ring" holo>
+          <RingChart caption="7 findings recorded" total={7} centreLabel="findings" segments={[
+            { label: "Critical", value: 1, tone: "danger" }, { label: "High", value: 2, tone: "warning" }, { label: "Medium", value: 3, tone: "copper" }, { label: "Low", value: 1, tone: "ion" }]} />
+        </Panel>
+        <div className="nv-card overflow-hidden">
           <DataRow title="vercel/next.js" meta="TypeScript · updated 2 days ago" trailing="128,402" href="#" />
           <DataRow title="selected row" meta="Active context" trailing="12" selected />
           <DataRow title="Disabled row" meta="Private, access not granted" trailing="n/a" disabled />
@@ -66,7 +76,7 @@ export function DataSections() {
           { id: "1", repo: "octocat/hello", mode: "Deep", status: "success" as const, findings: 3 },
           { id: "2", repo: "octocat/spoon", mode: "Quick", status: "warning" as const, findings: 11 },
         ]} rowKey={(r) => r.id} columns={[
-          { key: "repo", header: "Repository", render: (r) => <span className="font-mono">{r.repo}</span> },
+          { key: "repo", header: "Repository", render: (r) => <span className="font-nv-mono">{r.repo}</span> },
           { key: "mode", header: "Mode", render: (r) => r.mode },
           { key: "status", header: "Status", render: (r) => <StatusPill status={r.status}>{r.status === "success" ? "Verified" : "Needs review"}</StatusPill> },
           { key: "f", header: "Findings", numeric: true, render: (r) => r.findings },

@@ -23,7 +23,7 @@ export function StateSections() {
             <p>GitHub refused the request, usually a rate limit. Nothing was saved.</p></ErrorState>,
           <UnauthorizedState key="u" />,
           <NotFoundState key="n" />,
-        ].map((el, i) => <div key={i} className="rounded-nv-md border border-nv-graphite-700">{el}</div>)}
+        ].map((el, i) => <div key={i} className="nv-card">{el}</div>)}
       </div>
     </Section>
   );

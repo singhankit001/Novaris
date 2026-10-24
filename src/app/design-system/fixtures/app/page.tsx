@@ -7,8 +7,8 @@ import { ReportExpiredState } from "@/app/report/components/ReportExpiredState";
 import { SharedLinkFailureState } from "@/app/report/components/SharedLinkFailureState";
 import StatsDashboardClient from "@/app/admin/stats/StatsDashboardClient";
 import MotionSettings from "@/components/Dashboard/MotionSettings";
-import { OverviewStatsView } from "@/components/Dashboard/OverviewStats";
-import { ScansView, type ScanListItem } from "@/components/Dashboard/ScansTable";
+import type { ScanListItem } from "@/components/Dashboard/ScansTable";
+import { DashboardFixture, DashboardStatesFixture } from "./dashboard-views";
 import PageHeader from "@/components/Dashboard/PageHeader";
 import { Panel } from "@/components/nv/panel";
 
@@ -94,8 +94,6 @@ function Block({ id, title, children }: { id: string; title: string; children: R
   );
 }
 
-const noop = () => {};
-
 export default function AppSurfacesFixturePage() {
   return (
     <div className="space-y-16 pb-24">
@@ -104,27 +102,18 @@ export default function AppSurfacesFixturePage() {
       </div>
 
       <Block id="dashboard" title="dashboard with scans">
-        <div className="mx-auto max-w-[var(--nv-page-max)] space-y-8 px-[var(--nv-gutter)]">
-          <OverviewStatsView state={{ status: "ok", data: { stats: { reposScanned: 3, issuesFound: 8, deepScans: 1 } } }} retry={noop} />
-          <ScansView state={{ status: "ok", data: { scans } }} retry={noop} showViewAll />
-        </div>
+        <DashboardFixture scans={scans} />
       </Block>
 
       <Block id="dashboard-states" title="dashboard empty, loading, error, signed out">
-        <div className="mx-auto grid max-w-[var(--nv-page-max)] gap-8 px-[var(--nv-gutter)] lg:grid-cols-2">
-          <ScansView state={{ status: "ok", data: { scans: [] } }} retry={noop} />
-          <ScansView state={{ status: "loading" }} retry={noop} />
-          <ScansView state={{ status: "error", message: "Failed to fetch scans", httpStatus: 500 }} retry={noop} />
-          <ScansView state={{ status: "unauthorized", message: "Unauthorized" }} retry={noop} />
-          <OverviewStatsView state={{ status: "error", message: "Failed to fetch stats", httpStatus: 500 }} retry={noop} />
-        </div>
+        <DashboardStatesFixture />
       </Block>
 
       <Block id="settings" title="settings form (signed-out browser mode)">
         <div className="mx-auto max-w-xl px-[var(--nv-gutter)]">
           <Panel as="section">
             <p className="nv-eyebrow">Preferences</p>
-            <h3 className="mb-5 text-nv-title font-medium text-nv-ivory-50">Display</h3>
+            <h3 className="nv-display mb-5 text-nv-title text-nv-ivory-50">Display</h3>
             <MotionSettings />
           </Panel>
         </div>

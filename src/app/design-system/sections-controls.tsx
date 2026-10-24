@@ -70,7 +70,7 @@ export function ControlsSections() {
                 error={state === "error" ? "GitHub did not respond. Try again." : undefined}
                 emptyText="No cached matches. Press Enter to look it up."
               />
-              <p className="mt-2 text-nv-small text-nv-ivory-300" role="status">Chosen: <span className="font-mono">{picked || "nothing yet"}</span></p>
+              <p className="mt-2 text-nv-small text-nv-ivory-300" role="status">Chosen: <span className="font-nv-mono">{picked || "nothing yet"}</span></p>
             </div>
             <div className="flex flex-wrap items-start gap-2">
               {(["ok", "loading", "error", "empty"] as const).map((s) => (
@@ -105,7 +105,7 @@ export function ControlsSections() {
             ]}
           />
           <Tooltip text="Commit sha, 7 chars">
-            <button type="button" className="min-h-11 rounded-nv-sm border border-nv-graphite-500 px-3 font-mono text-nv-small">a1b2c3d</button>
+            <button type="button" className="min-h-11 rounded-nv-sm border border-nv-graphite-500 px-3 font-nv-mono text-nv-small">a1b2c3d</button>
           </Tooltip>
         </div>
       </Section>

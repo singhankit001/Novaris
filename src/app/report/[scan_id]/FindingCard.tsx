@@ -30,7 +30,7 @@ export default function FindingCard({ view, owner, repo, falsePositive, onReport
     const startsOpen = finding.severity === "critical" || finding.severity === "high";
 
     return (
-        <li className="overflow-hidden rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 [break-inside:avoid]">
+        <li className="nv-card overflow-hidden [break-inside:avoid]">
             <details open={startsOpen} className="group">
                 <summary className="flex min-h-14 cursor-pointer list-none items-start gap-3 p-5 transition-colors hover:bg-nv-graphite-850 focus-visible:outline-2 focus-visible:outline-nv-copper-400 [&::-webkit-details-marker]:hidden">
                     <ChevronDown aria-hidden className="mt-1 size-4 shrink-0 text-nv-ivory-300 transition-transform duration-150 motion-reduce:transition-none group-open:rotate-180" />
@@ -38,7 +38,7 @@ export default function FindingCard({ view, owner, repo, falsePositive, onReport
                         <span className="flex flex-wrap items-center gap-2">
                             <StatusPill status={severityStatus[finding.severity]}>{severityLabel[finding.severity]}</StatusPill>
                             <BasisTag basis={findingBasis(finding)} />
-                            <span className="font-mono text-nv-micro text-nv-ivory-300">{finding.type}</span>
+                            <span className="font-nv-mono text-nv-micro text-nv-ivory-300">{finding.type}</span>
                         </span>
                         <span className="block text-nv-body font-medium text-nv-ivory-50">{finding.title}</span>
                         <span className="block text-nv-small text-nv-ivory-300">{verificationText(finding)}</span>
@@ -54,7 +54,7 @@ export default function FindingCard({ view, owner, repo, falsePositive, onReport
                             repo={`${owner}/${repo}`}
                             href={buildFileHref(owner, repo, finding.file, finding.line)}
                         />
-                        {finding.cwe && <span className="font-mono text-nv-micro text-nv-ivory-300">{finding.cwe}</span>}
+                        {finding.cwe && <span className="font-nv-mono text-nv-micro text-nv-ivory-300">{finding.cwe}</span>}
                         {finding.cvss && <span className="nv-num text-nv-micro text-nv-ivory-300">CVSS {finding.cvss}</span>}
                     </div>
 
@@ -89,21 +89,21 @@ export default function FindingCard({ view, owner, repo, falsePositive, onReport
                             {hasStructured && (
                                 <ul className="m-0 grid list-none gap-2 p-0 md:grid-cols-2">
                                     {evidence.map((e, i) => (
-                                        <li key={`e${i}`} className="rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-850 p-3">
+                                        <li key={`e${i}`} className="rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-800 p-3.5">
                                             <p className="nv-eyebrow">{evidenceLabel[e.type] ?? "Context"}</p>
                                             <p className="m-0 mt-1 text-nv-small text-nv-ivory-100">{e.message}</p>
                                             <p className="nv-num m-0 mt-1 text-nv-micro text-nv-ivory-300">{typeof e.line === "number" ? `Line ${e.line}` : "Line not recorded"}</p>
                                         </li>
                                     ))}
                                     {signals.map((s, i) => (
-                                        <li key={`s${i}`} className="rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-850 p-3">
+                                        <li key={`s${i}`} className="rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-800 p-3.5">
                                             <p className="nv-eyebrow">Verifier check: {s.passed ? "passed" : "failed"}</p>
                                             <p className="m-0 mt-1 text-nv-small text-nv-ivory-100">{s.name}</p>
                                             <p className="m-0 mt-1 text-nv-micro text-nv-ivory-300">{s.detail}</p>
                                         </li>
                                     ))}
                                     {trace.map((t, i) => (
-                                        <li key={`t${i}`} className="rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-850 p-3">
+                                        <li key={`t${i}`} className="rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-800 p-3.5">
                                             <p className="nv-eyebrow">{traceLabel[t.type] ?? "Trace"}</p>
                                             <p className="m-0 mt-1 text-nv-small text-nv-ivory-100">{t.detail}</p>
                                             <p className="nv-num m-0 mt-1 text-nv-micro text-nv-ivory-300">{typeof t.line === "number" ? `Line ${t.line}` : "Line not recorded"}</p>
@@ -116,7 +116,7 @@ export default function FindingCard({ view, owner, repo, falsePositive, onReport
                                 <summary className="inline-flex min-h-11 cursor-pointer items-center text-nv-small text-nv-copper-400 hover:text-nv-copper-300">
                                     How this was decided
                                 </summary>
-                                <pre className="m-0 mt-2 whitespace-pre-wrap rounded-nv-sm bg-nv-graphite-850 p-3 font-mono text-nv-micro text-nv-ivory-200">{view.proof}</pre>
+                                <pre className="m-0 mt-2 whitespace-pre-wrap rounded-nv-sm bg-nv-graphite-850 p-3 font-nv-mono text-nv-micro text-nv-ivory-200">{view.proof}</pre>
                                 <p className="mt-2 text-nv-micro text-nv-ivory-300">{view.confidenceRationale}</p>
                                 {finding.verificationRationale && <p className="mt-1 text-nv-micro text-nv-ivory-300">Verification: {finding.verificationRationale}</p>}
                             </details>
@@ -135,12 +135,12 @@ export default function FindingCard({ view, owner, repo, falsePositive, onReport
                                     highlight={finding.line ? [finding.line] : []}
                                 />
                             ) : (
-                                <figure className="m-0 overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-950">
+                                <figure className="m-0 overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-white">
                                     <figcaption className="border-b border-nv-graphite-700 bg-nv-graphite-850 px-3 py-2 text-nv-micro text-nv-ivory-300">
                                         Snippet as reported by the scanner. Line numbers were not recorded.
                                     </figcaption>
                                     <div role="region" tabIndex={0} aria-label={`Code from ${finding.file}`} className="overflow-auto">
-                                        <pre className="m-0 min-w-max p-3 font-mono text-[0.8125rem] leading-6 text-nv-ivory-100">
+                                        <pre className="m-0 min-w-max p-3 font-nv-mono text-[0.8125rem] leading-6 text-nv-ivory-100">
                                             <code>{finding.snippet}</code>
                                         </pre>
                                     </div>

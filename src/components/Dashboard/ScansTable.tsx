@@ -57,7 +57,7 @@ const columns: Column<ScanListItem>[] = [
         key: "repo",
         header: "Repository",
         render: (s) => (
-            <Link href={`/report/${s.id}`} className="font-mono text-nv-small text-nv-copper-300 underline-offset-2 hover:underline">
+            <Link href={`/report/${s.id}`} className="font-nv-mono text-nv-small font-medium text-nv-copper-400 underline-offset-4 hover:text-nv-copper-300 hover:underline">
                 {s.owner}/{s.repo}
             </Link>
         ),
@@ -69,7 +69,7 @@ const columns: Column<ScanListItem>[] = [
 
 function ScansSkeleton() {
     return (
-        <LoadingRegion label="Loading your scans" className="divide-y divide-nv-graphite-700 rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900">
+        <LoadingRegion label="Loading your scans" className="nv-card divide-y divide-nv-graphite-700">
             {[0, 1, 2].map((i) => (
                 <div key={i} className="flex items-center gap-4 p-4">
                     <div className="flex-1 space-y-2">
@@ -131,7 +131,7 @@ export function ScansView({ state, retry, showViewAll = false }: { state: ApiSta
             <div className="hidden md:block">
                 <DataTable caption="Saved security scans" columns={columns} rows={scans} rowKey={(s) => s.id} />
             </div>
-            <ul className="m-0 list-none overflow-hidden rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-0 md:hidden">
+            <ul className="nv-card m-0 list-none overflow-hidden p-0 md:hidden">
                 {scans.map((s) => (
                     <li key={s.id}>
                         <DataRow
@@ -151,7 +151,7 @@ export function ScansView({ state, retry, showViewAll = false }: { state: ApiSta
                 ))}
             </ul>
             {showViewAll && (
-                <Link href="/dashboard/scans" className="inline-flex min-h-11 items-center text-nv-small text-nv-copper-400 hover:text-nv-copper-300">
+                <Link href="/dashboard/scans" className="inline-flex min-h-11 items-center gap-1 text-nv-small font-medium text-nv-copper-400 hover:text-nv-copper-300">
                     View all scans
                 </Link>
             )}

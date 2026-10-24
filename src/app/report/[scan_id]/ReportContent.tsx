@@ -14,8 +14,8 @@ import { formatReportCountdown, getReportExpiryState } from "@/app/report/report
 import { StatusPill } from "@/components/nv/badge";
 import { Button } from "@/components/nv/button";
 import { buttonClasses } from "@/components/nv/button-styles";
-import { StackedBar, type StackedSegment } from "@/components/nv/charts";
-import { Metric, MetricGroup } from "@/components/nv/data";
+import { RingChart, type StackedSegment } from "@/components/nv/charts";
+import { Metric, MetricGroup, MetricStrip } from "@/components/nv/data";
 import { Dialog } from "@/components/nv/dialog";
 import { EvidencePanel, type EvidenceScope } from "@/components/nv/evidence";
 import { Input, Textarea } from "@/components/nv/field";
@@ -50,10 +50,10 @@ interface Feedback {
 }
 
 const segmentTone: Record<Severity, StackedSegment["tone"]> = {
-    critical: "copper",
-    high: "copper",
-    medium: "patina",
-    low: "ivory",
+    critical: "danger",
+    high: "warning",
+    medium: "copper",
+    low: "ion",
     info: "graphite",
 };
 
@@ -197,14 +197,15 @@ export function ReportContent({
     }
 
     return (
-        <div className="min-h-dvh bg-nv-graphite-950">
+        <div className="min-h-dvh bg-nv-graphite-950 nv-aurora">
             <main id="nv-main" tabIndex={-1} className="mx-auto w-full max-w-[var(--nv-page-max)] space-y-8 px-[var(--nv-gutter)] py-6 sm:py-10">
-                <header className="space-y-5 rounded-3xl border border-nv-graphite-700 bg-nv-graphite-900 p-5 sm:p-8">
+                <header className="nv-card relative space-y-5 overflow-hidden p-5 sm:p-8">
+                    <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-[var(--nv-gradient-dusk)]" />
                     <div className="flex flex-wrap items-center gap-2">
                         <p className="nv-eyebrow">Security report{isSharedView ? " · shared view, read only" : ""}</p>
                         <StatusPill status={isOutdated ? "danger" : "warning"}>{isOutdated ? "Outdated" : `Expires in ${countdown}`}</StatusPill>
                     </div>
-                    <h1 className="nv-display text-nv-display-md tracking-[-0.045em] text-balance text-nv-ivory-50">
+                    <h1 className="nv-display text-nv-display-md text-balance text-nv-ivory-50">
                         <span className="text-nv-ivory-300">{scan.owner} / </span>
                         {scan.repo}
                     </h1>
@@ -270,16 +271,21 @@ export function ReportContent({
                     </Notice>
                 )}
 
+                <MetricStrip
+                    label="Severity summary"
+                    items={counts.slice(0, 4).map((c) => ({ label: `${severityLabel[c.severity]} severity findings`, value: c.count, note: "Recorded by the scanner" }))}
+                />
+
                 <EvidencePanel scope={scope} />
 
                 <div className="grid gap-8 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
                     <aside aria-label="Report summary" className="space-y-6 xl:sticky xl:top-20 xl:self-start">
-                        <section aria-labelledby="sev-h" className="space-y-4 rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-5">
-                            <h2 id="sev-h" className="text-nv-title font-medium text-nv-ivory-50">
+                        <section aria-labelledby="sev-h" className="space-y-4 nv-card p-5">
+                            <h2 id="sev-h" className="nv-display text-nv-title text-nv-ivory-50">
                                 Severity counts
                             </h2>
                             {segments.length > 0 ? (
-                                <StackedBar caption={`${recordedTotal} findings recorded by the scanner`} segments={segments} />
+                                <RingChart caption={`${recordedTotal} findings recorded by the scanner`} segments={segments} total={recordedTotal} centreLabel="findings" />
                             ) : (
                                 <p className="m-0 text-nv-body text-nv-ivory-200">No findings were recorded for this scan configuration.</p>
                             )}
@@ -290,8 +296,8 @@ export function ReportContent({
                             )}
                         </section>
 
-                        <section aria-labelledby="diff-h" className="space-y-4 rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-5">
-                            <h2 id="diff-h" className="text-nv-title font-medium text-nv-ivory-50">
+                        <section aria-labelledby="diff-h" className="space-y-4 nv-card p-5">
+                            <h2 id="diff-h" className="nv-display text-nv-title text-nv-ivory-50">
                                 Change since the previous scan
                             </h2>
                             {hasPreviousScan ? (
@@ -306,8 +312,8 @@ export function ReportContent({
                         </section>
 
                         {topFixes.length > 0 && (
-                            <section aria-labelledby="first-h" className="space-y-4 rounded-2xl border border-nv-graphite-700 bg-nv-graphite-900 p-5">
-                                <h2 id="first-h" className="text-nv-title font-medium text-nv-ivory-50">
+                            <section aria-labelledby="first-h" className="space-y-4 nv-card p-5">
+                                <h2 id="first-h" className="nv-display text-nv-title text-nv-ivory-50">
                                     Fix first
                                 </h2>
                                 <p className="m-0 text-nv-small text-nv-ivory-300">Ordered by severity, confidence and exploitability tag (inferred).</p>
@@ -315,7 +321,7 @@ export function ReportContent({
                                     {topFixes.slice(0, 3).map((v) => (
                                         <li key={`${v.fingerprint}:${v.index}`}>
                                             {v.finding.title}
-                                            <span className="block font-mono text-nv-micro text-nv-ivory-300">
+                                            <span className="block font-nv-mono text-nv-micro text-nv-ivory-300">
                                                 {v.finding.file}
                                                 {v.finding.line ? `:${v.finding.line}` : ""}
                                             </span>
@@ -327,7 +333,7 @@ export function ReportContent({
                     </aside>
 
                     <section aria-labelledby="findings-h" className="min-w-0 space-y-6">
-                        <h2 id="findings-h" className="text-nv-title font-medium text-nv-ivory-50">
+                        <h2 id="findings-h" className="nv-display text-nv-title text-nv-ivory-50">
                             Findings <span className="nv-num text-nv-ivory-300">({shownTotal})</span>
                         </h2>
                         {shownTotal === 0 ? (
@@ -394,7 +400,7 @@ export function ReportContent({
                     </>
                 }
             >
-                <pre className="m-0 max-h-[50dvh] overflow-auto whitespace-pre-wrap rounded-nv-sm bg-nv-graphite-850 p-3 font-mono text-nv-micro text-nv-ivory-200">{globalFixPrompt}</pre>
+                <pre className="m-0 max-h-[50dvh] overflow-auto whitespace-pre-wrap rounded-nv-sm bg-nv-graphite-850 p-3 font-nv-mono text-nv-micro text-nv-ivory-200">{globalFixPrompt}</pre>
             </Dialog>
 
             <Dialog
@@ -465,7 +471,7 @@ export function ReportContent({
                             id="fp-reason"
                             value={fpReason}
                             onChange={(e) => setFpReason(e.target.value as ReportFalsePositiveReason)}
-                            className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100"
+                            className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] focus:border-nv-copper-400 focus:bg-white"
                         >
                             {falsePositiveReasonOptions.map((o) => (
                                 <option key={o.value} value={o.value}>

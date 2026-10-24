@@ -195,7 +195,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
                 rows={24}
                 value={post.content ?? ""}
                 onChange={handleChange}
-                className="font-mono text-nv-small"
+                className="font-nv-mono text-nv-small"
                 placeholder="Write your post in Markdown"
               />
             </>
@@ -221,7 +221,7 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
               name="category"
               value={post.category ?? "Engineering"}
               onChange={handleChange}
-              className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100"
+              className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] focus:border-nv-copper-400 focus:bg-white"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>

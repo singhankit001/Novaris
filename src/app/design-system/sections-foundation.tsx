@@ -26,11 +26,11 @@ export function FoundationSections() {
       <Section id="color" title="Color and contrast" lede="Every pair below is computed from the token hex values with the WCAG 2.x formula, in this page. Text needs 4.5:1; UI boundaries and focus 3:1.">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {swatches.map((s) => (
-            <div key={s.token} className="overflow-hidden rounded-nv-md border border-nv-graphite-700">
-              <div className="h-14" style={{ background: s.value }} aria-hidden />
+            <div key={s.token} className="nv-card overflow-hidden !rounded-nv-md">
+              <div className="h-16 border-b border-nv-graphite-700" style={{ background: s.value }} aria-hidden />
               <div className="p-3">
                 <p className="text-nv-small font-medium text-nv-ivory-100">{s.name}</p>
-                <p className="font-mono text-nv-micro text-nv-ivory-300">{s.value} · {s.token}</p>
+                <p className="font-nv-mono text-nv-micro text-nv-ivory-300">{s.value} · {s.token}</p>
                 <p className="mt-1 text-nv-micro text-nv-ivory-200">{s.role}</p>
               </div>
             </div>
@@ -49,8 +49,8 @@ export function FoundationSections() {
                   const ok = passes(r, p.kind);
                   return (
                     <tr key={p.fgName + p.bgName + p.use} className="border-t border-nv-graphite-700">
-                      <td className="px-3 py-2 font-mono">{p.fgName}</td>
-                      <td className="px-3 py-2 font-mono">{p.bgName}</td>
+                      <td className="px-3 py-2 font-nv-mono">{p.fgName}</td>
+                      <td className="px-3 py-2 font-nv-mono">{p.bgName}</td>
                       <td className="px-3 py-2 text-nv-ivory-200">{p.use}</td>
                       <td className="nv-num px-3 py-2">{p.kind === "ui" ? "3:1" : "4.5:1"}</td>
                       <td className="nv-num px-3 py-2">{r.toFixed(2)}:1</td>
@@ -64,7 +64,7 @@ export function FoundationSections() {
         </Specimen>
       </Section>
 
-      <Section id="type" title="Typography" lede="Fraunces for editorial display, Geist for interface text, Geist Mono for paths, hashes and eyebrows. All SIL OFL 1.1. Metrics use tabular figures.">
+      <Section id="type" title="Typography" lede="Sora for display and interface text, Instrument Serif italic for one or two accent words per headline, JetBrains Mono for paths, hashes and eyebrows. All SIL OFL 1.1. Metrics use tabular figures.">
         <div className="flex flex-col divide-y divide-nv-graphite-700">
           {type.map(([name, cls, sample]) => (
             <div key={name} className="grid gap-2 py-4 md:grid-cols-[14rem_1fr] md:items-baseline">
@@ -75,7 +75,7 @@ export function FoundationSections() {
         </div>
       </Section>
 
-      <Section id="space" title="Spacing, radius and elevation" lede="4px base grid. Elevation is a tone step plus a hairline; shadows exist only on overlays. No glow, no blur halos.">
+      <Section id="space" title="Spacing, radius and elevation" lede="4px base grid. Depth comes from layered, ink-tinted shadows on white surfaces over the ivory canvas: a hairline and a contact shadow for cards, a lift on hover, a wider cast for popovers and dialogs. Inputs sit in an inset silver well. No neon glow.">
         <Specimen label="Spacing (px)">
           <div className="flex flex-wrap items-end gap-4">
             {space.map((s) => (
@@ -86,15 +86,29 @@ export function FoundationSections() {
             ))}
           </div>
         </Specimen>
-        <Specimen label="Elevation: base, raised, sunken, popover, overlay">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Specimen label="Elevation: well, control, card, lift, popover, overlay">
+          <div className="grid gap-5 rounded-nv-xl bg-nv-graphite-950 nv-aurora p-6 sm:grid-cols-2 lg:grid-cols-6">
             {[
-              ["Base 900", "bg-nv-graphite-900 border border-nv-graphite-700"],
-              ["Raised 800", "bg-nv-graphite-800 border border-nv-graphite-700"],
-              ["Sunken 850", "bg-nv-graphite-850 border border-nv-graphite-700"],
-              ["Popover", "bg-nv-graphite-800 shadow-nv-popover"],
-              ["Overlay", "bg-nv-graphite-800 shadow-nv-overlay"],
-            ].map(([n, c]) => <div key={n} className={`${c} grid h-24 place-items-center rounded-nv-md text-nv-small`}>{n}</div>)}
+              ["Well", "bg-nv-graphite-850 border border-nv-graphite-700 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)]"],
+              ["xs", "bg-white border border-nv-graphite-700 shadow-nv-xs"],
+              ["Card", "bg-white border border-nv-graphite-700 shadow-nv-card"],
+              ["Lift", "bg-white border border-nv-graphite-700 shadow-nv-lift"],
+              ["Popover", "bg-white shadow-nv-popover"],
+              ["Overlay", "bg-white shadow-nv-overlay"],
+            ].map(([n, c]) => <div key={n} className={`${c} grid h-24 place-items-center rounded-nv-lg text-nv-small text-nv-ivory-200`}>{n}</div>)}
+          </div>
+        </Specimen>
+        <Specimen label="Holographic ring and signal gradient">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="nv-holo-ring rounded-nv-xl bg-white p-6 shadow-nv-card">
+              <p className="nv-eyebrow">.nv-holo-ring</p>
+              <p className="mt-2 text-nv-body text-nv-ivory-200">One hairline of pastel light, reserved for the single hero surface on a view.</p>
+            </div>
+            <div className="rounded-nv-xl border border-nv-graphite-700 bg-white p-6 shadow-nv-card">
+              <p className="nv-eyebrow">--nv-gradient-signal</p>
+              <p className="nv-display mt-2 text-nv-title">One <span className="nv-gradient-text">highlighted</span> word, never a button.</p>
+              <div className="mt-4 h-1 rounded-full bg-[var(--nv-gradient-signal)]" aria-hidden />
+            </div>
           </div>
         </Specimen>
         <Specimen label="Radius xs / sm / md / lg">
@@ -104,7 +118,7 @@ export function FoundationSections() {
         </Specimen>
       </Section>
 
-      <Section id="grid" title="Responsive grid" lede="Mobile 4 columns (360), tablet 8 (768), desktop 12 (1440). Gutters 16/24/32. Page max 1360. The ruler below re-flows live; resize the window or open at 360, 768 and 1440.">
+      <Section id="grid" title="Responsive grid" lede="Mobile 4 columns (360), tablet 8 (768), desktop 12 (1440). Gutters 16/24/40. Page max 1280. The ruler below re-flows live; resize the window or open at 360, 768 and 1440.">
         <div className="grid grid-cols-4 gap-[var(--nv-gutter)] md:grid-cols-8 xl:grid-cols-12" aria-hidden>
           {Array.from({ length: 12 }, (_, i) => (
             <div key={i} className={`nv-num grid h-14 place-items-center rounded-nv-xs bg-nv-graphite-800 text-nv-micro text-nv-ivory-300 ${i >= 4 ? "max-md:hidden" : ""} ${i >= 8 ? "max-xl:hidden" : ""}`}>{i + 1}</div>

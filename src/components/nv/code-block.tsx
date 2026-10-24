@@ -32,22 +32,22 @@ export function CodeBlock({ code, language, path, startLine = 1, highlight = [],
   }
 
   return (
-    <figure className={cn("overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-950", className)}>
-      <figcaption className="flex min-h-11 items-center justify-between gap-3 border-b border-nv-graphite-700 bg-nv-graphite-850 px-3">
+    <figure className={cn("m-0 overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-white shadow-nv-xs", className)}>
+      <figcaption className="flex min-h-11 items-center justify-between gap-3 border-b border-nv-graphite-700 bg-[linear-gradient(180deg,#f8f9fb,#f1f2f5)] px-3">
         <span className="flex min-w-0 items-center gap-2">
           {path ? <Citation kind="file" target={path} /> : <span className="nv-eyebrow">{language ?? "text"}</span>}
         </span>
         <button
           type="button"
           onClick={copy}
-          className="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center gap-1.5 rounded-nv-sm px-2 text-nv-small text-nv-ivory-200 hover:text-nv-ivory-50"
+          className="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center gap-1.5 rounded-nv-sm px-2 text-nv-small text-nv-ivory-200 transition-colors hover:bg-white hover:text-nv-ivory-50"
         >
           {copied ? <Check aria-hidden className="size-4 text-nv-success" /> : <Copy aria-hidden className="size-4" />}
           <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
         </button>
       </figcaption>
       <div role="region" tabIndex={0} aria-label={path ? `Code from ${path}` : "Code"} className="overflow-auto">
-        <pre className="m-0 min-w-max py-3 font-mono text-[0.8125rem] leading-6 text-nv-ivory-100">
+        <pre className="m-0 min-w-max py-3 font-nv-mono text-[0.8125rem] leading-6 text-nv-ivory-100">
           <code>
             {lines.map((l, i) => {
               const n = startLine + i;

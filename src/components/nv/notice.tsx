@@ -4,11 +4,11 @@ import { cn } from "./cn";
 
 export type NoticeTone = "info" | "success" | "warning" | "danger";
 
-const tone: Record<NoticeTone, string> = {
-  info: "bg-nv-info-wash border-nv-info-edge text-nv-info",
-  success: "bg-nv-success-wash border-nv-success-edge text-nv-success",
-  warning: "bg-nv-warning-wash border-nv-warning-edge text-nv-warning",
-  danger: "bg-nv-danger-wash border-nv-danger-edge text-nv-danger",
+const tone: Record<NoticeTone, { box: string; chip: string }> = {
+  info: { box: "bg-nv-info-wash border-nv-info-edge", chip: "text-nv-info" },
+  success: { box: "bg-nv-success-wash border-nv-success-edge", chip: "text-nv-success" },
+  warning: { box: "bg-nv-warning-wash border-nv-warning-edge", chip: "text-nv-warning" },
+  danger: { box: "bg-nv-danger-wash border-nv-danger-edge", chip: "text-nv-danger" },
 };
 const icon = { info: Info, success: CheckCircle2, warning: AlertTriangle, danger: AlertOctagon };
 
@@ -26,11 +26,13 @@ export function Notice({ tone: t = "info", title, children, action, className }:
   return (
     <div
       role={t === "danger" || t === "warning" ? "alert" : "status"}
-      className={cn("flex gap-3 rounded-nv-md border-l-2 border-y border-r p-3", tone[t], className)}
+      className={cn("flex gap-3 rounded-nv-md border p-3.5 shadow-nv-xs", tone[t].box, className)}
     >
-      <Icon aria-hidden className="mt-0.5 size-4 shrink-0" />
-      <div className="min-w-0 flex-1">
-        <p className="text-nv-body font-medium">{title}</p>
+      <span aria-hidden className={cn("grid size-7 shrink-0 place-items-center rounded-full bg-white shadow-nv-xs", tone[t].chip)}>
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1 pt-0.5">
+        <p className={cn("text-nv-body font-semibold tracking-[-0.01em]", tone[t].chip)}>{title}</p>
         {children && <div className="mt-1 text-nv-small text-nv-ivory-200">{children}</div>}
       </div>
       {action && <div className="shrink-0 self-center">{action}</div>}

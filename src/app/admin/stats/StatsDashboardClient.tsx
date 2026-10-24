@@ -40,7 +40,7 @@ const RANGE_MS: Record<HistoryRange, number> = {
     "3m": 90 * 24 * 3_600_000,
 };
 
-const selectClass = "min-h-11 rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 disabled:opacity-45";
+const selectClass = "min-h-11 rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] focus:border-nv-copper-400 focus:bg-white disabled:opacity-45";
 
 function formatReason(reason: string): string {
     return reason
@@ -357,7 +357,7 @@ export default function StatsDashboardClient({ data, userAgent, country, isMobil
                     </div>
                     <div className="min-w-0">
                         <dt className="nv-eyebrow">User agent</dt>
-                        <dd className="m-0 break-all font-mono text-nv-micro text-nv-ivory-200">{userAgent || "Not sent"}</dd>
+                        <dd className="m-0 break-all font-nv-mono text-nv-micro text-nv-ivory-200">{userAgent || "Not sent"}</dd>
                     </div>
                 </dl>
             </section>
@@ -383,7 +383,7 @@ export default function StatsDashboardClient({ data, userAgent, country, isMobil
             render: (s) => (
                 <span className="flex flex-col">
                     <span>{s.title}</span>
-                    <span className="font-mono text-nv-micro text-nv-ivory-300">
+                    <span className="font-nv-mono text-nv-micro text-nv-ivory-300">
                         {s.severity} · {s.file}
                         {s.line ? `:${s.line}` : ""}
                     </span>
@@ -482,7 +482,7 @@ export default function StatsDashboardClient({ data, userAgent, country, isMobil
     );
 
     const visitorColumns: Column<VisitorData>[] = [
-        { key: "id", header: "Actor", render: (v) => <span className="font-mono text-nv-small">{v.actorType === "authenticated" && v.githubLogin ? `@${v.githubLogin}` : v.id.slice(0, 16)}</span> },
+        { key: "id", header: "Actor", render: (v) => <span className="font-nv-mono text-nv-small">{v.actorType === "authenticated" && v.githubLogin ? `@${v.githubLogin}` : v.id.slice(0, 16)}</span> },
         { key: "type", header: "Type", render: (v) => <Badge status={v.actorType === "authenticated" ? "info" : "neutral"}>{v.actorType}</Badge> },
         { key: "country", header: "Country", render: (v) => v.country },
         { key: "device", header: "Device", render: (v) => <span className="capitalize">{v.device}</span> },

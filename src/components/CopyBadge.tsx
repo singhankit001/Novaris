@@ -41,7 +41,7 @@ export function CopyBadge({ owner, repo }: CopyBadgeProps) {
                     {state === "copied" ? "Copied" : "Copy Markdown"}
                 </Button>
             </div>
-            <pre className="m-0 overflow-x-auto rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-850 p-3 font-mono text-nv-micro text-nv-ivory-200 whitespace-pre-wrap break-all select-all">{snippet}</pre>
+            <pre className="m-0 overflow-x-auto rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-850 p-3 font-nv-mono text-nv-micro text-nv-ivory-200 whitespace-pre-wrap break-all select-all">{snippet}</pre>
             <p role="status" aria-live="polite" className={state === "failed" ? "text-nv-small text-nv-danger" : "sr-only"}>
                 {state === "failed" ? "Copy failed. Select the text above and copy it by hand." : state === "copied" ? "Badge Markdown copied." : ""}
             </p>
