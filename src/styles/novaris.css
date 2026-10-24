@@ -81,6 +81,26 @@
   --nv-on-accent: #ffffff;
   --nv-scrim: rgb(21 23 29 / 0.32);
 
+  /* Semantic aliases (preferred in new code). Legacy graphite/copper names stay valid. */
+  --nv-surface-canvas: var(--nv-graphite-950);
+  --nv-surface-card: var(--nv-graphite-900);
+  --nv-surface-well: var(--nv-graphite-850);
+  --nv-surface-hover: var(--nv-graphite-800);
+  --nv-text-strong: var(--nv-ivory-50);
+  --nv-border-hairline: var(--nv-graphite-700);
+  --nv-border-default: var(--nv-graphite-600);
+  --nv-border-control: var(--nv-graphite-500);
+  --nv-action: var(--nv-copper-500);
+  --nv-action-hover: var(--nv-copper-300);
+  --nv-action-text: var(--nv-copper-400);
+  --nv-action-wash: var(--nv-copper-wash);
+  --nv-data-1: var(--nv-copper-400);
+  --nv-data-2: var(--nv-violet-400);
+  --nv-data-3: var(--nv-ion-400);
+  --nv-data-4: #9aa3b8; /* silver series, "other" */
+  --nv-data-grid: var(--nv-graphite-700);
+  --nv-data-axis: var(--nv-graphite-400);
+
   --nv-focus: var(--nv-copper-400);
   --nv-focus-gap: var(--nv-graphite-900);
 
@@ -176,6 +196,26 @@
   --color-nv-info-wash: var(--nv-info-wash);
   --color-nv-info-edge: var(--nv-info-edge);
   --color-nv-on-accent: var(--nv-on-accent);
+  --color-nv-canvas: var(--nv-surface-canvas);
+  --color-nv-card: var(--nv-surface-card);
+  --color-nv-well: var(--nv-surface-well);
+  --color-nv-hover: var(--nv-surface-hover);
+  --color-nv-text: var(--nv-text);
+  --color-nv-text-2: var(--nv-text-2);
+  --color-nv-text-3: var(--nv-text-3);
+  --color-nv-text-muted: var(--nv-text-muted);
+  --color-nv-text-strong: var(--nv-text-strong);
+  --color-nv-hairline: var(--nv-border-hairline);
+  --color-nv-border: var(--nv-border-default);
+  --color-nv-border-control: var(--nv-border-control);
+  --color-nv-action: var(--nv-action);
+  --color-nv-action-hover: var(--nv-action-hover);
+  --color-nv-action-text: var(--nv-action-text);
+  --color-nv-action-wash: var(--nv-action-wash);
+  --color-nv-data-1: var(--nv-data-1);
+  --color-nv-data-2: var(--nv-data-2);
+  --color-nv-data-3: var(--nv-data-3);
+  --color-nv-data-4: var(--nv-data-4);
 
   --font-nv-display: var(--nv-font-display);
   --font-nv-serif: var(--nv-font-serif);
