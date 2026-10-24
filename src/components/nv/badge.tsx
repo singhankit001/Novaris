@@ -9,8 +9,8 @@ const tone: Record<Status, string> = {
   warning: "bg-nv-warning-wash text-nv-warning border-nv-warning-edge",
   danger: "bg-nv-danger-wash text-nv-danger border-nv-danger-edge",
   info: "bg-nv-info-wash text-nv-info border-nv-info-edge",
-  neutral: "bg-nv-graphite-800 text-nv-ivory-200 border-nv-graphite-600",
-  pending: "bg-nv-graphite-850 text-nv-ivory-300 border-nv-graphite-600 border-dashed",
+  neutral: "bg-nv-graphite-850 text-nv-ivory-200 border-nv-graphite-600",
+  pending: "bg-white text-nv-ivory-300 border-nv-graphite-600 border-dashed",
 };
 const icons = { success: CheckCircle2, warning: AlertTriangle, danger: AlertOctagon, info: Info, neutral: Minus, pending: CircleDashed };
 
@@ -20,9 +20,16 @@ export interface BadgeProps {
   className?: string;
 }
 
+/** Compact label: mono, small caps feel, a hairline edge. */
 export function Badge({ status = "neutral", children, className }: BadgeProps) {
   return (
-    <span className={cn("inline-flex items-center rounded-nv-xs border px-1.5 py-0.5 font-mono text-nv-micro", tone[status], className)}>
+    <span
+      className={cn(
+        "inline-flex items-center rounded-nv-xs border px-1.5 py-0.5 font-nv-mono text-[0.6875rem] font-medium uppercase leading-4 tracking-[0.06em]",
+        tone[status],
+        className,
+      )}
+    >
       {children}
     </span>
   );
@@ -32,7 +39,13 @@ export function Badge({ status = "neutral", children, className }: BadgeProps) {
 export function StatusPill({ status, children, className }: BadgeProps & { status: Status }) {
   const Icon = icons[status];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-nv-small", tone[status], className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border py-1 pl-2 pr-3 text-nv-small font-medium shadow-nv-xs",
+        tone[status],
+        className,
+      )}
+    >
       <Icon aria-hidden className="size-3.5" />
       {children}
     </span>

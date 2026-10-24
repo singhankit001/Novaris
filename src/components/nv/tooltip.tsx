@@ -32,7 +32,7 @@ export function Tooltip({ text, children, className }: TooltipProps) {
         role="tooltip"
         className={cn(
           "pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-max max-w-64 -translate-x-1/2 rounded-nv-sm",
-          "bg-nv-ivory-100 px-2 py-1 text-nv-micro text-nv-graphite-950 transition-opacity duration-150",
+          "bg-nv-ivory-100 px-2.5 py-1.5 text-nv-micro font-medium text-white shadow-nv-popover transition-opacity duration-150",
           show ? "opacity-100" : "opacity-0",
         )}
       >

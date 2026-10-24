@@ -19,8 +19,8 @@ export function Citation({ kind, target, lines, repo, href, className }: Citatio
   const Icon = kind === "file" ? FileCode2 : GitCommitHorizontal;
   const text = `${repo ? `${repo}:` : ""}${target}${lines ? `#L${lines}` : ""}`;
   const cls = cn(
-    "inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-nv-xs border border-nv-copper-600 bg-nv-copper-wash px-2 py-1 font-mono text-nv-micro text-nv-copper-300",
-    href && "hover:border-nv-copper-400 hover:text-nv-copper-300",
+    "inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full border border-nv-copper-700 bg-nv-copper-wash py-1 pl-2 pr-3 font-nv-mono text-nv-micro text-nv-copper-400",
+    href && "transition-colors hover:border-nv-copper-400 hover:bg-white",
     className,
   );
   const inner = (
@@ -66,14 +66,14 @@ export function EvidencePanel({ scope, actions, className }: { scope: EvidenceSc
     ["Data freshness", scope.freshness],
   ];
   return (
-    <section aria-labelledby="nv-evidence-h" className={cn("rounded-nv-md border border-nv-copper-600/60 bg-nv-graphite-900", className)}>
-      <header className="flex items-center justify-between gap-3 border-b border-nv-graphite-700 px-4 py-2.5">
-        <h3 id="nv-evidence-h" className="nv-eyebrow !text-nv-copper-300">
+    <section aria-labelledby="nv-evidence-h" className={cn("nv-holo-ring rounded-nv-lg bg-white shadow-nv-card", className)}>
+      <header className="flex items-center justify-between gap-3 border-b border-nv-graphite-700 px-5 py-3">
+        <h3 id="nv-evidence-h" className="nv-eyebrow !text-nv-copper-400">
           Evidence scope
         </h3>
         {actions}
       </header>
-      <dl className="grid gap-x-8 gap-y-3 p-4 sm:grid-cols-2">
+      <dl className="grid gap-x-8 gap-y-4 p-5 sm:grid-cols-2">
         {rows.map(([k, v]) => (
           <div key={k}>
             <dt className="nv-eyebrow">{k}</dt>
@@ -81,7 +81,7 @@ export function EvidencePanel({ scope, actions, className }: { scope: EvidenceSc
           </div>
         ))}
       </dl>
-      <div className="grid gap-4 border-t border-nv-graphite-700 p-4 md:grid-cols-3">
+      <div className="grid gap-5 rounded-b-nv-lg border-t border-nv-graphite-700 bg-nv-graphite-800 p-5 md:grid-cols-3">
         <Group title="Collection limits" items={scope.limits} />
         <Group title="Measured" basis="measured" items={scope.measured} />
         <Group title="Inferred" basis="inferred" items={scope.inferred} />

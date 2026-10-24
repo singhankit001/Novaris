@@ -81,7 +81,7 @@ export default function IndexManagementClient({ repos, topics, stats }: Props) {
             id="tier"
             value={selectedTier}
             onChange={(e) => setSelectedTier(e.target.value as RepoTier | "all")}
-            className="min-h-11 rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100"
+            className="min-h-11 rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] focus:border-nv-copper-400 focus:bg-white"
           >
             <option value="all">All tiers</option>
             <option value="all-time">All-time</option>

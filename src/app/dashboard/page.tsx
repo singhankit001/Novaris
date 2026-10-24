@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     const name = user.username ?? user.name ?? "your account";
 
     return (
-        <div className="space-y-10">
+        <div className="space-y-12">
             <PageHeader
                 eyebrow="Dashboard"
                 title={`Signed in as ${name}`}
@@ -48,7 +48,7 @@ export default async function DashboardPage() {
                 <OverviewStats />
             </section>
             <section aria-labelledby="recent-h" className="space-y-4">
-                <h2 id="recent-h" className="text-nv-title font-medium text-nv-ivory-50">
+                <h2 id="recent-h" className="nv-display text-nv-title text-nv-ivory-50">
                     Recent scans
                 </h2>
                 <ScansTable limit={5} showViewAll />

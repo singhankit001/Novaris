@@ -35,9 +35,9 @@ export default async function SettingsPage() {
             <PageHeader eyebrow="Dashboard" title="Settings" description="Your GitHub connection and the display preferences Novaris can save for you." />
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <Panel as="section" className="rounded-3xl p-6 sm:p-8 [&>div]:p-0">
+                <Panel as="section" className="p-6 sm:p-8 [&>div]:p-0">
                     <p className="nv-eyebrow">Account</p>
-                    <h2 className="mb-5 text-nv-title font-medium text-nv-ivory-50">GitHub connection</h2>
+                    <h2 className="mb-5 nv-display text-nv-title text-nv-ivory-50">GitHub connection</h2>
                     <div className="flex items-center gap-4">
                         <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-nv-md border border-nv-graphite-600 bg-nv-graphite-850">
                             {user.image ? (
@@ -48,7 +48,7 @@ export default async function SettingsPage() {
                         </div>
                         <div className="min-w-0">
                             <p className="truncate text-nv-title text-nv-ivory-50">{user.name ?? user.username ?? "GitHub user"}</p>
-                            {user.username && <p className="truncate font-mono text-nv-small text-nv-ivory-300">@{user.username}</p>}
+                            {user.username && <p className="truncate font-nv-mono text-nv-small text-nv-ivory-300">@{user.username}</p>}
                             {user.email && <p className="truncate text-nv-small text-nv-ivory-300">{user.email}</p>}
                         </div>
                     </div>
@@ -85,9 +85,9 @@ export default async function SettingsPage() {
                     <p className="mt-6 text-nv-small text-nv-ivory-300">Saved scans and their reports expire automatically 7 days after the scan.</p>
                 </Panel>
 
-                <Panel as="section" className="rounded-3xl p-6 sm:p-8 [&>div]:p-0">
+                <Panel as="section" className="p-6 sm:p-8 [&>div]:p-0">
                     <p className="nv-eyebrow">Preferences</p>
-                    <h2 className="mb-5 text-nv-title font-medium text-nv-ivory-50">Display</h2>
+                    <h2 className="mb-5 nv-display text-nv-title text-nv-ivory-50">Display</h2>
                     <MotionSettings />
                 </Panel>
             </div>

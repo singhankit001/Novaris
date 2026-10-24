@@ -98,7 +98,7 @@ export function Menu({ label, trigger, items, align = "end", className }: MenuPr
       setOpen(true);
     }
         }}
-        className="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center gap-2 rounded-nv-sm px-3 text-nv-ivory-200 hover:bg-nv-graphite-800 hover:text-nv-ivory-50"
+        className="inline-flex min-h-11 min-w-11 touch-manipulation items-center justify-center gap-2 rounded-nv-sm px-3 text-nv-ivory-200 transition-colors hover:bg-nv-graphite-850 hover:text-nv-ivory-50"
       >
         {trigger}
       </button>
@@ -110,14 +110,15 @@ export function Menu({ label, trigger, items, align = "end", className }: MenuPr
         hidden={!open}
         onKeyDown={onListKey}
         className={cn(
-          "absolute top-full z-30 mt-1 min-w-52 rounded-nv-md bg-nv-graphite-800 py-1 shadow-nv-popover",
+          "absolute top-full z-30 mt-2 min-w-56 rounded-nv-md border border-nv-graphite-700 bg-white p-1.5 shadow-nv-popover",
+          !open ? "" : "nv-rise",
           align === "end" ? "right-0" : "left-0",
         )}
       >
         {items.map((it) => {
           const cls = cn(
-            "flex min-h-11 w-full cursor-pointer items-center gap-3 px-3 text-left text-nv-body",
-            "focus:bg-nv-graphite-700 focus:outline-none hover:bg-nv-graphite-700",
+            "flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-nv-sm px-3 text-left text-nv-body transition-colors duration-100",
+            "focus:bg-nv-copper-wash focus:outline-none hover:bg-nv-graphite-850",
             it.danger ? "text-nv-danger" : "text-nv-ivory-100",
             it.disabled && "cursor-not-allowed opacity-45",
           );

@@ -86,7 +86,7 @@ export function SearchModal({ repoContext, onSendMessage }: SearchModalProps) {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="min-h-12 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-950 px-4 text-nv-body text-nv-ivory-50 placeholder:text-nv-graphite-400 focus:border-nv-copper-400"
+                            className="min-h-12 w-full rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-4 text-nv-body text-nv-ivory-50 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] placeholder:text-nv-graphite-400 focus:border-nv-copper-400 focus:bg-white focus:shadow-[0_0_0_4px_rgb(47_84_255/0.14)]"
                             placeholder="Function name, exact string, pattern…"
                             disabled={loading}
                             autoFocus

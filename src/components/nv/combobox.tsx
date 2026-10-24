@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { cn } from "./cn";
+import { controlClasses } from "./field";
 
 export interface ComboboxOption {
   value: string;
@@ -145,7 +146,7 @@ export function Combobox({
             setActive(-1);
           }}
           onKeyDown={onKeyDown}
-          className="min-h-12 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 pl-9 pr-3 text-base text-nv-ivory-100 placeholder:text-nv-graphite-400 hover:border-nv-ivory-300 disabled:cursor-not-allowed disabled:opacity-45"
+          className={cn(controlClasses, "min-h-12 pl-10 pr-3 text-base")}
         />
       </div>
       <ul
@@ -153,7 +154,7 @@ export function Combobox({
         role="listbox"
         aria-label={label}
         hidden={!showPanel}
-        className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-nv-md bg-nv-graphite-800 py-1 shadow-nv-popover"
+        className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-nv-md border border-nv-graphite-700 bg-white p-1.5 shadow-nv-popover"
       >
         {options.map((o, i) => (
           <li
@@ -166,8 +167,8 @@ export function Combobox({
             onClick={() => choose(i)}
             onMouseMove={() => active !== i && setActive(i)}
             className={cn(
-              "flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2 text-nv-body",
-              i === active ? "bg-nv-copper-wash text-nv-ivory-50 shadow-[inset_2px_0_0_var(--nv-copper-400)]" : "text-nv-ivory-200",
+              "flex min-h-11 cursor-pointer items-center gap-3 rounded-nv-sm px-3 py-2 text-nv-body",
+              i === active ? "bg-nv-copper-wash text-nv-ivory-50" : "text-nv-ivory-200",
             )}
           >
             {o.icon && <span aria-hidden>{o.icon}</span>}

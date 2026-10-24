@@ -15,12 +15,19 @@ export interface NavLink {
   current?: boolean;
 }
 
-/** A branching mark connects the identity to repository intelligence. */
+/** A branching mark on a lit blue tile: identity tied to repository intelligence. */
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <span className="nv-brand-mark"><GitBranch aria-hidden className="size-5" strokeWidth={1.8} /></span>
-      <span className="font-nv-sans text-[23px] font-semibold tracking-[-0.055em] text-nv-ivory-50">novaris<span className="text-nv-copper-400">.</span></span>
+      <span
+        aria-hidden
+        className="grid size-8 place-items-center rounded-[10px] bg-[linear-gradient(145deg,#5d7bff_0%,#2f54ff_55%,#7a4dff_100%)] text-white shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_6px_14px_-6px_rgb(47_84_255/0.7)]"
+      >
+        <GitBranch className="size-[18px]" strokeWidth={2} />
+      </span>
+      <span className="font-nv-sans text-[1.3rem] font-semibold tracking-[-0.06em] text-nv-ivory-50">
+        novaris<span className="text-nv-copper-400">.</span>
+      </span>
     </span>
   );
 }
@@ -35,13 +42,14 @@ function NavItems({ links, vertical, onNavigate }: { links: NavLink[]; vertical?
             onClick={onNavigate}
             aria-current={l.current ? "page" : undefined}
             className={cn(
-              "nv-header-link flex min-h-11 items-center gap-2.5 rounded-nv-sm px-3.5 text-[13px]",
+              "relative flex min-h-11 items-center gap-3 rounded-nv-sm px-3.5 text-[0.8125rem] font-medium transition-colors duration-150",
               l.current
-                ? "bg-nv-copper-wash text-nv-copper-400"
+                ? "bg-nv-copper-wash text-nv-copper-400 shadow-[inset_0_0_0_1px_rgb(47_84_255/0.12)]"
                 : "text-nv-ivory-200 hover:bg-nv-graphite-850 hover:text-nv-ivory-50",
             )}
           >
-            {l.icon && <span aria-hidden>{l.icon}</span>}
+            {l.current && vertical && <span aria-hidden className="absolute -left-3 top-2.5 bottom-2.5 w-[3px] rounded-full bg-nv-copper-400" />}
+            {l.icon && <span aria-hidden className="grid size-5 place-items-center">{l.icon}</span>}
             {l.label}
           </Link>
         </li>
@@ -61,7 +69,7 @@ export function SiteHeader({ links, cta, account }: SiteHeaderProps) {
   const [open, setOpen] = useState(false);
   return (
     <header className="nv-site-header sticky top-0 z-30 border-b border-nv-graphite-700/70">
-      <a href="#nv-main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-nv-sm focus:bg-nv-ivory-100 focus:px-3 focus:py-2 focus:text-nv-graphite-950">
+      <a href="#nv-main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-nv-sm focus:bg-nv-ivory-100 focus:px-3 focus:py-2 focus:text-white">
         Skip to content
       </a>
       <div className="mx-auto flex h-[76px] max-w-[var(--nv-page-max)] items-center justify-between gap-4 px-[var(--nv-gutter)]">
@@ -74,7 +82,7 @@ export function SiteHeader({ links, cta, account }: SiteHeaderProps) {
         <div className="flex items-center gap-2">
           {account}
           {cta && (
-            <Link href={cta.href} className={cn(buttonClasses("primary"), "hidden lg:inline-flex shadow-[0_3px_10px_-4px_rgba(37,93,76,0.35)]")}>
+            <Link href={cta.href} className={cn(buttonClasses("primary"), "hidden lg:inline-flex")}>
               {cta.label}
             </Link>
           )}
@@ -98,8 +106,9 @@ export function SiteHeader({ links, cta, account }: SiteHeaderProps) {
 /** Signed-in left rail, visible from lg. */
 export function SideNav({ links, label, footer }: { links: NavLink[]; label: string; footer?: ReactNode }) {
   return (
-    <aside className="hidden w-60 shrink-0 flex-col justify-between border-r border-nv-graphite-700 bg-nv-graphite-900 p-3 lg:flex">
+    <aside className="hidden w-64 shrink-0 flex-col justify-between border-r border-nv-graphite-700 bg-[linear-gradient(180deg,#ffffff_0%,#fbfbf9_100%)] px-6 py-5 lg:flex">
       <nav aria-label={label}>
+        <p className="nv-eyebrow mb-3 px-3.5">Workspace</p>
         <NavItems links={links} vertical />
       </nav>
       {footer}
@@ -110,7 +119,7 @@ export function SideNav({ links, label, footer }: { links: NavLink[]; label: str
 /** Bottom tab bar below lg: 5 destinations max, each 44px+ wide with a text label. */
 export function MobileNav({ links, label }: { links: NavLink[]; label: string }) {
   return (
-    <nav aria-label={label} className="fixed inset-x-0 bottom-0 z-20 border-t border-nv-graphite-700 bg-nv-graphite-950 pb-[env(safe-area-inset-bottom)] lg:hidden">
+    <nav aria-label={label} className="nv-site-header fixed inset-x-0 bottom-0 z-20 border-t border-nv-graphite-700 pb-[env(safe-area-inset-bottom)] lg:hidden">
       <ul className="m-0 grid list-none grid-flow-col auto-cols-fr p-0">
         {links.slice(0, 5).map((l) => (
           <li key={l.label}>
@@ -118,10 +127,11 @@ export function MobileNav({ links, label }: { links: NavLink[]; label: string })
               href={l.href}
               aria-current={l.current ? "page" : undefined}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 text-nv-micro",
-                l.current ? "text-nv-copper-300 shadow-[inset_0_2px_0_var(--nv-copper-400)]" : "text-nv-ivory-300",
+                "relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-nv-micro font-medium",
+                l.current ? "text-nv-copper-400" : "text-nv-ivory-300",
               )}
             >
+              {l.current && <span aria-hidden className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-nv-copper-400" />}
               <span aria-hidden>{l.icon}</span>
               {l.label}
             </Link>
@@ -163,11 +173,11 @@ export function Breadcrumbs({ items }: { items: { label: string; href?: string }
           return (
             <li key={`${it.label}-${i}`} className="flex items-center gap-1">
               {it.href && !last ? (
-                <Link href={it.href} className="inline-flex min-h-8 items-center rounded-nv-xs px-1 hover:text-nv-ivory-50">
+                <Link href={it.href} className="inline-flex min-h-8 items-center rounded-nv-xs px-1 transition-colors hover:text-nv-copper-400">
                   {it.label}
                 </Link>
               ) : (
-                <span aria-current={last ? "page" : undefined} className={cn("px-1", last && "text-nv-ivory-100")}>
+                <span aria-current={last ? "page" : undefined} className={cn("px-1", last && "font-medium text-nv-ivory-100")}>
                   {it.label}
                 </span>
               )}
@@ -196,7 +206,7 @@ export function Footer({ groups }: { groups: { title: string; links: { href: str
             <ul className="m-0 list-none p-0">
               {g.links.map((l) => (
                 <li key={l.label}>
-                  <Link href={l.href} className="inline-flex min-h-11 items-center text-nv-small text-nv-ivory-200 hover:text-nv-ivory-50">
+                  <Link href={l.href} className="inline-flex min-h-11 items-center text-nv-small text-nv-ivory-200 transition-colors hover:text-nv-copper-400">
                     {l.label}
                   </Link>
                 </li>

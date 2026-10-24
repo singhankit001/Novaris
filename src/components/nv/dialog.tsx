@@ -63,27 +63,28 @@ export function Dialog({ open, onClose, title, description, children, footer, pl
         if (e.target === ref.current) onClose();
       }}
       className={cn(
-        "nv-dialog fixed inset-0 z-40 flex-col bg-nv-graphite-800 p-0 text-nv-ivory-100 shadow-nv-overlay",
+        "nv-dialog fixed inset-0 z-40 flex-col overflow-hidden border border-nv-graphite-700 bg-white p-0 text-nv-ivory-100 shadow-nv-overlay",
         "backdrop:bg-transparent open:flex",
         placements[placement],
         className,
       )}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-nv-graphite-700 p-4">
+      <span aria-hidden className="h-0.5 w-full shrink-0 bg-[var(--nv-gradient-signal)] opacity-80" />
+      <header className="flex items-start justify-between gap-4 border-b border-nv-graphite-700 px-5 py-4">
         <div className="min-w-0">
           <h2 id={`${uid}-title`} className="nv-display text-nv-title">
             {title}
           </h2>
           {description && (
-            <p id={`${uid}-desc`} className="mt-1 text-nv-small text-nv-ivory-200">
+            <p id={`${uid}-desc`} className="mt-1 text-pretty text-nv-small text-nv-ivory-200">
               {description}
             </p>
           )}
         </div>
         <IconButton label="Close" icon={<X className="size-4" />} onClick={onClose} />
       </header>
-      <div className="min-h-0 flex-1 overflow-auto p-4">{children}</div>
-      {footer && <footer className="flex flex-wrap justify-end gap-2 border-t border-nv-graphite-700 p-4">{footer}</footer>}
+      <div className="min-h-0 flex-1 overflow-auto px-5 py-5">{children}</div>
+      {footer && <footer className="flex flex-wrap justify-end gap-2 border-t border-nv-graphite-700 bg-nv-graphite-800 px-5 py-4">{footer}</footer>}
     </dialog>
   );
 }

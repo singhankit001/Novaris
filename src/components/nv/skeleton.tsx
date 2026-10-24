@@ -18,7 +18,7 @@ export function LoadingRegion({ label, children, className }: { label: string; c
 export function Spinner({ label = "Loading", className }: { label?: string; className?: string }) {
   return (
     <span role="status" className={cn("inline-flex items-center gap-2 text-nv-small text-nv-ivory-200", className)}>
-      <Loader2 aria-hidden className="nv-spin size-4" />
+      <Loader2 aria-hidden className="nv-spin size-4 text-nv-copper-400" />
       {label}
     </span>
   );
@@ -28,7 +28,7 @@ export function Spinner({ label = "Loading", className }: { label?: string; clas
 export function IndeterminateProgress({ label, phase }: { label: string; phase?: string }) {
   return (
     <div role="progressbar" aria-label={label} aria-valuetext={phase ?? "In progress"} className="flex flex-col gap-2">
-      <div className="nv-indeterminate relative h-0.5 overflow-hidden bg-nv-graphite-700" />
+      <div className="nv-indeterminate relative h-1 overflow-hidden rounded-full bg-nv-graphite-700" />
       {phase && <p className="text-nv-micro text-nv-ivory-300">{phase}</p>}
     </div>
   );

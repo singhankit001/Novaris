@@ -46,7 +46,7 @@ export default function MotionSettings() {
                 {options.map((option) => (
                     <label
                         key={option.value}
-                        className="flex min-h-16 cursor-pointer items-start gap-3 rounded-nv-sm border border-nv-graphite-600 bg-nv-graphite-950 p-4 hover:border-nv-graphite-500 has-[:checked]:border-nv-copper-500 has-[:checked]:bg-nv-copper-wash"
+                        className="flex min-h-16 cursor-pointer items-start gap-3 rounded-nv-md border border-nv-graphite-600 bg-white p-4 shadow-nv-xs transition-[border-color,background-color,box-shadow] duration-150 hover:border-nv-graphite-500 has-[:checked]:border-nv-copper-400 has-[:checked]:bg-nv-copper-wash has-[:checked]:shadow-[0_0_0_3px_rgb(47_84_255/0.12)]"
                     >
                         <input
                             type="radio"

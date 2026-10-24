@@ -99,7 +99,7 @@ export function WhatsNewModal({ isOpen, onClose }: WhatsNewModalProps) {
                 {versions.map((version) => (
                     <section key={version.version} aria-labelledby={`wn-${version.version}`}>
                         <div className="mb-3 flex items-center gap-3">
-                            <h3 id={`wn-${version.version}`} className="nv-num font-mono text-nv-body font-medium text-nv-ivory-50">
+                            <h3 id={`wn-${version.version}`} className="nv-num font-nv-mono text-nv-body font-medium text-nv-ivory-50">
                                 {version.version}
                             </h3>
                             {version.isNew && <Badge status="info">Latest</Badge>}

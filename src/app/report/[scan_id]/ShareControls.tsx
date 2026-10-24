@@ -134,7 +134,7 @@ export default function ShareControls({ scanId, canGenerateOutreach, shareMode, 
                 )}
             </div>
             {link && (
-                <p className="m-0 break-all rounded-nv-sm bg-nv-graphite-850 px-3 py-2 font-mono text-nv-micro text-nv-ivory-200">
+                <p className="m-0 break-all rounded-nv-sm bg-nv-graphite-850 px-3 py-2 font-nv-mono text-nv-micro text-nv-ivory-200">
                     <span className="sr-only">Share link: </span>
                     {link.url}
                     <span className="block text-nv-ivory-300">Expires {fmt(link.expiresAt)}</span>
