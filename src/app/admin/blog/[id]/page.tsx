@@ -6,7 +6,7 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ i
   const { id } = await params;
   
   // Try to find by ID first (internal prisma ID)
-  let post = await prisma.blogPost.findUnique({
+  const post = await prisma.blogPost.findUnique({
     where: { id }
   });
 
@@ -14,9 +14,5 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  return (
-    <div className="max-w-7xl mx-auto">
-      <BlogEditor initialPost={post} />
-    </div>
-  );
+  return <BlogEditor initialPost={post} />;
 }

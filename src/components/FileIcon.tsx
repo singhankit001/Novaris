@@ -1,137 +1,35 @@
 "use client";
 
-import { 
-    File, FileCode2, FileJson, FileText, FilePenLine, FileType2, FileImage, 
-    Settings, FileKey, FileBox, Database, Terminal, Lock,
-    Folder, FolderOpen, FolderCode, FolderGit2, FolderCheck, FolderCog, FolderArchive, FolderKanban,
-    Globe, Layers, FileVideo, FileAudio
-} from 'lucide-react';
+import { Database, File, FileAudio, FileCode2, FileImage, FileJson, FileText, FileVideo, Folder, FolderOpen, Lock, Settings, Terminal } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface FileIconProps {
-    filename: string;
-    className?: string;
-}
+// Icons are decorative: the file name is always rendered next to them. Colour groups by kind, never by language brand.
+const TONE = { code: "text-nv-copper-400", data: "text-nv-patina-400", doc: "text-nv-ivory-300", config: "text-nv-ivory-300", media: "text-nv-info", lock: "text-nv-warning" } as const;
 
-export function FileIcon({ filename, className }: FileIconProps) {
-    const ext = filename.split('.').pop()?.toLowerCase();
+function pick(filename: string): { Icon: LucideIcon; tone: keyof typeof TONE } {
     const name = filename.toLowerCase();
-
-    // Specific filenames
-    if (name === 'package.json' || name === 'package-lock.json' || name === 'yarn.lock' || name === 'pnpm-lock.yaml' || name.endsWith('.lock')) 
-        return <Lock className={cn("w-4 h-4 text-rose-400 shrink-0 transition-colors", className)} />;
-    
-    if (name.includes('config') || name.startsWith('.') || name.includes('prettier') || name.includes('eslint') || name.includes('tsconfig'))
-        return <Settings className={cn("w-4 h-4 text-zinc-400 shrink-0 transition-colors", className)} />;
-    
-    if (name === 'dockerfile' || name.includes('docker-compose'))
-        return <FileBox className={cn("w-4 h-4 text-blue-500 shrink-0 transition-colors", className)} />;
-    
-    if (name.startsWith('.env'))
-        return <FileKey className={cn("w-4 h-4 text-amber-500 shrink-0 transition-colors", className)} />;
-
-    if (name === 'favicon.ico')
-        return <Globe className={cn("w-4 h-4 text-blue-400 shrink-0 transition-colors", className)} />;
-
-    // Extensions
-    switch (ext) {
-        case 'js':
-        case 'jsx':
-        case 'mjs':
-        case 'cjs':
-            return <FileCode2 className={cn("w-4 h-4 text-amber-400 shrink-0 transition-colors", className)} />;
-        case 'ts':
-        case 'tsx':
-            return <FileCode2 className={cn("w-4 h-4 text-blue-400 shrink-0 transition-colors", className)} />;
-        case 'json':
-            return <FileJson className={cn("w-4 h-4 text-green-400 shrink-0 transition-colors", className)} />;
-        case 'md':
-        case 'txt':
-        case 'log':
-            return <FileText className={cn("w-4 h-4 text-zinc-400 shrink-0 transition-colors", className)} />;
-        case 'css':
-        case 'scss':
-        case 'less':
-            return <FilePenLine className={cn("w-4 h-4 text-pink-400 shrink-0 transition-colors", className)} />;
-        case 'html':
-            return <FileType2 className={cn("w-4 h-4 text-orange-400 shrink-0 transition-colors", className)} />;
-        case 'png':
-        case 'jpg':
-        case 'jpeg':
-        case 'gif':
-        case 'svg':
-        case 'webp':
-        case 'ico':
-        case 'tiff':
-        case 'avif':
-            return <FileImage className={cn("w-4 h-4 text-purple-400 shrink-0 transition-colors", className)} />;
-        case 'mp4':
-        case 'mov':
-        case 'avi':
-        case 'webm':
-        case 'mkv':
-        case 'ogv':
-            return <FileVideo className={cn("w-4 h-4 text-rose-400 shrink-0 transition-colors", className)} />;
-        case 'mp3':
-        case 'wav':
-        case 'ogg':
-        case 'm4a':
-        case 'aac':
-        case 'flac':
-            return <FileAudio className={cn("w-4 h-4 text-blue-500 shrink-0 transition-colors", className)} />;
-        case 'pdf':
-            return <FileText className={cn("w-4 h-4 text-red-500 shrink-0 transition-colors", className)} />;
-        case 'yml':
-        case 'yaml':
-            return <Settings className={cn("w-4 h-4 text-rose-400 shrink-0 transition-colors", className)} />;
-        case 'sql':
-        case 'prisma':
-            return <Database className={cn("w-4 h-4 text-cyan-400 shrink-0 transition-colors", className)} />;
-        case 'py':
-            return <FileCode2 className={cn("w-4 h-4 text-indigo-400 shrink-0 transition-colors", className)} />;
-        case 'go':
-            return <FileCode2 className={cn("w-4 h-4 text-cyan-500 shrink-0 transition-colors", className)} />;
-        case 'rs':
-            return <FileCode2 className={cn("w-4 h-4 text-orange-700 shrink-0 transition-colors", className)} />;
-        case 'sh':
-        case 'bash':
-        case 'zsh':
-            return <Terminal className={cn("w-4 h-4 text-emerald-400 shrink-0 transition-colors", className)} />;
-        default:
-            return <File className={cn("w-4 h-4 text-zinc-500 shrink-0 transition-colors", className)} />;
-    }
+    const ext = name.split(".").pop() ?? "";
+    if (name.endsWith(".lock") || name === "package-lock.json" || name === "pnpm-lock.yaml" || name.startsWith(".env")) return { Icon: Lock, tone: "lock" };
+    if (name.includes("config") || name.startsWith(".") || name === "dockerfile" || name.includes("docker-compose")) return { Icon: Settings, tone: "config" };
+    if (["js", "jsx", "mjs", "cjs", "ts", "tsx", "py", "go", "rs", "java", "c", "cpp", "h", "rb", "css", "scss", "html"].includes(ext)) return { Icon: FileCode2, tone: "code" };
+    if (ext === "json") return { Icon: FileJson, tone: "data" };
+    if (["sql", "prisma"].includes(ext)) return { Icon: Database, tone: "data" };
+    if (["yml", "yaml", "toml"].includes(ext)) return { Icon: Settings, tone: "config" };
+    if (["md", "txt", "log", "pdf"].includes(ext)) return { Icon: FileText, tone: "doc" };
+    if (["sh", "bash", "zsh"].includes(ext)) return { Icon: Terminal, tone: "code" };
+    if (["png", "jpg", "jpeg", "gif", "svg", "webp", "ico", "tiff", "avif"].includes(ext)) return { Icon: FileImage, tone: "media" };
+    if (["mp4", "mov", "avi", "webm", "mkv", "ogv"].includes(ext)) return { Icon: FileVideo, tone: "media" };
+    if (["mp3", "wav", "ogg", "m4a", "aac", "flac"].includes(ext)) return { Icon: FileAudio, tone: "media" };
+    return { Icon: File, tone: "doc" };
 }
 
-interface FolderIconProps {
-    name: string;
-    isExpanded: boolean;
-    className?: string;
+export function FileIcon({ filename, className }: { filename: string; className?: string }) {
+    const { Icon, tone } = pick(filename);
+    return <Icon aria-hidden className={cn("size-4 shrink-0", TONE[tone], className)} />;
 }
 
-export function FolderIcon({ name, isExpanded, className }: FolderIconProps) {
-    const iconClass = cn("w-4 h-4 shrink-0 transition-colors", className);
-    const folderName = name.toLowerCase();
-
-    const getIcon = () => {
-        if (folderName === 'src') return <FolderCode className={cn(iconClass, "text-blue-400")} />;
-        if (folderName === '.github') return <FolderGit2 className={cn(iconClass, "text-orange-500")} />;
-        if (folderName === 'public' || folderName === 'assets' || folderName === 'images' || folderName === 'static') 
-            return <FolderOpen className={cn(iconClass, "text-purple-400")} />;
-        if (folderName === 'components' || folderName === 'ui' || folderName === 'blocks') 
-            return <FolderOpen className={cn(iconClass, "text-indigo-400")} />;
-        if (folderName === 'app' || folderName === 'pages' || folderName === 'routes' || folderName === 'views') 
-            return <Layers className={cn(iconClass, "text-emerald-400")} />;
-        if (folderName === 'test' || folderName === '__tests__' || folderName === 'spec' || folderName === 'tests')
-            return <FolderCheck className={cn(iconClass, "text-green-500")} />;
-        if (folderName === 'lib' || folderName === 'utils' || folderName === 'helpers' || folderName === 'services' || folderName === 'config' || folderName === 'settings' || folderName === 'api' || folderName === 'actions' || folderName === 'hooks') 
-            return <FolderCog className={cn(iconClass, "text-amber-400")} />;
-        if (folderName === 'docs' || folderName === 'documentation' || folderName === 'archive') 
-            return <FolderArchive className={cn(iconClass, "text-zinc-400")} />;
-        if (folderName === 'node_modules') 
-            return <FolderKanban className={cn(iconClass, "text-rose-400")} />;
-        
-        return isExpanded ? <FolderOpen className={cn(iconClass, "text-blue-400")} /> : <Folder className={cn(iconClass, "text-blue-400")} />;
-    };
-
-    return getIcon();
+export function FolderIcon({ isExpanded, className }: { name: string; isExpanded: boolean; className?: string }) {
+    const Icon = isExpanded ? FolderOpen : Folder;
+    return <Icon aria-hidden className={cn("size-4 shrink-0 text-nv-ivory-200", className)} />;
 }

@@ -1,17 +1,15 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { getPreviousScan, getScanResultWithStatus } from "@/lib/services/scan-storage";
 import { peekScanFromShareToken, resolveScanFromShareToken } from "@/lib/services/scan-share-links";
 import { buildReportViewData } from "@/lib/services/report-service";
 import { trackReportConversionEvent } from "@/lib/analytics";
 import { ReportContent } from "@/app/report/[scan_id]/ReportContent";
+import { SharedLinkFailureState } from "@/app/report/components/SharedLinkFailureState";
 import { ReportExpiredState } from "@/app/report/components/ReportExpiredState";
 import { buildOgImageUrl, buildReportSummaryDescription, createSeoMetadata, estimateSecurityHealthScore } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-
-type SharedLinkFailureReason = "invalid" | "expired" | "revoked";
 
 function buildSharedLinkFailureMetadata(title: string, description: string, token: string): Metadata {
     return createSeoMetadata({
@@ -23,43 +21,6 @@ function buildSharedLinkFailureMetadata(title: string, description: string, toke
         ogDescription: description,
         noIndex: true,
     });
-}
-
-function SharedLinkFailureState({ reason }: { reason: SharedLinkFailureReason }) {
-    const messages: Record<SharedLinkFailureReason, { title: string; body: string }> = {
-        invalid: {
-            title: "Invalid Share Link",
-            body: "This report link is not valid. Ask the report owner to generate a fresh signed link.",
-        },
-        expired: {
-            title: "Report Expired",
-            body: "This report is no longer available. Run a new scan to generate a fresh report.",
-        },
-        revoked: {
-            title: "Share Link Revoked",
-            body: "The report owner revoked this link. Request a new signed link if access is still needed.",
-        },
-    };
-
-    const content = messages[reason];
-
-    return (
-        <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-            <div className="max-w-lg w-full rounded-2xl border border-white/10 bg-zinc-900 p-8 space-y-4">
-                <h1 className="text-2xl font-semibold">{content.title}</h1>
-                <p className="text-zinc-200">{content.body}</p>
-                <p className="text-sm text-zinc-300">
-                    Novaris uses signed, expiring report URLs to protect sensitive scan details.
-                </p>
-                <Link
-                    href="/"
-                    className="inline-flex items-center px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm"
-                >
-                    Back to Home
-                </Link>
-            </div>
-        </div>
-    );
 }
 
 export async function generateMetadata({
@@ -203,6 +164,7 @@ export default async function SharedReportByTokenPage({
             globalChatHref={reportView.globalChatHref}
             hasPreviousScan={Boolean(previousScan)}
             isSharedView={true}
+            shareToken={resolvedParams.token}
             canShareReport={true}
             canGenerateOutreach={false}
             shareMode="copy-current-url"

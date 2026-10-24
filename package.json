@@ -36,7 +36,7 @@
     "analytics:estimate-gap": "node scripts/estimate-analytics-gap.mjs"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.11.1",
+    "@auth/prisma-adapter": "^2.11.3",
     "@babel/parser": "^7.28.5",
     "@babel/traverse": "^7.28.5",
     "@google/genai": "^1.46.0",
@@ -50,7 +50,7 @@
     "@typescript-eslint/parser": "^8.47.0",
     "@vercel/blob": "^2.3.1",
     "@vercel/kv": "^3.0.0",
-    "axios": "^1.13.6",
+    "axios": "^1.20.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.24",
     "gpt-tokenizer": "^3.4.0",
@@ -59,15 +59,14 @@
     "license-checker-rseidelsohn": "^4.4.2",
     "lucide-react": "^0.554.0",
     "madge": "^8.0.0",
-    "mermaid": "^11.12.1",
-    "next": "16.1.1",
-    "next-auth": "^5.0.0-beta.30",
-    "next-pwa": "^5.6.0",
+    "mermaid": "^11.17.2",
+    "next": "16.4.3",
+    "next-auth": "5.0.0-beta.32",
     "next-themes": "^0.4.6",
     "node-emoji": "^2.2.0",
     "octokit": "^5.0.5",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.0",
     "rehype-raw": "^7.0.0",
@@ -79,27 +78,33 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/babel__traverse": "^7.28.0",
+    "@types/d3-array": "^3.2.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitest/coverage-v8": "^4.0.18",
-    "baseline-browser-mapping": "^2.10.0",
+    "baseline-browser-mapping": "^2.11.0",
     "eslint": "^9.39.1",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "16.4.3",
     "eslint-plugin-security": "^3.0.1",
+    "jest-worker": "^29.7.0",
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.0.18",
-    "jest-worker": "^29.7.0",
-    "@types/d3-array": "^3.2.1"
+    "vitest": "^4.0.18"
   },
   "prisma": {
     "seed": "tsx scripts/seed-blog.ts"
+  },
+  "overrides": {
+    "dompurify": "^3.4.17",
+    "undici": "^6.29.1",
+    "follow-redirects": "^1.16.1"
   }
 }

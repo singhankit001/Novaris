@@ -64,6 +64,9 @@ describe("getPublicStats resilience", () => {
         userAggregateMock.mockReset();
 
         delete process.env.ADMIN_GITHUB_USERNAME;
+        // Manual adjustments are only read when KV is configured; these scenarios model a configured KV.
+        process.env.KV_REST_API_URL = "https://kv.test";
+        process.env.KV_REST_API_TOKEN = "test-token";
 
         getMock.mockImplementation(async (key: string) => {
             return kvValues.get(key) ?? 0;
@@ -134,5 +137,29 @@ describe("getPublicStats resilience", () => {
             totalScans: 20,
         });
         expect(second).toEqual(first);
+    });
+
+    it("treats a failed adjustment read as a failure instead of persisting deflated totals", async () => {
+        kvValues.set("queries:total", 100);
+        kvValues.set("stats:adjustment:visitors", 5);
+        kvValues.set("stats:adjustment:queries", 10);
+        scardMock.mockResolvedValue(50);
+        repoScanCountMock.mockResolvedValue(20);
+        userCountMock.mockResolvedValue(7);
+        userAggregateMock.mockResolvedValue({ _sum: { queryCount: 50 } });
+
+        const getPublicStats = await loadGetPublicStats();
+        const first = await getPublicStats();
+        setMock.mockClear();
+
+        getMock.mockImplementation(async (key: string) => {
+            if (key.startsWith("stats:adjustment:")) throw new Error("kv timeout");
+            return kvValues.get(key) ?? 0;
+        });
+
+        const second = await getPublicStats();
+
+        expect(second).toEqual(first);
+        expect(setMock).not.toHaveBeenCalled();
     });
 });

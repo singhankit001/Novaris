@@ -1,6 +1,7 @@
 "use client";
 
 import { Download, FileText } from 'lucide-react';
+import { buttonClasses } from '@/components/nv/button-styles';
 import { StoredScan } from '@/lib/services/scan-storage';
 import { toast } from 'sonner';
 import { stripEmojiCharacters } from '@/lib/no-emoji';
@@ -84,16 +85,18 @@ export function ExportButtons({ scan }: ExportButtonsProps) {
     return (
         <div className="flex items-center gap-2 no-export print:hidden">
             <button
+                type="button"
                 onClick={handleMarkdownExport}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 hover:text-white border border-white/10 rounded-lg transition-colors shadow-sm"
+                className={buttonClasses("secondary")}
                 title="Download Markdown"
             >
                 <FileText className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Markdown</span>
             </button>
             <button
+                type="button"
                 onClick={handlePdfExport}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 hover:text-white border border-white/10 rounded-lg transition-colors shadow-sm"
+                className={buttonClasses("secondary")}
                 title="Download PDF"
             >
                 <Download className="w-3.5 h-3.5" />

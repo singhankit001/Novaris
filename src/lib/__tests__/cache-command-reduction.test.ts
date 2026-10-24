@@ -5,11 +5,13 @@ const {
     kvExpireMock,
     kvMGetMock,
     kvSetExMock,
+    kvDecrByMock,
 } = vi.hoisted(() => ({
     kvIncrByMock: vi.fn(),
     kvExpireMock: vi.fn(),
     kvMGetMock: vi.fn(),
     kvSetExMock: vi.fn(),
+    kvDecrByMock: vi.fn(),
 }));
 
 vi.mock("@vercel/kv", () => ({
@@ -18,10 +20,11 @@ vi.mock("@vercel/kv", () => ({
         expire: kvExpireMock,
         mget: kvMGetMock,
         setex: kvSetExMock,
+        decrby: kvDecrByMock,
     },
 }));
 
-import { consumeToolBudgetUsage, resolveAnonymousConsecutivePaths } from "@/lib/cache";
+import { reserveToolBudget, resolveAnonymousConsecutivePaths } from "@/lib/cache";
 
 describe("cache command reduction helpers", () => {
     beforeEach(() => {
@@ -35,11 +38,11 @@ describe("cache command reduction helpers", () => {
         kvIncrByMock.mockResolvedValueOnce(2);
         kvExpireMock.mockResolvedValue(1);
 
-        await consumeToolBudgetUsage("repo", "anonymous", "anon_1", 2);
+        await reserveToolBudget("repo", "anonymous", "anon_1", 2);
         expect(kvExpireMock).toHaveBeenCalledTimes(1);
 
         kvIncrByMock.mockResolvedValueOnce(5);
-        await consumeToolBudgetUsage("repo", "anonymous", "anon_1", 3);
+        await reserveToolBudget("repo", "anonymous", "anon_1", 3);
         expect(kvExpireMock).toHaveBeenCalledTimes(1);
     });
 

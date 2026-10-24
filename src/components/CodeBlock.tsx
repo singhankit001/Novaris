@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Check, Copy, Eye, FileCode } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import type { Components } from "react-markdown";
 
 import { EnhancedMarkdown } from "./EnhancedMarkdown";
@@ -16,83 +15,71 @@ interface CodeBlockProps {
     repo?: string;
 }
 
+// Semantic colors keep code readable on the light mineral canvas.
+const NV_PRISM: Record<string, React.CSSProperties> = {
+    'code[class*="language-"]': { color: "var(--nv-ivory-100)", fontFamily: "var(--nv-font-mono)", textShadow: "none" },
+    'pre[class*="language-"]': { color: "var(--nv-ivory-100)", fontFamily: "var(--nv-font-mono)", textShadow: "none" },
+    comment: { color: "var(--nv-graphite-400)", fontStyle: "italic" },
+    prolog: { color: "var(--nv-graphite-400)" },
+    punctuation: { color: "var(--nv-ivory-300)" },
+    keyword: { color: "var(--nv-copper-400)" },
+    "attr-name": { color: "var(--nv-copper-300)" },
+    function: { color: "var(--nv-ivory-50)" },
+    "class-name": { color: "var(--nv-ivory-50)" },
+    string: { color: "var(--nv-patina-400)" },
+    "attr-value": { color: "var(--nv-patina-400)" },
+    number: { color: "var(--nv-warning)" },
+    boolean: { color: "var(--nv-warning)" },
+    operator: { color: "var(--nv-ivory-200)" },
+};
+
 export function CodeBlock({ language, value, components, owner, repo }: CodeBlockProps) {
-    const [copied, setCopied] = useState(false);
-    const [isPreview, setIsPreview] = useState(false);
+    const [copy, setCopy] = useState<"idle" | "copied" | "failed">("idle");
+    const [preview, setPreview] = useState(false);
+    const canCopy = typeof navigator !== "undefined" && Boolean(navigator.clipboard);
 
     const handleCopy = async () => {
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopy("copied");
+        } catch {
+            setCopy("failed");
+        }
+        setTimeout(() => setCopy("idle"), 2000);
     };
 
-
-
-    const isMarkdown = language === 'markdown';
+    const isMarkdown = language === "markdown";
+    const btn =
+        "inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-nv-sm px-2.5 text-nv-small text-nv-ivory-200 transition-colors hover:bg-nv-graphite-800 hover:text-nv-ivory-50 disabled:opacity-45";
 
     return (
-        <div className="relative my-4 rounded-lg border border-white/10 bg-[#1e1e1e] grid min-w-0 max-w-full">
-            <div className="flex items-center justify-between px-4 py-2 bg-zinc-900/50 border-b border-white/5">
-                <span className="text-xs text-zinc-200 font-mono uppercase">{language || 'text'}</span>
-                <div className="flex items-center gap-2">
+        <figure className="not-prose relative my-4 grid min-w-0 max-w-full overflow-hidden rounded-nv-lg border border-nv-graphite-600 bg-nv-graphite-800">
+            <figcaption className="flex min-h-11 items-center justify-between gap-2 border-b border-nv-graphite-700 bg-nv-graphite-950 pl-4">
+                <span className="nv-eyebrow">{language || "text"}</span>
+                <span className="flex items-center">
                     {isMarkdown && (
-                        <button
-                            onClick={() => setIsPreview(!isPreview)}
-                            className="flex items-center gap-1.5 px-2 py-1 text-xs text-zinc-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                            title={isPreview ? "Show raw code" : "Show preview"}
-                        >
-                            {isPreview ? (
-                                <>
-                                    <FileCode className="w-3.5 h-3.5" />
-                                    <span>Raw</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Eye className="w-3.5 h-3.5" />
-                                    <span>Preview</span>
-                                </>
-                            )}
+                        <button type="button" onClick={() => setPreview(!preview)} className={btn} aria-pressed={preview}>
+                            {preview ? <FileCode aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
+                            {preview ? "Raw" : "Preview"}
                         </button>
                     )}
-
-                    <button
-                        onClick={handleCopy}
-                        className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-md transition-colors flex-shrink-0"
-                        title="Copy code"
-                    >
-                        {copied ? (
-                            <Check className="w-4 h-4 text-green-400" />
-                        ) : (
-                            <Copy className="w-4 h-4" />
-                        )}
+                    <button type="button" onClick={handleCopy} disabled={!canCopy} className={btn} aria-label="Copy code">
+                        {copy === "copied" ? <Check aria-hidden className="size-4 text-nv-success" /> : <Copy aria-hidden className="size-4" />}
+                        <span aria-live="polite">{copy === "copied" ? "Copied" : copy === "failed" ? "Copy failed" : "Copy"}</span>
                     </button>
-                </div>
-            </div>
+                </span>
+            </figcaption>
 
-            {isPreview ? (
-                <div className="p-4 bg-zinc-900/50 overflow-x-auto w-full min-w-0">
-                    <div className="prose prose-invert prose-sm max-w-none">
-                        <EnhancedMarkdown
-                            content={value}
-                            components={components}
-                            currentOwner={owner}
-                            currentRepo={repo}
-                        />
-                    </div>
+            {preview ? (
+                <div className="w-full min-w-0 overflow-x-auto p-4">
+                    <EnhancedMarkdown content={value} components={components} currentOwner={owner} currentRepo={repo} />
                 </div>
             ) : (
-                <div className="overflow-x-auto w-full min-w-0">
+                <div role="region" tabIndex={0} aria-label={`${language || "text"} code`} className="w-full min-w-0 overflow-x-auto">
                     <SyntaxHighlighter
                         language={language}
-                        style={vscDarkPlus}
-                        customStyle={{
-                            margin: 0,
-                            padding: '1rem',
-                            background: 'transparent',
-                            fontSize: '0.875rem',
-                            lineHeight: '1.5',
-                            whiteSpace: 'pre', // Force no wrapping
-                        }}
+                        style={NV_PRISM}
+                        customStyle={{ margin: 0, padding: "1rem", background: "transparent", fontSize: "0.8125rem", lineHeight: "1.6", whiteSpace: "pre" }}
                         wrapLines={false}
                         wrapLongLines={false}
                     >
@@ -100,6 +87,6 @@ export function CodeBlock({ language, value, components, owner, repo }: CodeBloc
                     </SyntaxHighlighter>
                 </div>
             )}
-        </div>
+        </figure>
     );
 }

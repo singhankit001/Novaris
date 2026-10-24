@@ -1,0 +1,28 @@
+/* A calm reading surface for repository and profile investigation. */
+.nv-workspace { isolation: isolate; }
+.nv-workspace > :first-child { box-shadow: none; }
+.nv-conversation { padding-block: clamp(1.5rem, 4vh, 3rem); scroll-padding-block: 2rem; }
+.nv-conversation > div { margin-bottom: 1.8rem; }
+.nv-model-message { background: var(--nv-graphite-900); border: 1px solid var(--nv-graphite-700); box-shadow: 0 2px 6px rgb(24 43 40 / .025); padding: 1.25rem 1.5rem; }
+.nv-user-message { background: #e5efdf; color: #182b28; border: 1px solid #d4e2cf; padding: .9rem 1.25rem; }
+.nv-message-prose { --tw-prose-body: var(--nv-ivory-100); --tw-prose-headings: var(--nv-ivory-50); --tw-prose-bold: var(--nv-ivory-50); --tw-prose-links: var(--nv-copper-400); --tw-prose-code: var(--nv-ivory-50); --tw-prose-bullets: var(--nv-copper-400); --tw-prose-counters: var(--nv-ivory-300); font-size: .9375rem; line-height: 1.8; }
+.nv-message-prose :where(h1,h2,h3) { letter-spacing: -.025em; }
+.nv-message-prose :where(table) { border-collapse: collapse; }
+.nv-message-prose :where(th,td) { border-bottom: 1px solid var(--nv-graphite-700); }
+.nv-workspace-composer { box-shadow: 0 -12px 28px rgb(24 43 40 / .025); padding-block: 1.1rem 1.35rem; }
+.nv-workspace :where(button,a):focus-visible { outline: 2px solid var(--nv-copper-400); outline-offset: 4px; }
+.nv-loading-panel { background: var(--nv-graphite-900); border: 1px solid var(--nv-graphite-700); border-radius: 28px; box-shadow: 0 24px 80px rgb(24 43 40 / .06); margin: 1.5rem; }
+.nv-loading-panel h2 { letter-spacing: -.035em; font-weight: 600; }
+.nv-loading-steps > div { box-shadow: none; background: var(--nv-graphite-950); border-radius: 12px; }
+.nv-analysis-loader { background-image: radial-gradient(ellipse at 50% 30%, #e8efdf 0%, transparent 62%); }
+@media (prefers-reduced-motion: no-preference) {
+ .nv-loading-panel { animation: nv-workspace-enter .5s cubic-bezier(.16,1,.3,1) both; }
+ .nv-workspace :where(button,a) { transition: background-color 180ms, border-color 180ms, color 180ms, box-shadow 180ms; }
+ .nv-workspace button:active { transform: translateY(1px); }
+ @keyframes nv-workspace-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+}
+@media (max-width: 640px) {
+ .nv-model-message { padding: 1rem; }
+ .nv-conversation > div { gap: .65rem; }
+ .nv-workspace-composer { padding-inline: .75rem; }
+}

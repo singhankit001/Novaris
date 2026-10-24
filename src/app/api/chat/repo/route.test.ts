@@ -6,16 +6,16 @@ const {
     generateAnswerStreamMock,
     trackAuthenticatedQueryEventMock,
     trackEventMock,
-    getToolBudgetUsageMock,
-    consumeToolBudgetUsageMock,
+    reserveToolBudgetMock,
+    settleMock,
     getAnonymousActorIdMock,
 } = vi.hoisted(() => ({
     authMock: vi.fn(),
     generateAnswerStreamMock: vi.fn(),
     trackAuthenticatedQueryEventMock: vi.fn(),
     trackEventMock: vi.fn(),
-    getToolBudgetUsageMock: vi.fn(),
-    consumeToolBudgetUsageMock: vi.fn(),
+    reserveToolBudgetMock: vi.fn(),
+    settleMock: vi.fn(),
     getAnonymousActorIdMock: vi.fn(),
 }));
 
@@ -33,14 +33,23 @@ vi.mock("@/lib/analytics", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
-    getToolBudgetUsage: getToolBudgetUsageMock,
-    consumeToolBudgetUsage: consumeToolBudgetUsageMock,
+    reserveToolBudget: reserveToolBudgetMock,
+    acquireRunLock: vi.fn().mockResolvedValue(true),
+    releaseRunLock: vi.fn().mockResolvedValue(undefined),
 }));
+
+vi.mock("@/lib/rate-limit", () => ({
+    RATE_LIMIT_CHAT: {},
+    enforceRateLimit: vi.fn().mockResolvedValue(null),
+}));
+
+process.env.GEMINI_API_KEY = "test-key";
 
 vi.mock("@/lib/actor-id", () => ({
     ANON_COOKIE_NAME: "rm_anon_id",
     getAnonymousCookieIdFromActorId: vi.fn(),
     getAnonymousActorId: getAnonymousActorIdMock,
+    getAnonymousNetworkId: vi.fn().mockReturnValue("ip_net"),
     isValidAnonymousCookieId: vi.fn().mockReturnValue(false),
 }));
 
@@ -52,12 +61,12 @@ describe("POST /api/chat/repo", () => {
         generateAnswerStreamMock.mockReset();
         trackAuthenticatedQueryEventMock.mockReset();
         trackEventMock.mockReset();
-        getToolBudgetUsageMock.mockReset();
-        consumeToolBudgetUsageMock.mockReset();
+        reserveToolBudgetMock.mockReset();
+        settleMock.mockReset();
         getAnonymousActorIdMock.mockReset();
 
-        getToolBudgetUsageMock.mockResolvedValue({ used: 0, limit: 10, remaining: 10 });
-        consumeToolBudgetUsageMock.mockResolvedValue({ used: 1, limit: 10, remaining: 9 });
+        settleMock.mockResolvedValue(undefined);
+        reserveToolBudgetMock.mockResolvedValue({ status: "granted", reserved: 3, settle: settleMock });
         getAnonymousActorIdMock.mockReturnValue("anon_actor");
     });
 
@@ -99,7 +108,7 @@ describe("POST /api/chat/repo", () => {
             "flash",
             false
         );
-        expect(getToolBudgetUsageMock).toHaveBeenCalledWith("repo", "anonymous", "anon_actor");
+        expect(reserveToolBudgetMock).toHaveBeenCalledWith("repo", "anonymous", ["anon_actor", "ip_net"]);
         expect(trackAuthenticatedQueryEventMock).not.toHaveBeenCalled();
         // Anonymous visitors should be tracked via trackEvent with the anon actorId
         expect(trackEventMock).toHaveBeenCalledWith("anon_actor", "query", expect.objectContaining({ device: "desktop" }));
@@ -202,7 +211,7 @@ describe("POST /api/chat/repo", () => {
 
     it("continues streaming with tool calls disabled when budget is exhausted", async () => {
         authMock.mockResolvedValue(null);
-        getToolBudgetUsageMock.mockResolvedValueOnce({ used: 10, limit: 10, remaining: 0 });
+        reserveToolBudgetMock.mockResolvedValueOnce({ status: "exhausted" });
         generateAnswerStreamMock.mockImplementation(async function* () {
             yield { type: "status", message: "Tool calls are paused for this window.", progress: 50 };
             yield { type: "content", text: "fallback answer", append: true };
@@ -230,7 +239,7 @@ describe("POST /api/chat/repo", () => {
         expect(generateAnswerStreamMock).toHaveBeenCalled();
         expect(generateAnswerStreamMock.mock.calls[0]?.[9]).toBe(true);
         expect(text).toContain("fallback answer");
-        expect(consumeToolBudgetUsageMock).not.toHaveBeenCalled();
+        expect(settleMock).not.toHaveBeenCalledWith(expect.anything(), true);
     });
 
     it("tracks analytics for authenticated users via trackAuthenticatedQueryEvent only", async () => {
@@ -240,6 +249,7 @@ describe("POST /api/chat/repo", () => {
         generateAnswerStreamMock.mockImplementation(async function* () {
             yield { type: "content", text: "hello" };
             yield { type: "tool", name: "fetch_recent_commits", usageUnits: 3 };
+            yield { type: "complete", relevantFiles: [] };
         });
 
         const request = new NextRequest("http://localhost/api/chat/repo", {
@@ -270,7 +280,7 @@ describe("POST /api/chat/repo", () => {
             userAgent: "Mozilla/5.0 (iPhone; Mobile)",
         });
         expect(trackEventMock).not.toHaveBeenCalled();
-        expect(consumeToolBudgetUsageMock).toHaveBeenCalledWith("repo", "authenticated", "user_123", 3);
+        expect(settleMock).toHaveBeenCalledWith(3, true);
     });
 
     it("does not bill native web-search tool units", async () => {
@@ -302,7 +312,8 @@ describe("POST /api/chat/repo", () => {
         await response.text();
 
         expect(response.status).toBe(200);
-        expect(consumeToolBudgetUsageMock).not.toHaveBeenCalled();
+        // Nothing billable was used: the whole reservation is refunded.
+        expect(settleMock).toHaveBeenCalledWith(0, true);
     });
 
     it("bills only one unit when a non-billable tool-intent event is followed by a billable completion event", async () => {
@@ -335,6 +346,6 @@ describe("POST /api/chat/repo", () => {
         await response.text();
 
         expect(response.status).toBe(200);
-        expect(consumeToolBudgetUsageMock).toHaveBeenCalledWith("repo", "authenticated", "user_123", 1);
+        expect(settleMock).toHaveBeenCalledWith(1, true);
     });
 });

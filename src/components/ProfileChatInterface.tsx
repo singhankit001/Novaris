@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { FileCode, ChevronRight, ArrowLeft, Sparkles, Menu, MessageCircle, Shield, Folder, Github, Users, BookMarked, Trash2, Download, X, Wrench } from "lucide-react";
+import { FileCode, ArrowLeft, Sparkles, MessageCircle, Github, Users, BookMarked, Trash2, Download, X, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
 import { BotIcon } from "@/components/icons/BotIcon";
 import { UserAvatar } from "./UserAvatar";
 import { CopySquaresIcon } from "@/components/icons/CopySquaresIcon";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { GitHubProfile } from "@/lib/github";
@@ -156,6 +156,7 @@ export function ProfileChatInterface({
     recentCommits,
     recentCommitFreshnessLabel,
 }: ProfileChatInterfaceProps) {
+    const reduceMotion = useReducedMotion();
     const { data: session, status: sessionStatus } = useSession();
     const shouldUseCloudStorage = sessionStatus !== "unauthenticated";
     const [messages, setMessages] = useState<ProfileChatMessage[]>([
@@ -205,7 +206,6 @@ export function ProfileChatInterface({
                 return null;
             }
             const quota = await response.json() as ToolQuotaState;
-            setToolQuota(quota);
             return quota;
         } catch {
             return null;
@@ -226,14 +226,14 @@ export function ProfileChatInterface({
     const quotaResetLabel = useMemo(() => formatDuration(quotaSecondsRemaining), [quotaSecondsRemaining]);
     const isToolQuotaExhausted = Boolean(toolQuota?.remaining === 0);
 
-    useEffect(() => {
-        if (!session && crossRepoEnabled) {
-            setCrossRepoEnabled(false);
-        }
-    }, [session, crossRepoEnabled]);
+    if (!session && crossRepoEnabled) {
+        setCrossRepoEnabled(false);
+    }
 
     useEffect(() => {
-        void refreshToolQuota();
+        void refreshToolQuota().then((quota) => {
+            if (quota) setToolQuota(quota);
+        });
     }, [refreshToolQuota, session?.user?.id]);
 
     useEffect(() => {
@@ -713,6 +713,7 @@ export function ProfileChatInterface({
                 window.sessionStorage.removeItem(activeRunKey);
             }
             const latestQuota = await refreshToolQuota();
+            if (latestQuota) setToolQuota(latestQuota);
             if (
                 latestQuota &&
                 previousToolQuotaRemaining !== null &&
@@ -772,23 +773,23 @@ export function ProfileChatInterface({
     };
 
     return (
-        <div className="flex flex-col h-[100dvh] bg-transparent text-white relative z-10">
+        <div className="nv-workspace flex flex-col h-[100dvh] bg-nv-graphite-950 text-nv-ivory-50 relative z-10">
             {/* Profile Header */}
-            <div className="relative z-40 border-b border-white/15 p-4 md:p-6 bg-[#09090b]/45 backdrop-blur-xl shadow-[0_4px_30px_rgba(168,85,247,0.12)]">
+            <div className="relative z-40 border-b border-nv-graphite-700 p-4 md:p-6 bg-nv-graphite-900 backdrop-blur-xl shadow-sm">
                 <div className="flex items-start gap-3 md:gap-6 max-w-3xl mx-auto">
                     <Link
                         href="/"
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="p-2 hover:bg-nv-graphite-800 rounded-lg transition-colors"
                         title="Back to home"
                     >
-                        <ArrowLeft className="w-5 h-5 text-zinc-400 hover:text-white" />
+                        <ArrowLeft className="w-5 h-5 text-nv-ivory-300 hover:text-nv-ivory-50" />
                     </Link>
                     {/* Profile avatars use source URLs from GitHub and remain intentionally unoptimized here. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src={profile.avatar_url}
                         alt={profile.login}
-                        className="w-10 h-10 md:w-20 md:h-20 rounded-xl border-2 border-white/20"
+                        className="w-10 h-10 md:w-20 md:h-20 rounded-xl border-2 border-nv-graphite-700"
                     />
                     <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3 mb-2">
@@ -797,7 +798,7 @@ export function ProfileChatInterface({
                                 href={profile.html_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-zinc-400 hover:text-white transition-colors"
+                                className="text-nv-ivory-300 hover:text-nv-ivory-50 transition-colors"
                             >
                                 <Github className="w-5 h-5" />
                             </a>
@@ -807,7 +808,7 @@ export function ProfileChatInterface({
                                 "ml-auto hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                                 tokenWarningLevel === 'danger' && "bg-red-500/10 text-red-400 border border-red-500/20",
                                 tokenWarningLevel === 'warning' && "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20",
-                                tokenWarningLevel === 'safe' && "bg-zinc-800 text-zinc-400 border border-white/10"
+                                tokenWarningLevel === 'safe' && "bg-nv-graphite-800 text-nv-ivory-300 border border-nv-graphite-700"
                             )}>
                                 <MessageCircle className="w-3.5 h-3.5" />
                                 <span>{formatTokenCount(totalTokens)} / {formatTokenCount(MAX_TOKENS)} tokens</span>
@@ -820,8 +821,8 @@ export function ProfileChatInterface({
                                     className={cn(
                                         "hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border",
                                         isToolQuotaExhausted
-                                            ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                                            : "bg-zinc-800 text-zinc-400 border-white/10 hover:text-white"
+                                            ? "bg-amber-500/10 text-amber-800 border-amber-500/30"
+                                            : "bg-nv-graphite-800 text-nv-ivory-300 border-nv-graphite-700 hover:text-nv-ivory-50"
                                     )}
                                     title="Open tool quota details"
                                 >
@@ -832,7 +833,7 @@ export function ProfileChatInterface({
 
                             <button
                                 onClick={handleExportChat}
-                                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="p-2 text-nv-ivory-300 hover:text-nv-ivory-50 hover:bg-nv-graphite-800 rounded-lg transition-colors"
                                 title="Export Chat"
                             >
                                 <Download className="w-5 h-5" />
@@ -840,16 +841,16 @@ export function ProfileChatInterface({
 
                             <button
                                 onClick={() => setShowClearConfirm(true)}
-                                className="p-2 text-zinc-200 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="p-2 text-nv-ivory-300 hover:text-red-400 hover:bg-nv-graphite-800 rounded-lg transition-colors"
                                 title="Clear Chat"
                             >
                                 <Trash2 className="w-5 h-5" />
                             </button>
                         </div>
                         {profile.bio && (
-                            <p className="text-zinc-200 mb-3 line-clamp-2 hidden md:block">{profile.bio}</p>
+                            <p className="text-nv-ivory-300 mb-3 line-clamp-2 hidden md:block">{profile.bio}</p>
                         )}
-                        <div className="flex w-full justify-between md:justify-start md:gap-4 text-sm text-zinc-300">
+                        <div className="flex w-full justify-between md:justify-start md:gap-4 text-sm text-nv-ivory-300">
                             <span className="flex items-center gap-1">
                                 <BookMarked className="w-4 h-4" />
                                 {profile.public_repos} repos
@@ -867,11 +868,11 @@ export function ProfileChatInterface({
             <div
                 ref={chatScrollRef}
                 onMouseUp={handleSelection}
-                className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 relative isolate z-0 selection:bg-blue-500/50 selection:text-white [&_*::selection]:bg-blue-500/50 [&_*::selection]:text-white"
+                className="nv-conversation flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 relative isolate z-0 selection:bg-nv-copper-400/20 selection:text-nv-ivory-50 [&_*::selection]:bg-nv-copper-400/20 [&_*::selection]:text-nv-ivory-50"
             >
                 {connectionLost && (
                     <div className="max-w-3xl mx-auto">
-                        <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                        <div className="text-xs text-amber-800 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
                             Connection lost. We&apos;ll keep saving the response and reconnect when possible.
                         </div>
                     </div>
@@ -887,7 +888,7 @@ export function ProfileChatInterface({
                             event.preventDefault();
                             event.stopPropagation();
                         }}
-                        className="absolute z-20 -translate-y-full -mt-2 px-3 py-1 bg-white text-black text-xs rounded-full shadow-lg border border-black/10 transition-transform transition-shadow duration-150 ease-out hover:-translate-y-[110%] hover:scale-105 hover:shadow-xl"
+                        className="absolute z-20 -translate-y-full -mt-2 px-3 py-1 bg-nv-graphite-900 text-nv-ivory-50 text-xs rounded-full shadow-lg border border-nv-graphite-700 transition-transform transition-shadow duration-150 ease-out hover:-translate-y-[110%] hover:scale-105 hover:shadow-xl"
                         style={{ left: selectionAnchor.x, top: selectionAnchor.y }}
                     >
                         Ask NovarisAI
@@ -917,8 +918,8 @@ export function ProfileChatInterface({
                             <div className={cn(
                                 "w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg overflow-hidden",
                                 msg.role === "model"
-                                    ? "bg-zinc-950 ring-2 ring-purple-500/60"
-                                    : "bg-zinc-800 ring-2 ring-blue-500/50"
+                                    ? "bg-nv-graphite-900 ring-2 ring-nv-copper-400/20"
+                                    : "bg-nv-graphite-800 ring-2 ring-nv-copper-400/20"
                             )}>
                                 {msg.role === "model" ? (
                                     <BotIcon className="w-full h-full" />
@@ -956,21 +957,21 @@ export function ProfileChatInterface({
                                     <div className={cn(
                                         "relative px-4 py-2.5 rounded-2xl overflow-hidden min-w-0",
                                         msg.role === "user"
-                                            ? "bg-blue-600 text-white rounded-tr-none"
-                                            : "bg-zinc-900 border border-white/10 rounded-tl-none"
+                                            ? "nv-user-message rounded-tr-md"
+                                            : "nv-model-message rounded-tl-md"
                                     )}
                                         data-message-role={msg.role}
                                     >
                                         {msg.role === "model" && msg.content && !loading && (
                                             <button
                                                 onClick={() => handleCopyMessage(msg)}
-                                                className="absolute top-2 right-2 p-1.5 text-zinc-600 hover:text-zinc-200 hover:bg-white/10 rounded-md transition-colors"
+                                                className="absolute top-2 right-2 p-1.5 text-nv-ivory-300 hover:text-nv-ivory-300 hover:bg-nv-graphite-800 rounded-md transition-colors"
                                                 title="Copy response"
                                             >
                                                 <CopySquaresIcon
                                                     className={cn(
                                                         "w-4 h-4",
-                                                        copiedMessageId === msg.id && "text-emerald-400"
+                                                        copiedMessageId === msg.id && "text-nv-copper-400"
                                                     )}
                                                 />
                                             </button>
@@ -983,7 +984,7 @@ export function ProfileChatInterface({
                                                         onClick={() => {
                                                             window.dispatchEvent(new CustomEvent("open-file-preview", { detail: file }));
                                                         }}
-                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors outline-none bg-white/20 text-white hover:bg-white/30"
+                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors outline-none bg-nv-graphite-800 text-nv-ivory-50 hover:bg-nv-graphite-800"
                                                     >
                                                         <FileCode className="w-3 h-3 shrink-0" />
                                                         <span className="truncate max-w-[200px]">{file}</span>
@@ -991,7 +992,7 @@ export function ProfileChatInterface({
                                                 ))}
                                             </div>
                                         )}
-                                        <div className="prose prose-invert prose-sm max-w-none leading-relaxed break-words [overflow-wrap:anywhere] overflow-x-hidden w-full min-w-0">
+                                        <div className="prose nv-message-prose prose-sm max-w-none leading-relaxed break-words [overflow-wrap:anywhere] overflow-x-hidden w-full min-w-0">
                                             {msg.content && (
                                                 <MessageContent
                                                     content={msg.content + (loading && isLatestMessage ? "▋" : "")}
@@ -1005,7 +1006,7 @@ export function ProfileChatInterface({
                                     </div>
                                 )}
                                 {msg.role === "model" && (msg.commitFreshnessLabel || (msg.toolsUsed && msg.toolsUsed.length > 0) || msg.sourceScope || (msg.processingSummary && msg.processingSummary.length > 0)) && (
-                                    <div className="hidden md:block text-[11px] text-zinc-300 pl-1">
+                                    <div className="hidden md:block text-[11px] text-nv-ivory-300 pl-1">
                                         {msg.sourceScope && <span>Scope: {msg.sourceScope}</span>}
                                         {msg.commitFreshnessLabel && <span>{msg.commitFreshnessLabel}</span>}
                                         {msg.toolsUsed && msg.toolsUsed.length > 0 && (
@@ -1030,15 +1031,15 @@ export function ProfileChatInterface({
             </div>
 
             {/* Input Area */}
-            <div className="relative z-40 p-4 border-t border-white/15 bg-[#09090b]/45 backdrop-blur-xl shadow-[0_-4px_30px_rgba(168,85,247,0.12)] space-y-3">
+            <div className="nv-workspace-composer relative z-40 p-4 border-t border-nv-graphite-700 bg-nv-graphite-900 backdrop-blur-xl shadow-sm space-y-3">
                 {referenceText && (
                     <div className="max-w-3xl mx-auto">
-                        <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-300">
-                            <span className="text-zinc-200">Ask NovarisAI</span>
+                        <div className="flex items-center gap-2 bg-nv-graphite-900 border border-nv-graphite-700 rounded-lg px-3 py-2 text-xs text-nv-ivory-300">
+                            <span className="text-nv-ivory-300">Ask NovarisAI</span>
                             <span className="truncate">{referenceText}</span>
                             <button
                                 onClick={clearReference}
-                                className="ml-auto p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded"
+                                className="ml-auto p-1 text-nv-ivory-300 hover:text-nv-ivory-50 hover:bg-nv-graphite-800 rounded"
                                 title="Clear reference"
                             >
                                 <X className="w-3.5 h-3.5" />
@@ -1049,20 +1050,20 @@ export function ProfileChatInterface({
                 {/* Suggestions */}
                 {showSuggestions && messages.length === 1 && (
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="max-w-3xl mx-auto"
                     >
                         <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-purple-400" />
-                            <span className="text-sm text-zinc-200">Suggested questions:</span>
+                            <Sparkles className="w-4 h-4 text-nv-copper-400" />
+                            <span className="text-sm text-nv-ivory-300">Suggested questions:</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {PROFILE_SUGGESTIONS.map((suggestion, index) => (
                                 <button
                                     key={index}
                                     onClick={() => handleSuggestionClick(suggestion)}
-                                    className="text-sm px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-purple-600/50 rounded-full text-zinc-300 hover:text-white transition-all"
+                                    className="text-sm px-4 py-2 bg-nv-graphite-900 hover:bg-nv-graphite-800 border border-nv-graphite-700 hover:border-nv-copper-400 rounded-full text-nv-ivory-300 hover:text-nv-ivory-50 transition-all"
                                 >
                                     {suggestion}
                                 </button>
@@ -1080,8 +1081,8 @@ export function ProfileChatInterface({
                                 className={cn(
                                     "flex md:hidden items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold border transition-all",
                                     isToolQuotaExhausted
-                                        ? "bg-amber-900/20 text-amber-300 border-amber-500/30 hover:bg-amber-900/30"
-                                        : "bg-zinc-800/50 text-zinc-400 border-white/5 hover:bg-zinc-800 hover:text-zinc-300"
+                                        ? "bg-amber-900/20 text-amber-800 border-amber-500/30 hover:bg-amber-900/30"
+                                        : "bg-nv-graphite-800 text-nv-ivory-300 border-nv-graphite-700 hover:bg-nv-graphite-800 hover:text-nv-ivory-300"
                                 )}
                                 title="Open tool quota details"
                             >

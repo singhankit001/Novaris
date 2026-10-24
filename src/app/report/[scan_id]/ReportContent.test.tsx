@@ -7,7 +7,7 @@ vi.mock("next-auth/react", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-    useRouter: () => ({ push: vi.fn() }),
+    useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
 vi.mock("next/link", () => ({
@@ -21,20 +21,8 @@ vi.mock("@/app/actions", () => ({
     trackReportConversion: vi.fn(),
 }));
 
-vi.mock("@/components/CodeBlock", () => ({
-    CodeBlock: ({ value }: { value: string }) => <pre>{value}</pre>,
-}));
-
-vi.mock("@/components/LoginModal", () => ({
-    LoginModal: () => null,
-}));
-
-vi.mock("@/app/report/[scan_id]/ShareButton", () => ({
-    default: () => <div>Share Report</div>,
-}));
-
-vi.mock("@/app/report/[scan_id]/components/ExportButtons", () => ({
-    ExportButtons: () => <div>Markdown PDF</div>,
+vi.mock("@/app/report/[scan_id]/ShareControls", () => ({
+    default: ({ shareMode }: { shareMode: string }) => <div>Share controls {shareMode}</div>,
 }));
 
 import { ReportContent } from "@/app/report/[scan_id]/ReportContent";
@@ -106,22 +94,62 @@ describe("ReportContent", () => {
             />
         );
 
+        // Behavioral requirements (previously asserted through old class strings).
         expect(html).toContain("Remediate with AI");
-        expect(html).toContain("Talk to the Codebase");
-        expect(html).toContain("Repository Profile");
-        expect(html).toContain("Share Report");
-        expect(html).toContain("Security Health Score");
-        expect(html).toContain("Shareable Verified Snippets");
-        expect(html).toContain("Copy Verified Badge");
-        expect(html).toContain("Copy Report Snippet");
-        expect(html).toContain("Deep Scan Another Repo");
-        expect(html).toContain("data-testid=\"report-actions-navbar\"");
-        expect(html).toContain("sticky top-0 z-50");
+        expect(html).toContain("Talk to the codebase");
+        expect(html).toContain("Repository profile");
+        expect(html).toContain("Share controls canonical");
+        expect(html).toContain("Copy summary");
+        expect(html).toContain("Download Markdown");
+        expect(html).toContain("Deep scan another repo");
+        expect(html).toContain('data-testid="report-actions"');
+        // Scope, severity counts, grouped findings, cited location, verification state.
+        expect(html).toContain("Evidence scope");
+        expect(html).toContain("Severity counts");
+        expect(html).toContain("Hardcoded Secret");
+        expect(html).toContain("src/api.ts");
+        expect(html).toContain("Not verified (scan has no verification data)");
+        expect(html).toContain("Inferred");
+        expect(html).toContain("Report false positive");
+        // No composite score or unsupported claims.
+        expect(html).not.toContain("Security Health Score");
+        expect(html).not.toContain("Verified Badge");
         expect(html).not.toContain("Copy Global Prompt");
-        expect(html).not.toContain("Copy Fix Prompt");
-        expect(html).not.toContain("Open Repo Chat");
-        expect(html).not.toContain("Fix All in Repo Chat");
-        expect(html).not.toContain(">Copy Prompt<");
         expect(html).not.toContain("Fix in Repo Chat");
+    });
+
+    it("shows the shared read-only marker and hides owner actions when expired", () => {
+        const html = renderToStaticMarkup(
+            <ReportContent
+                scan={{
+                    id: "scan_2",
+                    owner: "acme",
+                    repo: "widget",
+                    timestamp: Date.now() - 10 * 86_400_000,
+                    expiresAt: Date.now() - 1000,
+                    depth: "quick",
+                    summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+                    findings: [],
+                }}
+                priorScanDiff={{ new: 0, resolved: 0, unchanged: 0 }}
+                topFixes={[]}
+                findingViews={[]}
+                globalFixPrompt=""
+                globalChatHref="/chat"
+                hasPreviousScan={false}
+                isSharedView
+                shareToken="tok"
+                canShareReport
+                canGenerateOutreach={false}
+                shareMode="copy-current-url"
+                reportExpiresAt={Date.now() - 1000}
+            />
+        );
+        expect(html).toContain("shared view, read only");
+        expect(html).toContain("This report is outdated");
+        expect(html).toContain("No verified findings");
+        expect(html).not.toContain("Share controls");
+        expect(html).not.toContain("Download Markdown");
+        expect(html).not.toContain("Copy summary");
     });
 });

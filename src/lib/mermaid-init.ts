@@ -1,20 +1,23 @@
 import mermaid from "mermaid";
-import { APP_FONT_STACK } from "@/lib/design-tokens";
 
-const DIAGRAM_THEME = {
-    primary: "#4f46e5",
-    secondary: "#1f2937",
-    accent1: "#1d4ed8",
-    accent2: "#0e7490",
-    accent3: "#047857",
-    accent4: "#6d28d9",
-    accent5: "#b45309",
-    accent6: "#be185d",
-    line: "#6366f1",
-    surface: "#111827",
-    border: "#475569",
-    textOnColor: "#f8fafc",
-    axis: "#94a3b8",
+/** Interface font for diagram labels. The nv font variables resolve inside [data-nv-root]. */
+export const APP_FONT_STACK = 'var(--nv-font-sans), ui-sans-serif, system-ui, sans-serif';
+
+// Novaris tokens as hex: Mermaid computes colours itself and cannot read CSS variables.
+export const DIAGRAM_THEME = {
+    primary: "#dceee4",
+    secondary: "#edf3ee",
+    accent1: "#dce8ef",
+    accent2: "#d9ebe5",
+    accent3: "#e7efce",
+    accent4: "#f3ead4",
+    accent5: "#e4e1f1",
+    accent6: "#f2ded9",
+    line: "#255d4c",
+    surface: "#ffffff",
+    border: "#6b857b",
+    textOnColor: "#182b28",
+    axis: "#61776e",
 } as const;
 
 export const MERMAID_THEME_VARIABLES = {
@@ -26,9 +29,9 @@ export const MERMAID_THEME_VARIABLES = {
     tertiaryColor: DIAGRAM_THEME.surface,
     mainBkg: DIAGRAM_THEME.surface,
     rowOdd: DIAGRAM_THEME.secondary,
-    rowEven: "#0f172a",
+    rowEven: DIAGRAM_THEME.surface,
     attributeBackgroundColorOdd: DIAGRAM_THEME.secondary,
-    attributeBackgroundColorEven: "#0f172a",
+    attributeBackgroundColorEven: DIAGRAM_THEME.surface,
     nodeBorder: DIAGRAM_THEME.border,
     nodeTextColor: DIAGRAM_THEME.textOnColor,
     textColor: DIAGRAM_THEME.textOnColor,
@@ -174,7 +177,7 @@ export const MERMAID_THEME_CSS = `
     }
     .er g.row-rect-even path,
     .er g.row-rect-even rect {
-        fill: #0f172a !important;
+        fill: ${DIAGRAM_THEME.surface} !important;
     }
     .er .label,
     .er .label text,

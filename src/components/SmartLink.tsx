@@ -125,8 +125,10 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
     }, [linkMeta]);
 
     if (linkMeta.type === "link" || error) {
+        const safe = !href || /^(https?:|mailto:|#|\/)/i.test(href);
+        if (!safe) return <span>{children}</span>;
         return (
-            <a href={href} {...props} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+            <a href={href} {...props} target="_blank" rel="noopener noreferrer" className="text-nv-copper-400 underline underline-offset-2 hover:text-nv-copper-300">
                 {children}
             </a>
         );
@@ -134,9 +136,9 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
 
     if (loading) {
         return (
-            <span className="inline-flex items-center gap-2 text-zinc-200 bg-zinc-900 px-3 py-1 rounded-lg border border-zinc-800">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Loading preview...
+            <span role="status" className="inline-flex items-center gap-2 rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-900 px-3 py-1 text-nv-small text-nv-ivory-200">
+                <Loader2 aria-hidden className="nv-spin size-3" />
+                Loading preview
             </span>
         );
     }
@@ -181,7 +183,7 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
                         window.dispatchEvent(new CustomEvent('open-file-preview', { detail: filePath }));
                     }
                 }}
-                className="text-purple-400 hover:text-purple-300 hover:underline inline-flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 font-mono text-sm"
+                className="inline-flex min-h-6 cursor-pointer items-center gap-1 border-none bg-transparent p-0 font-mono text-nv-small text-nv-copper-400 underline decoration-dashed underline-offset-[3px] hover:text-nv-copper-300"
                 title="Open file preview"
             >
                 {children}
@@ -190,7 +192,7 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
     }
 
     return (
-        <a href={href} {...props} target="_blank" rel="noopener noreferrer">
+        <a href={href} {...props} target="_blank" rel="noopener noreferrer" className="text-nv-copper-400 underline underline-offset-2">
             {children}
         </a>
     );

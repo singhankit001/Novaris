@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Star, FileCode } from 'lucide-react';
+import { Star } from 'lucide-react';
+import SiteChrome from '@/components/seo/SiteChrome';
+import { Page, PageHeader, LinkRow } from '@/components/seo/blocks';
 import { getIndexableTopics, getReposForTopic, isIndexableTopic } from '@/lib/repo-catalog';
 import { buildOgImageUrl, createSeoMetadata, truncateMetaText } from '@/lib/seo';
 
@@ -67,64 +68,30 @@ export default async function TopicPage({ params }: Props) {
     }
 
     return (
-        <main className="min-h-screen bg-black text-white p-6 md:p-12 overflow-x-hidden relative">
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[80vw] max-w-[500px] h-[80vw] max-h-[500px] bg-blue-600/10 rounded-full blur-[80px] md:blur-[128px]" />
-            </div>
-
-            <div className="max-w-5xl mx-auto relative z-10">
-                <Link href="/" className="inline-flex items-center text-zinc-400 hover:text-white mb-8 transition-colors">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> back to home
-                </Link>
-
-                <header className="mb-16 border-b border-zinc-800 pb-8 text-center md:text-left">
-                    <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 capitalize">
-                        Best Open Source <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">{displayTopic}</span> Libraries
-                    </h1>
-                    <p className="text-xl text-zinc-300 max-w-3xl">
-                        A curated list of the most popular GitHub repositories tagged with <strong>{displayTopic}</strong>.
-                        Select any project to visualize its architecture and dive into the codebase using Novaris&apos;s AI engine.
-                    </p>
-                </header>
-
-                <div className="grid grid-cols-1 gap-6">
+        <SiteChrome current="/trending">
+            <Page wide>
+                <PageHeader
+                    crumbs={[{ label: 'Home', href: '/' }, { label: 'Trending', href: '/trending' }, { label: displayTopic }]}
+                    eyebrow="Topic"
+                    title={`Open source repositories tagged ${displayTopic}`}
+                    lead={`Repositories in the Novaris catalog tagged ${displayTopic}, ordered by stars at the last catalog refresh. Open one to see its public GitHub data.`}
+                />
+                <ol className="m-0 list-none border-t border-nv-graphite-700 p-0">
                     {repos.map((repo, index) => (
-                        <Link
-                            href={`/repo/${repo.owner}/${repo.repo}`}
-                            key={`${repo.owner}/${repo.repo}`}
-                            className="block w-full bg-zinc-900/50 border border-zinc-800 hover:border-purple-500/50 rounded-xl p-6 transition-all group hover:bg-zinc-900/80"
-                        >
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0">
-                                <div className="min-w-0 flex-1">
-                                    <h2 className="text-xl md:text-2xl font-bold mb-2 flex flex-wrap items-center break-all">
-                                        <span className="text-zinc-300 mr-3 text-lg shrink-0">#{index + 1}</span>
-                                        <span className="text-zinc-300">{repo.owner}/</span>
-                                        <span className="text-white group-hover:text-purple-400 transition-colors">{repo.repo}</span>
-                                    </h2>
-                                    <p className="text-zinc-200 mb-4 line-clamp-2 md:pr-12">{repo.description}</p>
-
-                                    <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
-                                        <span className="flex items-center text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded">
-                                            <Star className="w-4 h-4 mr-1" />
-                                            {repo.stars.toLocaleString()}
-                                        </span>
-                                        {repo.language && (
-                                            <span className="flex items-center text-zinc-300">
-                                                <FileCode className="w-4 h-4 mr-1" />
-                                                {repo.language}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="shrink-0 flex items-center text-purple-400 font-medium">
-                                    Explore Repo <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                                </div>
-                            </div>
-                        </Link>
+                        <li key={`${repo.owner}/${repo.repo}`}>
+                            <LinkRow
+                                href={`/repo/${repo.owner}/${repo.repo}`}
+                                title={`${index + 1}. ${repo.owner}/${repo.repo}`}
+                                summary={repo.description ?? undefined}
+                                meta={`${repo.language ? `${repo.language} · ` : ''}${repo.stars.toLocaleString()} stars`}
+                            />
+                        </li>
                     ))}
-                </div>
-            </div>
-        </main>
+                </ol>
+                <p className="mt-4 flex items-center gap-1.5 text-nv-micro text-nv-ivory-300">
+                    <Star aria-hidden className="size-3" /> Star counts are from the catalog, not live GitHub.
+                </p>
+            </Page>
+        </SiteChrome>
     );
 }

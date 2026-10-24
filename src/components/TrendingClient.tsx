@@ -1,253 +1,195 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { 
-    TrendingUp, 
-    Search, 
-    Star, 
-    GitFork, 
-    MessageSquare, 
-    Globe, 
-    ArrowRight,
-    ArrowLeft,
-    Filter
-} from "lucide-react";
+import { Search, Star, ArrowUpRight } from "lucide-react";
 import { CatalogRepoEntry } from "@/lib/repo-catalog";
-import Footer from "./Footer";
+import { buttonClasses } from "@/components/nv/button-styles";
+import { Button } from "@/components/nv/button";
+import { EmptyState } from "@/components/nv/states";
+import { cn } from "@/components/nv/cn";
+
+type Tier = "weekly" | "monthly" | "yearly" | "all-time";
 
 interface TrendingClientProps {
     initialRepos: CatalogRepoEntry[];
-    currentTier: "weekly" | "monthly" | "yearly" | "all-time";
+    currentTier: Tier;
 }
+
+const TIERS: { id: Tier; label: string }[] = [
+    { id: "weekly", label: "Weekly" },
+    { id: "monthly", label: "Monthly" },
+    { id: "yearly", label: "Yearly" },
+    { id: "all-time", label: "All time" },
+];
+
+const PAGE_SIZE = 50;
 
 export default function TrendingClient({ initialRepos, currentTier }: TrendingClientProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
-    const [visibleCount, setVisibleCount] = useState(50);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-    // Get unique languages from the trending set
-    const languages = useMemo(() => {
-        const langs = new Set<string>();
-        initialRepos.forEach(repo => {
-            if (repo.language) langs.add(repo.language);
-        });
-        return Array.from(langs).sort();
-    }, [initialRepos]);
+    const languages = Array.from(new Set(initialRepos.map((r) => r.language).filter((l): l is string => Boolean(l)))).sort();
 
-    // Filter logic
-    const filteredRepos = useMemo(() => {
-        return initialRepos.filter(repo => {
-            const matchesSearch = 
-                repo.repo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                repo.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                repo.description?.toLowerCase().includes(searchQuery.toLowerCase());
-            
-            const matchesLanguage = !selectedLanguage || repo.language === selectedLanguage;
-            
-            return matchesSearch && matchesLanguage;
-        });
-    }, [initialRepos, searchQuery, selectedLanguage]);
-
+    const needle = searchQuery.trim().toLowerCase();
+    const filteredRepos = initialRepos.filter((repo) => {
+        const matchesSearch =
+            !needle ||
+            repo.repo.toLowerCase().includes(needle) ||
+            repo.owner.toLowerCase().includes(needle) ||
+            Boolean(repo.description?.toLowerCase().includes(needle));
+        return matchesSearch && (!selectedLanguage || repo.language === selectedLanguage);
+    });
     const visibleRepos = filteredRepos.slice(0, visibleCount);
     const hasMore = visibleCount < filteredRepos.length;
+    const tierLabel = TIERS.find((t) => t.id === currentTier)?.label ?? "Weekly";
 
     return (
-        <main className="min-h-screen bg-[#050505] text-white selection:bg-blue-500/30 relative">
-            <div className="absolute inset-0 premium-grid opacity-25 pointer-events-none z-0" />
-            <div className="absolute inset-0 premium-radial pointer-events-none z-0" />
-            {/* Header / Nav */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/60 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group">
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="text-sm font-bold">Back to Home</span>
-                    </Link>
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-white/5 text-[10px] font-bold text-zinc-300 uppercase tracking-widest">
-                        {currentTier} Refresh
-                    </div>
-                </div>
-            </nav>
-
-            {/* Hero Section */}
-            <section className="relative pt-32 pb-16 px-6 overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-64 bg-blue-600/10 rounded-full blur-[120px] -z-10" />
-                
-                <div className="max-w-7xl mx-auto text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col items-center"
-                    >
-                        <div className="mb-6 p-4 rounded-3xl bg-zinc-900 border border-white/5 shadow-2xl">
-                            <TrendingUp size={48} className="text-blue-400" />
-                        </div>
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-                            Trending <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                                {currentTier === 'all-time' ? 'All-Time' : currentTier.charAt(0).toUpperCase() + currentTier.slice(1)}
-                            </span>
-                        </h1>
-                        <p className="text-zinc-200 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-                            Discover projects getting the most heat on GitHub {currentTier === 'all-time' ? 'ever' : `this ${currentTier.replace('ly', '')}`}.
-                            Analyze any of them instantly with AI.
-                        </p>
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* Tier Switcher */}
-            <section className="max-w-7xl mx-auto px-6 mb-8">
-                <div className="flex flex-wrap justify-center p-1.5 bg-zinc-900 border border-white/5 rounded-2xl w-fit mx-auto gap-1">
-                    {(['weekly', 'monthly', 'yearly', 'all-time'] as const).map((tier) => (
+        <div className="mx-auto w-full max-w-[var(--nv-page-max)] px-[var(--nv-gutter)] py-10 md:py-20">
+            <header className="mb-12">
+                <p className="nv-eyebrow mb-4">Catalog · {tierLabel}</p>
+                <h1 className="nv-display text-nv-display-lg text-balance text-nv-ivory-50">Trending repositories</h1>
+                <p className="mt-5 max-w-[var(--nv-measure)] text-pretty text-nv-title leading-snug text-nv-ivory-200">
+                    Find your next deep dive. Explore the repositories gaining momentum, then uncover how they work.
+                </p>
+                <nav aria-label="Time window" className="mt-6 flex flex-wrap gap-2">
+                    {TIERS.map((tier) => (
                         <Link
-                            key={tier}
-                            href={`/trending?tier=${tier}`}
-                            className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                                currentTier === tier 
-                                ? "bg-blue-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]" 
-                                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-                            }`}
+                            key={tier.id}
+                            href={`/trending?tier=${tier.id}`}
+                            aria-current={currentTier === tier.id ? "page" : undefined}
+                            className={cn(
+                                buttonClasses(currentTier === tier.id ? "primary" : "secondary"),
+                            )}
                         >
-                            {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                            {tier.label}
                         </Link>
                     ))}
-                </div>
-            </section>
+                </nav>
+            </header>
 
-            {/* Filter Bar */}
-            <section className="sticky top-16 z-40 bg-black/80 backdrop-blur-md border-b border-white/5 py-3 px-4 md:px-6 mb-12">
-                <div className="max-w-7xl mx-auto flex flex-row items-center gap-2 md:gap-4">
-                    <div className="relative flex-1 group">
-                        <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-zinc-300 w-3.5 h-3.5 group-focus-within:text-blue-400 transition-colors" />
-                        <input 
-                            type="text"
-                            placeholder="Find..."
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+                <aside aria-label="Filters" className="rounded-nv-lg border border-nv-graphite-600 bg-nv-graphite-800 p-5 lg:sticky lg:top-24 lg:col-span-3 lg:self-start">
+                    <label htmlFor="trending-find" className="nv-eyebrow mb-2 block">
+                        Find a repository
+                    </label>
+                    <div className="flex min-h-11 items-center gap-2 rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 px-3 focus-within:border-nv-copper-400">
+                        <Search aria-hidden className="size-4 shrink-0 text-nv-ivory-300" />
+                        <input
+                            id="trending-find"
+                            type="search"
+                            placeholder="Name, owner or description"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-zinc-900/50 border border-white/10 rounded-xl md:rounded-2xl py-2 md:py-3 pl-10 md:pl-12 pr-4 text-xs md:text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-zinc-600"
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setVisibleCount(PAGE_SIZE);
+                            }}
+                            className="min-h-11 w-full border-0 bg-transparent text-nv-body text-nv-ivory-50 outline-none placeholder:text-nv-graphite-400 focus-visible:!shadow-none focus-visible:!outline-none"
                         />
                     </div>
-                    <div className="flex items-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-hide shrink-0 max-w-[60%] md:max-w-none">
-                        <Filter size={12} className="text-zinc-300 shrink-0 hidden sm:block" />
-                        <button
-                            onClick={() => setSelectedLanguage(null)}
-                            className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold whitespace-nowrap transition-all border ${
-                                !selectedLanguage 
-                                ? "bg-blue-500 border-blue-400 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
-                                : "bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/20"
-                            }`}
-                        >
-                            All
-                        </button>
-                        {languages.slice(0, 8).map(lang => (
-                            <button
-                                key={lang}
-                                onClick={() => setSelectedLanguage(lang)}
-                                className={`px-3 md:px-4 py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold whitespace-nowrap transition-all border ${
-                                    selectedLanguage === lang
-                                    ? "bg-blue-500 border-blue-400 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
-                                    : "bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/20"
-                                }`}
-                            >
-                                {lang}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* Repo Grid */}
-            <section className="max-w-7xl mx-auto px-6 pb-24">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {visibleRepos.map((repo, idx) => (
-                        <motion.div 
-                            layout
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: idx % 12 * 0.05 }}
-                            key={`${repo.owner}/${repo.repo}`}
-                            className="bg-zinc-900/40 border border-white/5 rounded-2xl p-6 hover:bg-zinc-900/60 transition-all group flex flex-col justify-between"
-                        >
-                            <div>
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2 text-zinc-300 font-medium">
-                                        <Image 
-                                            src={`https://github.com/${repo.owner}.png`}
-                                            alt={`${repo.owner} avatar`}
-                                            width={20}
-                                            height={20}
-                                            className="rounded-full bg-white/10"
-                                        />
-                                        <span className="truncate max-w-[150px]">{repo.owner}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-zinc-300 uppercase">
-                                        <Globe size={10} /> {repo.language || 'Code'}
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
-                                    {repo.repo}
-                                </h3>
-                                <p className="text-zinc-300 text-sm line-clamp-2 mb-6 min-h-[40px]">
-                                    {repo.description || 'Experience high-context AI analysis for this repository.'}
-                                </p>
+                    {languages.length > 0 && (
+                        <fieldset className="mt-6 min-w-0 border-0 p-0">
+                            <legend className="nv-eyebrow mb-2">Language</legend>
+                            <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
+                                {[null, ...languages.slice(0, 12)].map((lang) => {
+                                    const active = selectedLanguage === lang;
+                                    return (
+                                        <button
+                                            key={lang ?? "all"}
+                                            type="button"
+                                            aria-pressed={active}
+                                            onClick={() => {
+                                                setSelectedLanguage(lang);
+                                                setVisibleCount(PAGE_SIZE);
+                                            }}
+                                            className={cn(
+                                                "min-h-11 shrink-0 touch-manipulation rounded-nv-sm border px-3 text-nv-small transition-colors duration-150",
+                                                active
+                                                    ? "border-nv-copper-400 bg-nv-copper-wash text-nv-copper-300"
+                                                    : "border-nv-graphite-600 text-nv-ivory-200 hover:border-nv-graphite-500 hover:text-nv-ivory-50",
+                                            )}
+                                        >
+                                            {lang ?? "All"}
+                                        </button>
+                                    );
+                                })}
                             </div>
+                        </fieldset>
+                    )}
+                </aside>
 
-                            <div className="flex items-center justify-between mt-auto">
-                                <div className="flex items-center gap-4 text-xs text-zinc-300">
-                                    <span className="flex items-center gap-1">
-                                        <Star size={12} className="text-yellow-500" />
-                                        {repo.stars.toLocaleString()}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <GitFork size={12} className="text-zinc-600" />
-                                        Trending
-                                    </span>
-                                </div>
-                                <Link 
-                                    href={`/chat?q=${repo.owner}/${repo.repo}`}
-                                    aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
-                                    className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white text-black text-xs font-bold hover:bg-zinc-200 transition-colors shadow-xl"
-                                >
-                                    <MessageSquare size={12} />
-                                    Analyze
-                                </Link>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {filteredRepos.length === 0 && (
-                    <div className="py-24 text-center">
-                        <div className="inline-flex p-4 rounded-full bg-zinc-900 border border-white/5 mb-6">
-                            <Search size={32} className="text-zinc-300" />
+                <section aria-label="Results" className="min-w-0 lg:col-span-9">
+                    <p role="status" className="nv-num mb-3 text-nv-small text-nv-ivory-300">
+                        Showing {visibleRepos.length} of {filteredRepos.length} repositories. Star counts are from the last catalog refresh.
+                    </p>
+                    {filteredRepos.length === 0 ? (
+                        <EmptyState
+                            title={initialRepos.length === 0 ? "The catalog has no repositories for this window" : "No repositories match"}
+                            action={
+                                initialRepos.length === 0 ? (
+                                    <Link href="/trending?tier=weekly" className={buttonClasses("secondary")}>
+                                        Try the weekly list
+                                    </Link>
+                                ) : (
+                                    <Button
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            setSelectedLanguage(null);
+                                        }}
+                                    >
+                                        Reset filters
+                                    </Button>
+                                )
+                            }
+                        >
+                            <p>{initialRepos.length === 0 ? "The catalog may be refreshing. Search for any repository from the home page instead." : "Change the search text or language."}</p>
+                        </EmptyState>
+                    ) : (
+                        <ul className="m-0 list-none overflow-hidden rounded-nv-lg border border-nv-graphite-600 bg-nv-graphite-800 p-0">
+                            {visibleRepos.map((repo) => (
+                                <li key={`${repo.owner}/${repo.repo}`} className="group flex flex-wrap items-center gap-4 border-b border-nv-graphite-600 px-5 py-5 transition-colors last:border-b-0 hover:bg-nv-graphite-850 sm:flex-nowrap">
+                                    <Image
+                                        src={`https://github.com/${repo.owner}.png`}
+                                        alt=""
+                                        width={44}
+                                        height={44}
+                                        className="hidden size-11 shrink-0 rounded-nv-sm bg-nv-graphite-800 sm:block"
+                                    />
+                                    <div className="min-w-0 flex-1 basis-1/2">
+                                        <p className="truncate text-nv-body font-semibold text-nv-ivory-50">
+                                            <span className="text-nv-ivory-300">{repo.owner}/</span>
+                                            {repo.repo}
+                                        </p>
+                                        <p className="mt-1 line-clamp-2 text-nv-small text-nv-ivory-300">{repo.description || "No description in the catalog."}</p>
+                                        <p className="nv-num mt-1 flex flex-wrap items-center gap-x-4 text-nv-micro text-nv-ivory-300">
+                                            {repo.language && <span>{repo.language}</span>}
+                                            <span className="inline-flex items-center gap-1">
+                                                <Star aria-hidden className="size-3" />
+                                                {repo.stars.toLocaleString()}
+                                                <span className="sr-only"> stars</span>
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <Link
+                                        href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
+                                        aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
+                                        className={buttonClasses("secondary")}
+                                    >
+                                        Analyze <ArrowUpRight aria-hidden className="size-4 transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5" />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {hasMore && (
+                        <div className="mt-8">
+                            <Button onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}>Load {PAGE_SIZE} more</Button>
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">No trending projects found</h3>
-                        <p className="text-zinc-300">Try adjusting your search or filters.</p>
-                        <button 
-                            onClick={() => {setSearchQuery(""); setSelectedLanguage(null);}}
-                            className="mt-6 text-blue-400 font-bold hover:underline"
-                        >
-                            Reset all filters
-                        </button>
-                    </div>
-                )}
-
-                {hasMore && (
-                    <div className="mt-16 text-center">
-                        <button 
-                            onClick={() => setVisibleCount(prev => prev + 50)}
-                            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-zinc-900 border border-white/10 text-white font-bold hover:bg-zinc-800 transition-colors group"
-                        >
-                            Load 50 more repositories
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </div>
-                )}
-            </section>
-
-            <Footer />
-        </main>
+                    )}
+                </section>
+            </div>
+        </div>
     );
 }

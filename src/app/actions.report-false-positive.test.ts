@@ -7,7 +7,9 @@ const {
     canAccessPrivateReportMock,
     createFalsePositiveSubmissionMock,
     trackReportConversionEventMock,
+    peekScanFromShareTokenMock,
 } = vi.hoisted(() => ({
+    peekScanFromShareTokenMock: vi.fn(),
     authMock: vi.fn(),
     getSessionUserIdMock: vi.fn(),
     getScanResultWithStatusMock: vi.fn(),
@@ -28,6 +30,12 @@ vi.mock("@/lib/services/scan-storage", () => ({
     getScanResultWithStatus: getScanResultWithStatusMock,
     saveScanResult: vi.fn(),
     getLatestScanId: vi.fn(),
+}));
+
+vi.mock("@/lib/services/scan-share-links", () => ({
+    createScanShareLink: vi.fn(),
+    resolveScanFromShareToken: vi.fn(),
+    peekScanFromShareToken: peekScanFromShareTokenMock,
 }));
 
 vi.mock("@/lib/services/report-access", () => ({
@@ -57,6 +65,7 @@ describe("submitReportFalsePositive", () => {
         canAccessPrivateReportMock.mockReset();
         createFalsePositiveSubmissionMock.mockReset();
         trackReportConversionEventMock.mockReset();
+        peekScanFromShareTokenMock.mockReset();
 
         authMock.mockResolvedValue({ user: { id: "user_1" } });
         getSessionUserIdMock.mockReturnValue("user_1");
@@ -90,7 +99,6 @@ describe("submitReportFalsePositive", () => {
             scanId: "scan_1",
             findingIndex: 0,
             findingFingerprint: "code|src/api.ts|potential sql injection||user input reaches query sink.",
-            isSharedView: false,
             reason: "FALSE_DATAFLOW",
             details: "The query builder parameterizes this path before execution.",
         });
@@ -107,15 +115,17 @@ describe("submitReportFalsePositive", () => {
         });
     });
 
-    it("allows anonymous shared-view submissions", async () => {
+    it("allows anonymous shared-view submissions that present a share token for the same scan", async () => {
         authMock.mockResolvedValue(null);
         getSessionUserIdMock.mockReturnValue(undefined);
+        canAccessPrivateReportMock.mockReturnValue(false);
+        peekScanFromShareTokenMock.mockResolvedValue({ status: "ok", scanId: "scan_1", linkId: "l1", expiresAt: new Date() });
 
         await submitReportFalsePositive({
             scanId: "scan_1",
             findingIndex: 0,
             findingFingerprint: "code|src/api.ts|potential sql injection||user input reaches query sink.",
-            isSharedView: true,
+            shareToken: "a".repeat(43),
             reason: "OTHER",
             details: "Shared reviewer notes",
         });
@@ -126,12 +136,34 @@ describe("submitReportFalsePositive", () => {
         }));
     });
 
+    it("rejects anonymous submissions without access, or with a token for a different scan", async () => {
+        authMock.mockResolvedValue(null);
+        getSessionUserIdMock.mockReturnValue(undefined);
+        canAccessPrivateReportMock.mockReturnValue(false);
+        const base = {
+            scanId: "scan_1",
+            findingIndex: 0,
+            findingFingerprint: "code|src/api.ts|potential sql injection||user input reaches query sink.",
+            reason: "OTHER" as const,
+            details: "notes",
+        };
+
+        await expect(submitReportFalsePositive(base)).rejects.toThrow("Forbidden");
+
+        peekScanFromShareTokenMock.mockResolvedValue({ status: "ok", scanId: "other_scan", linkId: "l2", expiresAt: new Date() });
+        await expect(submitReportFalsePositive({ ...base, shareToken: "b".repeat(43) })).rejects.toThrow("Forbidden");
+
+        peekScanFromShareTokenMock.mockResolvedValue({ status: "revoked" });
+        await expect(submitReportFalsePositive({ ...base, shareToken: "c".repeat(43) })).rejects.toThrow("Forbidden");
+
+        expect(createFalsePositiveSubmissionMock).not.toHaveBeenCalled();
+    });
+
     it("rejects empty details", async () => {
         await expect(submitReportFalsePositive({
             scanId: "scan_1",
             findingIndex: 0,
             findingFingerprint: "code|src/api.ts|potential sql injection||user input reaches query sink.",
-            isSharedView: false,
             reason: "NOT_A_VULNERABILITY",
             details: "   ",
         })).rejects.toThrow("Please include details for the false positive report");

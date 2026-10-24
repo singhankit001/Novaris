@@ -36,7 +36,7 @@ async function main() {
     // ── 2. CHAT RUNS (Postgres) — introduced same commit, exact message count ──
     let authRuns = 0, anonRuns = 0;
     try {
-        const runs: any[] = await prisma.$queryRaw`
+        const runs: { auth_runs?: number; anon_runs?: number }[] = await prisma.$queryRaw`
             SELECT
                 COUNT(*) FILTER (WHERE "userId" IS NOT NULL)::int AS auth_runs,
                 COUNT(*) FILTER (WHERE "userId" IS NULL)::int     AS anon_runs
@@ -48,7 +48,7 @@ async function main() {
     } catch (e) { console.log("ChatRun query failed:", e); }
 
     // ── 3. REPO SCANS (Postgres) ──
-    const recentScans: any[] = await prisma.$queryRaw`
+    const recentScans: { total?: bigint | number; anon?: bigint | number; auth?: bigint | number }[] = await prisma.$queryRaw`
         SELECT
             COUNT(*)                                      AS total,
             COUNT(*) FILTER (WHERE "userId" IS NULL)      AS anon,
@@ -75,7 +75,7 @@ async function main() {
     const sampleIds = anonIds.slice(0, 300);
     const pipe = kv.pipeline();
     sampleIds.forEach(id => pipe.hgetall(`visitor:${id}`));
-    const sampleData = await pipe.exec() as any[];
+    const sampleData = await pipe.exec() as ({ lastSeen?: string | number } | null)[];
     const recentInSample = sampleData.filter(v => v && Number(v.lastSeen) >= SINCE.getTime());
     const fraction = sampleData.length > 0 ? recentInSample.length / sampleData.length : 0;
     const estAnonVisitors = Math.round(anonIds.length * fraction);
@@ -83,7 +83,7 @@ async function main() {
     // Country/device breakdown
     const statsPipe = kv.pipeline();
     [...countryKeys, ...deviceKeys].forEach(k => statsPipe.get(k));
-    const statsVals = await statsPipe.exec() as any[];
+    const statsVals = await statsPipe.exec() as (string | number | null)[];
     const countryStats: Record<string,number> = {};
     const deviceStats:  Record<string,number> = {};
     (countryKeys as string[]).forEach((k,i) => { countryStats[k.replace("stats:country:","")] = Number(statsVals[i]||0); });

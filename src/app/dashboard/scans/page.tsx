@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import RecentScans from "@/components/Dashboard/RecentScans";
-import { History } from "lucide-react";
+import PageHeader from "@/components/Dashboard/PageHeader";
+import ScansTable from "@/components/Dashboard/ScansTable";
 import { buildInvalidSessionSignOutRedirect, getSessionAuthState, getSessionUserId } from "@/lib/session-guard";
 
 export default async function ScansPage() {
@@ -22,14 +22,8 @@ export default async function ScansPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center gap-3">
-                <History className="w-8 h-8 text-purple-500" />
-                <h1 className="text-3xl font-bold">Recent Scans</h1>
-            </div>
-
-            <div className="w-full">
-                <RecentScans userId={userId} limit={20} />
-            </div>
+            <PageHeader eyebrow="Dashboard" title="Scans" description="Your 20 most recent saved scans. Each report opens in full." />
+            <ScansTable limit={20} />
         </div>
     );
 }

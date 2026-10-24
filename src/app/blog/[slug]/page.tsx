@@ -1,8 +1,9 @@
 import { getPublishedPostBySlug, getPublishedPosts } from "@/lib/services/blog-service";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Clock, Share2 } from "lucide-react";
-import Footer from "@/components/Footer";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { ActionLink, H2, LinkRow, Page } from "@/components/seo/blocks";
+import { Breadcrumbs } from "@/components/nv/nav";
+import { Badge } from "@/components/nv/badge";
 import { EnhancedMarkdown } from "@/components/EnhancedMarkdown";
 import JsonLdScript from "@/components/JsonLdScript";
 import { BlogPost } from "@prisma/client";
@@ -100,6 +101,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     updatedAtIso: post.updatedAt.toISOString(),
   });
 
+  const readingMinutes = Math.max(1, Math.round(post.content.trim().split(/\s+/).length / 200));
+
   const breadcrumbSchema = buildBreadcrumbStructuredData([
     { name: "Home", path: "/" },
     { name: "Insights", path: "/blog" },
@@ -107,116 +110,52 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   ]);
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white">
+    <SiteChrome current="/blog">
       <JsonLdScript data={blogPostingSchema} />
       <JsonLdScript data={breadcrumbSchema} />
 
-       {/* Header / Nav */}
-       <div className="border-b border-white/5 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
-            Novaris
-          </Link>
-          <div className="flex gap-6 items-center">
-            <Link href="/" className="text-sm text-zinc-400 hover:text-white transition-colors">Analyzer</Link>
-            <Link href="/blog" className="text-sm text-white font-medium">Insights</Link>
-            <Link href="https://github.com/singhankit001/novaris" target="_blank" className="text-sm text-zinc-400 hover:text-white transition-colors">GitHub</Link>
-          </div>
-        </div>
-      </div>
-
-      <main className="max-w-4xl mx-auto px-6 py-16">
-        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-zinc-200 flex items-center gap-2">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span>/</span>
-          <Link href="/blog" className="hover:text-white transition-colors">Insights</Link>
-          <span>/</span>
-          <span className="text-zinc-200 line-clamp-1">{post.title}</span>
-        </nav>
-
-        <Link 
-          href="/blog" 
-          className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-12 text-sm font-medium"
-        >
-          <ArrowLeft size={16} /> Back to Insights
-        </Link>
-
-        {/* Post Metadata */}
-        <div className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
-                <span className="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold border border-purple-500/20 uppercase tracking-widest">
-                    {post.category}
-                </span>
-                <span className="text-zinc-300 text-xs flex items-center gap-1">
-                    <Clock size={12} /> 5 min read
-                </span>
+      <Page className="max-w-[calc(60rem+2*var(--nv-gutter))]">
+        <article>
+          <header className="mb-10">
+            <div className="mb-8">
+              <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Insights", href: "/blog" }, { label: post.title }]} />
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold mb-8 tracking-tight leading-tight">
-                {post.title}
-            </h1>
-            <div className="flex items-center justify-between py-6 border-y border-white/5">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center font-bold">
-                        AS
-                    </div>
-                    <div>
-                        <p className="text-sm font-bold">{post.author}</p>
-                        <p className="text-xs text-zinc-300">{post.date}</p>
-                    </div>
-                </div>
-                <div className="flex gap-4">
-                    <button className="p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
-                        <Share2 size={18} className="text-zinc-200" />
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        {/* Hero Image */}
-        <div className="relative rounded-3xl overflow-hidden mb-16 border border-white/5 shadow-2xl bg-zinc-900/50">
-            <img 
-                src={post.image} 
-                alt={post.title}
-                className="w-full h-auto block"
-            />
-        </div>
-
-        {/* Post Content */}
-        <div className="prose prose-invert prose-purple max-w-none">
-            <p className="text-zinc-300 text-lg not-prose mb-8 leading-relaxed">
-              {post.excerpt}
+            <p className="nv-eyebrow nv-num mb-4 flex flex-wrap items-center gap-3">
+              <Badge>{post.category}</Badge>
+              <span>{post.date}</span>
+              <span>{readingMinutes} min read</span>
             </p>
-            <EnhancedMarkdown content={post.content} />
-        </div>
+            <h1 className="nv-display text-nv-display-lg text-balance text-nv-ivory-50 lg:max-w-[25ch] leading-[1.1] tracking-[-0.04em]">{post.title}</h1>
+            <p className="mt-6 max-w-[var(--nv-measure)] text-pretty text-nv-title leading-snug text-nv-ivory-200">{post.excerpt}</p>
+            <p className="mt-6 border-t border-nv-graphite-700 pt-4 text-nv-small text-nv-ivory-300">By {post.author}</p>
+          </header>
 
-        <section className="mt-14 rounded-2xl border border-white/10 bg-zinc-900/40 p-6">
-          <h3 className="text-xl font-semibold mb-4">Related Workflows</h3>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/github-repository-analysis" className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors text-sm">
-              GitHub Repository Analysis
-            </Link>
-            <Link href="/ai-code-review-tool" className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors text-sm">
-              AI Code Review Tool
-            </Link>
-            <Link href="/security-scanner" className="px-4 py-2 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors text-sm">
-              Security Scanner
-            </Link>
+          <div className="relative mb-12 aspect-video overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-900">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={post.image} alt="" className="size-full object-cover" />
+          </div>
+
+          <div className="prose max-w-[var(--nv-measure)] [--tw-prose-body:var(--nv-ivory-200)] [--tw-prose-headings:var(--nv-ivory-50)] [--tw-prose-lead:var(--nv-ivory-200)] [--tw-prose-links:var(--nv-copper-400)] [--tw-prose-bold:var(--nv-ivory-50)] [--tw-prose-counters:var(--nv-ivory-300)] [--tw-prose-bullets:var(--nv-graphite-500)] [--tw-prose-hr:var(--nv-graphite-700)] [--tw-prose-quotes:var(--nv-ivory-100)] [--tw-prose-quote-borders:var(--nv-copper-600)] [--tw-prose-captions:var(--nv-ivory-300)] [--tw-prose-code:var(--nv-ivory-100)] [--tw-prose-th-borders:var(--nv-graphite-600)] [--tw-prose-td-borders:var(--nv-graphite-700)] prose-headings:font-nv-display prose-headings:font-semibold prose-headings:tracking-tight">
+            <EnhancedMarkdown content={post.content} />
+          </div>
+        </article>
+
+        <section aria-labelledby="post-related-h" className="mt-16 grid grid-cols-1 gap-6 border-t border-nv-graphite-700 pt-8 lg:grid-cols-12 lg:gap-10">
+          <div className="lg:col-span-4">
+            <H2 id="post-related-h">Related workflows</H2>
+          </div>
+          <div className="lg:col-span-7 lg:col-start-6">
+            <div className="border-t border-nv-graphite-700">
+              <LinkRow href="/github-repository-analysis" title="GitHub Repository Analysis" />
+              <LinkRow href="/ai-code-review-tool" title="AI Code Review Tool" />
+              <LinkRow href="/security-scanner" title="Security Scanner" />
+            </div>
+            <div className="mt-8">
+              <ActionLink href="/" variant="primary">Analyze a repository</ActionLink>
+            </div>
           </div>
         </section>
-
-        {/* CTA */}
-        <div className="mt-20 pt-12 border-t border-white/5 text-center">
-            <h4 className="text-sm font-bold uppercase tracking-[0.2em] text-purple-400 mb-8">Ready to see it in action?</h4>
-            <Link 
-                href="/" 
-                className="inline-block bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold px-8 py-4 rounded-2xl hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/20"
-            >
-                Start Analyzing Repos Now
-            </Link>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+      </Page>
+    </SiteChrome>
   );
 }

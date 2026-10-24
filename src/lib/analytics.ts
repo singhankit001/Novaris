@@ -849,21 +849,26 @@ export async function resetReportConversionMetrics(): Promise<void> {
  * Fetch aggregated analytics data for the dashboard
  */
 
-async function getManualAnalyticsAdjustments(): Promise<{ visitors: number; queries: number }> {
+// Throws on KV failure so callers with last-known-good fallbacks can tell a failed read from a zero.
+async function readManualAnalyticsAdjustments(): Promise<{ visitors: number; queries: number }> {
     if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
         return { visitors: 0, queries: 0 };
     }
-    
-    try {
-        const [visitorsAdjustment, queriesAdjustment] = await Promise.all([
-            kv.get<number>("stats:adjustment:visitors"),
-            kv.get<number>("stats:adjustment:queries"),
-        ]);
 
-        return {
-            visitors: Number(visitorsAdjustment || 0),
-            queries: Number(queriesAdjustment || 0),
-        };
+    const [visitorsAdjustment, queriesAdjustment] = await Promise.all([
+        kv.get<number>("stats:adjustment:visitors"),
+        kv.get<number>("stats:adjustment:queries"),
+    ]);
+
+    return {
+        visitors: Number(visitorsAdjustment || 0),
+        queries: Number(queriesAdjustment || 0),
+    };
+}
+
+async function getManualAnalyticsAdjustments(): Promise<{ visitors: number; queries: number }> {
+    try {
+        return await readManualAnalyticsAdjustments();
     } catch (error) {
         console.warn("Failed to fetch manual analytics adjustments:", error);
         return { visitors: 0, queries: 0 };
@@ -1674,7 +1679,7 @@ const getCachedPublicStats = unstable_cache(
             const [anonVisitorCountRaw, totalAnonQueriesRaw, manualAdjustments, totalScans, loggedInUserCount, authQueryTotal] = await Promise.all([
                 readWithFallback("kv.scard(visitors)", () => kv.scard("visitors"), 0),
                 readWithFallback("kv.get(queries:total)", () => kv.get<number>("queries:total"), 0),
-                readWithFallback("manual analytics adjustments", () => getManualAnalyticsAdjustments(), { visitors: 0, queries: 0 }),
+                readWithFallback("manual analytics adjustments", () => readManualAnalyticsAdjustments(),{ visitors: 0, queries: 0 }),
                 readWithFallback(
                     "prisma.repoScan.count(public stats)",
                     () => prisma.repoScan.count({

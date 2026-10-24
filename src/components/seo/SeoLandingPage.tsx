@@ -1,7 +1,11 @@
 import Link from "next/link";
 import JsonLdScript from "@/components/JsonLdScript";
 import SeoVisual from "@/components/seo/SeoVisual";
-import type { SeoInternalLink, SeoPageDefinition } from "@/lib/seo-pages";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { ActionLink, BulletList, FaqList, H2, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { Notice } from "@/components/nv/notice";
+import { DataTable } from "@/components/nv/data";
+import type { SeoComparisonTableRow, SeoInternalLink, SeoPageDefinition } from "@/lib/seo-pages";
 import {
   buildBreadcrumbStructuredData,
   buildFaqStructuredData,
@@ -16,18 +20,16 @@ function InternalLinks({ links }: { links: SeoInternalLink[] }) {
   if (links.length === 0) return null;
 
   return (
-    <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+    <ul className="m-0 mt-5 grid list-none gap-3 p-0">
       {links.map((link) => (
-        <Link
-          key={`${link.href}-${link.label}`}
-          href={link.href}
-          className="rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-4 hover:border-cyan-300/50 hover:bg-cyan-500/10 transition-colors"
-        >
-          <p className="text-cyan-200 font-semibold mb-1">{link.label}</p>
-          <p className="text-zinc-300 text-sm leading-relaxed">{link.description}</p>
-        </Link>
+        <li key={`${link.href}-${link.label}`}>
+          <Link href={link.href} className="group block min-h-14 rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-900 px-5 py-4 transition-colors hover:border-nv-copper-400/40 hover:bg-nv-copper-wash">
+            <span className="block text-nv-body font-medium text-nv-copper-400 group-hover:text-nv-copper-300">{link.label}</span>
+            <span className="mt-0.5 block text-nv-small text-nv-ivory-300">{link.description}</span>
+          </Link>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
@@ -49,170 +51,122 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
       ...(section.subsections?.map((subsection) => subsection.title) ?? []),
     ]),
   });
+  const table = page.comparisonTable;
 
   return (
-    <main className="min-h-screen bg-[#09090b] text-white px-6 py-20">
+    <SiteChrome current="/compare">
       {page.schemaTypes.includes("SoftwareApplication") && <JsonLdScript data={softwareSchema} />}
       {page.schemaTypes.includes("FAQPage") && <JsonLdScript data={faqSchema} />}
       {page.schemaTypes.includes("BreadcrumbList") && <JsonLdScript data={breadcrumbSchema} />}
 
-      <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex flex-wrap items-center gap-2">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span>/</span>
-          <Link href="/explore" className="hover:text-white transition-colors">Explore</Link>
-          <span>/</span>
-          <span className="text-zinc-200">{page.title}</span>
-        </nav>
+      <Page wide>
+        <PageHeader
+          crumbs={[{ label: "Home", href: "/" }, { label: "Explore", href: "/explore" }, { label: page.title }]}
+          eyebrow={page.primaryIntent}
+          title={page.h1}
+          lead={page.lead}
+        />
 
-        <header className="mb-12">
-          <p className="text-cyan-300 text-xs uppercase tracking-[0.2em] mb-4">
-            {page.primaryIntent}
-          </p>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">{page.h1}</h1>
-          <p className="text-zinc-300 text-lg leading-relaxed max-w-3xl">{page.lead}</p>
-          <p className="text-zinc-200 leading-relaxed mt-4 max-w-4xl">
-            This guide is optimized for teams comparing tools, planning onboarding, and choosing the
-            next best action in repository analysis and security workflows.
-          </p>
-        </header>
-
-        <section className="mb-12">
-          <SeoVisual
-            variant={page.visualVariant}
-            ariaLabel={`${page.title} visual workflow`}
-            sizeMode="wide"
-            animate
-            priority="high"
-          />
+        <section aria-label="Workflow illustration" className="mb-16 max-w-5xl">
+          <SeoVisual variant={page.visualVariant} ariaLabel={`${page.title} workflow, illustrative`} />
         </section>
 
-        <section className="space-y-6 mb-14">
+        <div className="space-y-14 md:space-y-20">
           {page.sections.map((section) => (
-            <article
-              key={section.title}
-              className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8"
-            >
-              <h2 className="text-2xl font-semibold mb-4">{section.title}</h2>
-              {section.paragraphs.map((paragraph) => (
-                <p key={paragraph} className="text-zinc-300 leading-relaxed mb-3">
-                  {paragraph}
-                </p>
-              ))}
-              {section.bullets && section.bullets.length > 0 && (
-                <ul className="space-y-2 mt-4">
-                  {section.bullets.map((bullet) => (
-                    <li key={bullet} className="text-zinc-300 flex items-start gap-2">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />
-                      <span>{bullet}</span>
-                    </li>
+            <section key={section.title} className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
+              <div className="lg:col-span-4">
+                <H2>{section.title}</H2>
+              </div>
+              <div className="lg:col-span-7 lg:col-start-6">
+                <Prose>
+                  {section.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
                   ))}
-                </ul>
-              )}
-              {section.subsections && section.subsections.length > 0 && (
-                <div className="mt-6 space-y-5">
-                  {section.subsections.map((subsection) => (
-                    <section key={`${section.title}-${subsection.title}`} className="rounded-xl border border-zinc-800 bg-black/20 p-4">
-                      <h3 className="text-xl font-medium mb-3 text-zinc-100">{subsection.title}</h3>
-                      {subsection.paragraphs.map((paragraph) => (
-                        <p key={paragraph} className="text-zinc-300 leading-relaxed mb-3">
-                          {paragraph}
-                        </p>
-                      ))}
-                      {subsection.bullets && subsection.bullets.length > 0 && (
-                        <ul className="space-y-2 mt-3">
-                          {subsection.bullets.map((bullet) => (
-                            <li key={bullet} className="text-zinc-300 flex items-start gap-2">
-                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />
-                              <span>{bullet}</span>
-                            </li>
+                </Prose>
+                {section.bullets && section.bullets.length > 0 && (
+                  <div className="mt-5 max-w-[var(--nv-measure)]">
+                    <BulletList items={section.bullets} />
+                  </div>
+                )}
+                {section.subsections && section.subsections.length > 0 && (
+                  <div className="mt-8 space-y-8">
+                    {section.subsections.map((subsection) => (
+                      <section key={`${section.title}-${subsection.title}`} className="border-t border-nv-graphite-700 pt-5">
+                        <h3 className="mb-3 text-nv-title font-medium text-nv-ivory-50">{subsection.title}</h3>
+                        <Prose>
+                          {subsection.paragraphs.map((paragraph) => (
+                            <p key={paragraph}>{paragraph}</p>
                           ))}
-                        </ul>
-                      )}
-                      {subsection.internalLinks && <InternalLinks links={subsection.internalLinks} />}
-                    </section>
-                  ))}
-                </div>
-              )}
-              {section.internalLinks && <InternalLinks links={section.internalLinks} />}
-            </article>
+                        </Prose>
+                        {subsection.bullets && subsection.bullets.length > 0 && (
+                          <div className="mt-4 max-w-[var(--nv-measure)]">
+                            <BulletList items={subsection.bullets} />
+                          </div>
+                        )}
+                        {subsection.internalLinks && <InternalLinks links={subsection.internalLinks} />}
+                      </section>
+                    ))}
+                  </div>
+                )}
+                {section.internalLinks && <InternalLinks links={section.internalLinks} />}
+              </div>
+            </section>
           ))}
-        </section>
 
-        {page.comparisonTable && (
-          <section className="mb-14 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
-            <h2 className="text-2xl font-semibold mb-3">{page.comparisonTable.title}</h2>
-            <p className="text-zinc-300 mb-5 leading-relaxed">{page.comparisonTable.caption}</p>
+          {table && (
+            <section aria-labelledby="seo-compare-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
+              <div className="lg:col-span-4">
+                <H2 id="seo-compare-h">{table.title}</H2>
+              </div>
+              <div className="min-w-0 space-y-5 lg:col-span-8 lg:col-start-5">
+                <Prose>
+                  <p>{table.caption}</p>
+                </Prose>
+                <Notice tone="info" title="Editorial comparison">
+                  Written by Novaris from public documentation. It is not a benchmark. Check each vendor&apos;s current docs before deciding.
+                </Notice>
+                <DataTable<SeoComparisonTableRow>
+                  caption={table.title}
+                  rowKey={(row) => `${page.slug}-${row.criteria}`}
+                  rows={table.rows}
+                  columns={[
+                    { key: "criteria", header: "Criteria", render: (r) => <span className="font-medium">{r.criteria}</span> },
+                    { key: "novaris", header: table.novarisLabel, render: (r) => r.novaris, className: "min-w-56 text-nv-ivory-200" },
+                    { key: "alt", header: table.alternativeLabel, render: (r) => r.alternative, className: "min-w-56 text-nv-ivory-200" },
+                  ]}
+                />
+                <div>
+                  <h3 className="mb-3 text-nv-title font-medium text-nv-ivory-50">Key differences</h3>
+                  <div className="max-w-[var(--nv-measure)]">
+                    <BulletList items={table.differentiators} />
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
-            <div className="overflow-x-auto rounded-xl border border-zinc-800">
-              <table className="w-full min-w-[760px]">
-                <thead className="bg-zinc-950">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-zinc-300 font-semibold">Criteria</th>
-                    <th className="text-left px-4 py-3 text-cyan-200 font-semibold">{page.comparisonTable.novarisLabel}</th>
-                    <th className="text-left px-4 py-3 text-zinc-300 font-semibold">{page.comparisonTable.alternativeLabel}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {page.comparisonTable.rows.map((row) => (
-                    <tr key={`${page.slug}-${row.criteria}`} className="border-t border-zinc-800">
-                      <td className="px-4 py-4 text-zinc-100 font-medium align-top">{row.criteria}</td>
-                      <td className="px-4 py-4 text-zinc-300 align-top">{row.novaris}</td>
-                      <td className="px-4 py-4 text-zinc-200 align-top">{row.alternative}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <section aria-labelledby="seo-faq-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
+            <div className="lg:col-span-4">
+              <H2 id="seo-faq-h">Frequently asked questions</H2>
             </div>
-
-            <div className="mt-6 rounded-xl border border-zinc-800 bg-black/20 p-4">
-              <h3 className="text-lg font-semibold mb-3">Key differentiators</h3>
-              <ul className="space-y-2">
-                {page.comparisonTable.differentiators.map((item) => (
-                  <li key={item} className="text-zinc-300 flex items-start gap-2">
-                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="lg:col-span-8 lg:col-start-5">
+              <FaqList items={page.faq} />
             </div>
           </section>
-        )}
 
-        <section className="mb-14 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
-          <h2 className="text-2xl font-semibold mb-6">Frequently Asked Questions</h2>
-          <div className="space-y-5">
-            {page.faq.map((item) => (
-              <article key={item.question} className="border-b border-white/10 pb-4 last:border-0">
-                <h3 className="text-lg font-medium mb-2">{item.question}</h3>
-                <p className="text-zinc-300 leading-relaxed">{item.answer}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
-          <h2 className="text-2xl font-semibold mb-2">Take the Next Step</h2>
-          <p className="text-zinc-200 mb-6">
-            Continue with a workflow that matches your analysis goal.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            {page.ctaTargets.map((cta) => (
-              <Link
-                key={`${page.slug}-${cta.href}-${cta.label}`}
-                href={cta.href}
-                className={
-                  cta.style === "primary"
-                    ? "px-5 py-3 rounded-lg bg-white text-black font-medium hover:bg-zinc-200 transition-colors"
-                    : "px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors"
-                }
-              >
-                {cta.label}
-              </Link>
-            ))}
-          </div>
-        </section>
-      </div>
-    </main>
+          <section aria-labelledby="seo-next-h" className="rounded-nv-lg border border-nv-graphite-700 bg-nv-copper-wash p-7 md:p-10">
+            <H2 id="seo-next-h">Next step</H2>
+            <p className="mt-3 max-w-[var(--nv-measure)] text-nv-body text-nv-ivory-200">Continue with the workflow that matches your question.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {page.ctaTargets.map((cta) => (
+                <ActionLink key={`${page.slug}-${cta.href}-${cta.label}`} href={cta.href} variant={cta.style === "primary" ? "primary" : "secondary"}>
+                  {cta.label}
+                </ActionLink>
+              ))}
+            </div>
+          </section>
+        </div>
+      </Page>
+    </SiteChrome>
   );
 }

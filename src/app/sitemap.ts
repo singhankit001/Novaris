@@ -13,7 +13,8 @@ export const dynamic = 'force-static';
  */
 function getFileModDate(relativePath: string): Date {
     try {
-        const fullPath = path.join(process.cwd(), relativePath);
+        // Build-time only (force-static); keeps Turbopack from tracing the whole project into the server bundle.
+        const fullPath = path.join(/*turbopackIgnore: true*/ process.cwd(), relativePath);
         const stats = fs.statSync(fullPath);
         return stats.mtime;
     } catch {

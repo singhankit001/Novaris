@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { ANON_COOKIE_NAME, getAnonymousActorId } from "@/lib/actor-id";
+import { ANON_COOKIE_NAME, getAnonymousActorId, getAnonymousNetworkId } from "@/lib/actor-id";
 import { getToolBudgetWindowUsage, type CacheAudience, type ToolBudgetScope } from "@/lib/cache";
 import { getInvalidSessionApiError, getSessionAuthState, getSessionUserId } from "@/lib/session-guard";
 
@@ -29,7 +29,9 @@ export async function GET(req: NextRequest) {
         const audience: CacheAudience = userId ? "authenticated" : "anonymous";
         const anonCookieId = req.cookies.get(ANON_COOKIE_NAME)?.value ?? null;
         const actorId = userId ?? getAnonymousActorId(req.headers, anonCookieId);
-        const usage = await getToolBudgetWindowUsage(scope, audience, actorId);
+        // Anonymous callers are limited by cookie actor and network; report the stricter.
+        const budgetActors = userId ? [userId] : [actorId, getAnonymousNetworkId(req.headers)];
+        const usage = await getToolBudgetWindowUsage(scope, audience, budgetActors);
 
         return NextResponse.json({
             scope,

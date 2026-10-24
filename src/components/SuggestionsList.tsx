@@ -1,103 +1,84 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Star, User, Github, Database } from "lucide-react";
 import type { RepoSuggestion } from "@/lib/services/repo-suggestions";
+import { cn } from "@/components/nv/cn";
 
 interface SuggestionsListProps {
+    id: string;
     suggestions: RepoSuggestion[];
     onSelect: (suggestion: RepoSuggestion) => void;
-    isVisible: boolean;
     selectedIndex: number;
 }
 
-export default function SuggestionsList({
-    suggestions,
-    onSelect,
-    isVisible,
-    selectedIndex,
-}: SuggestionsListProps) {
-    const listRef = useRef<HTMLDivElement>(null);
-    const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+const SOURCE_LABEL = { user: "Your repositories", local: "Novaris catalog", github: "GitHub search" } as const;
+
+export function suggestionOptionId(listId: string, index: number) {
+    return `${listId}-opt-${index}`;
+}
+
+export default function SuggestionsList({ id, suggestions, onSelect, selectedIndex }: SuggestionsListProps) {
+    const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
     useEffect(() => {
-        if (selectedIndex >= 0 && itemRefs.current[selectedIndex]) {
-            itemRefs.current[selectedIndex]?.scrollIntoView({
-                block: "nearest",
-                behavior: "auto",
-            });
-        }
+        itemRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
     }, [selectedIndex]);
 
-    if (!isVisible || suggestions.length === 0) return null;
+    if (suggestions.length === 0) return null;
+
+    const sourceLabel = suggestions.some((s) => s.source === "github")
+        ? SOURCE_LABEL.github
+        : suggestions.some((s) => s.source === "user")
+          ? SOURCE_LABEL.user
+          : SOURCE_LABEL.local;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute left-0 right-0 top-full mt-2 bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl z-[150]"
-        >
-            <div 
-                ref={listRef}
-                className="max-h-[210px] overflow-y-auto custom-scrollbar p-2 space-y-1 scroll-pt-2 scroll-pb-2"
-            >
-                {suggestions.map((suggestion, index) => (
-                    <button
-                        key={`${suggestion.source}:${suggestion.owner}/${suggestion.repo}`}
-                        ref={(el) => { itemRefs.current[index] = el; }}
-                        onClick={() => onSelect(suggestion)}
-                        onMouseDown={(e) => e.preventDefault()} // Prevent blur before click
-                        className={`w-full text-left px-4 py-3 rounded-lg flex items-start gap-3 transition-all duration-200 ${
-                            index === selectedIndex
-                                ? "bg-white/10 border-white/10 ring-1 ring-white/20"
-                                : "hover:bg-white/5 border-transparent"
-                        } border`}
-                    >
-                        <div className="mt-1 shrink-0 text-zinc-300">
-                            {suggestion.source === 'user' ? (
-                                <User size={16} />
-                            ) : suggestion.source === 'local' ? (
-                                <Database size={16} />
-                            ) : (
-                                <Github size={16} />
+        <div className="nv-fade absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-nv-md bg-nv-graphite-800 shadow-nv-popover">
+            <ul id={id} role="listbox" aria-label="Repository suggestions" className="m-0 max-h-64 list-none overflow-y-auto p-1">
+                {suggestions.map((suggestion, index) => {
+                    const selected = index === selectedIndex;
+                    const Icon = suggestion.source === "user" ? User : suggestion.source === "local" ? Database : Github;
+                    return (
+                        <li
+                            key={`${suggestion.source}:${suggestion.owner}/${suggestion.repo}`}
+                            id={suggestionOptionId(id, index)}
+                            ref={(el) => {
+                                itemRefs.current[index] = el;
+                            }}
+                            role="option"
+                            aria-selected={selected}
+                            onMouseDown={(e) => e.preventDefault()} // keep input focus so blur does not drop the tap
+                            onClick={() => onSelect(suggestion)}
+                            className={cn(
+                                "flex min-h-12 cursor-pointer items-start gap-3 rounded-nv-sm px-3 py-2.5 text-left",
+                                selected ? "bg-nv-copper-wash shadow-[inset_2px_0_0_var(--nv-copper-400)]" : "hover:bg-nv-graphite-700",
                             )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-0.5">
-                                <span className="text-sm font-bold text-white truncate">
-                                    {suggestion.owner}/{suggestion.repo}
+                        >
+                            <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-nv-ivory-300" />
+                            <span className="min-w-0 flex-1">
+                                <span className="flex items-center justify-between gap-3">
+                                    <span className="truncate font-mono text-nv-small text-nv-ivory-50">
+                                        {suggestion.owner}/{suggestion.repo}
+                                    </span>
+                                    <span className="nv-num flex shrink-0 items-center gap-1 text-nv-micro text-nv-ivory-300">
+                                        <Star aria-hidden className="size-3" />
+                                        <span className="sr-only">Stars </span>
+                                        {suggestion.stars >= 1000 ? `${(suggestion.stars / 1000).toFixed(1)}k` : suggestion.stars}
+                                    </span>
                                 </span>
-                                <span className="flex items-center gap-1 text-[10px] text-zinc-300 font-mono">
-                                    <Star size={10} className="text-yellow-500/80" />
-                                    {suggestion.stars >= 1000 
-                                        ? `${(suggestion.stars / 1000).toFixed(1)}k` 
-                                        : suggestion.stars}
-                                </span>
-                            </div>
-                            {suggestion.description && (
-                                <p className="text-xs text-zinc-300 truncate italic">
-                                    {suggestion.description}
-                                </p>
-                            )}
-                        </div>
-                    </button>
-                ))}
-            </div>
-            
-            <div className="px-4 py-2 bg-black/40 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-600 font-medium">
-                <span>↑↓ to navigate · ↵ to select</span>
-                <span className="flex items-center gap-1">
-                    {suggestions.some(s => s.source === 'github') ? (
-                        <><Github size={10} /> GitHub Search</>
-                    ) : suggestions.some(s => s.source === 'user') ? (
-                        <><User size={10} /> User Repositories</>
-                    ) : (
-                        <><Database size={10} /> Catalog Search</>
-                    )}
-                </span>
-            </div>
-        </motion.div>
+                                {suggestion.description && (
+                                    <span className="mt-0.5 block truncate text-nv-micro text-nv-ivory-300">{suggestion.description}</span>
+                                )}
+                            </span>
+                        </li>
+                    );
+                })}
+            </ul>
+            <p className="m-0 flex items-center justify-between border-t border-nv-graphite-700 px-3 py-1.5 text-nv-micro text-nv-ivory-300">
+                <span>Arrow keys to move, Enter to select</span>
+                <span>{sourceLabel}</span>
+            </p>
+        </div>
     );
 }

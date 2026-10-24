@@ -5,6 +5,7 @@ const {
     isAdminUserMock,
     kvGetMock,
     kvIncrMock,
+    kvDecrMock,
     kvExpireMock,
     getDefaultBranchHeadShaMock,
     getCachedSecurityScanResultMock,
@@ -18,6 +19,7 @@ const {
     isAdminUserMock: vi.fn(),
     kvGetMock: vi.fn(),
     kvIncrMock: vi.fn(),
+    kvDecrMock: vi.fn().mockResolvedValue(0),
     kvExpireMock: vi.fn(),
     getDefaultBranchHeadShaMock: vi.fn(),
     getCachedSecurityScanResultMock: vi.fn(),
@@ -40,6 +42,7 @@ vi.mock("@vercel/kv", () => ({
     kv: {
         get: kvGetMock,
         incr: kvIncrMock,
+        decr: kvDecrMock,
         expire: kvExpireMock,
     },
 }));
@@ -263,7 +266,8 @@ describe("scan policy updates", () => {
 
     it("enforces deep limit at 15 for fresh scans", async () => {
         getCachedSecurityScanResultMock.mockResolvedValue(null);
-        kvGetMock.mockResolvedValue(15);
+        // The slot is reserved atomically with INCR; the 16th reservation is over the cap.
+        kvIncrMock.mockResolvedValue(16);
 
         await expect(scanRepositoryVulnerabilities(
             "acme",
@@ -273,12 +277,12 @@ describe("scan policy updates", () => {
         )).rejects.toThrow("Monthly Deep Scan limit reached (15/15).");
 
         expect(runSecurityScanMock).not.toHaveBeenCalled();
-        expect(kvIncrMock).not.toHaveBeenCalled();
+        expect(kvDecrMock).toHaveBeenCalledOnce(); // the over-cap reservation is handed back
     });
 
     it("increments deep quota only on fresh deep scans", async () => {
         getCachedSecurityScanResultMock.mockResolvedValue(null);
-        kvGetMock.mockResolvedValue(3);
+        kvIncrMock.mockResolvedValue(1);
 
         await scanRepositoryVulnerabilities(
             "acme",

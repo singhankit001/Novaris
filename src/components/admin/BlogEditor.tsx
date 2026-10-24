@@ -3,14 +3,39 @@
 import { useState } from "react";
 import { BlogPost } from "@prisma/client";
 import { EnhancedMarkdown } from "@/components/EnhancedMarkdown";
-import { Save, Send, Eye, Edit3, ArrowLeft, Image as ImageIcon, Globe, Lock, Tag } from "lucide-react";
+import { ArrowLeft, Globe, Image as ImageIcon, Lock, Save, Send } from "lucide-react";
 import Link from "next/link";
 import { savePostAction } from "@/app/admin/blog/actions";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/nv/badge";
+import { Button } from "@/components/nv/button";
+import { buttonClasses } from "@/components/nv/button-styles";
+import { Input, Textarea } from "@/components/nv/field";
+import { Notice } from "@/components/nv/notice";
 
 interface BlogEditorProps {
   initialPost?: Partial<BlogPost>;
 }
+
+const CATEGORIES = ["Engineering", "Security", "Product", "Announcement"];
+// The upload route enforces type and size on the server; this only gives faster feedback.
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+const toolbar: { label: string; before: string; after?: string }[] = [
+  { label: "Heading 1", before: "# " },
+  { label: "Heading 2", before: "## " },
+  { label: "Heading 3", before: "### " },
+  { label: "Bold", before: "**", after: "**" },
+  { label: "Italic", before: "_", after: "_" },
+  { label: "Strikethrough", before: "~~", after: "~~" },
+  { label: "Inline code", before: "`", after: "`" },
+  { label: "Bullet list", before: "- " },
+  { label: "Numbered list", before: "1. " },
+  { label: "Quote", before: "> " },
+  { label: "Link", before: "[", after: "](url)" },
+  { label: "Mermaid diagram", before: "```mermaid\n", after: "\n```" },
+  { label: "Code block", before: "```\n", after: "\n```" },
+];
 
 export default function BlogEditor({ initialPost }: BlogEditorProps) {
   const router = useRouter();
@@ -24,423 +49,218 @@ export default function BlogEditor({ initialPost }: BlogEditorProps) {
     author: "Ankit Singh",
     published: false,
     keywords: "",
-    ...initialPost
+    ...initialPost,
   });
 
   const [isPreview, setIsPreview] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const isSaving = saveStatus === "saving";
+  const slugLocked = Boolean(post.id && (post.published || post.publishedAt));
 
-  const handleInsertMarkdown = (prefix: string, suffix: string = "") => {
-    const textarea = document.getElementById("content-textarea") as HTMLTextAreaElement;
+  const insert = (prefix: string, suffix = "") => {
+    const textarea = document.getElementById("content-textarea") as HTMLTextAreaElement | null;
     if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const currentContent = post.content || "";
-
-    const selectedText = currentContent.substring(start, end);
-    const textBefore = currentContent.substring(0, start);
-    const textAfter = currentContent.substring(end);
-
-    const newContent = textBefore + prefix + selectedText + suffix + textAfter;
-    setPost((prev) => ({ ...prev, content: newContent }));
-
+    const { selectionStart: start, selectionEnd: end } = textarea;
+    const current = post.content || "";
+    const next = current.slice(0, start) + prefix + current.slice(start, end) + suffix + current.slice(end);
+    setPost((prev) => ({ ...prev, content: next }));
     setTimeout(() => {
       textarea.focus();
-      const newCursorPos = start + prefix.length + selectedText.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      const pos = start + prefix.length + (end - start);
+      textarea.setSelectionRange(pos, pos);
     }, 0);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setPost((prev: Partial<BlogPost>) => ({ ...prev, [name]: value }));
+    setPost((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async (published: boolean) => {
-    setIsSaving(true);
     setSaveStatus("saving");
     setSaveError(null);
     try {
-      const dataToSave = { ...post, published };
-      const result = await savePostAction(dataToSave);
+      const result = await savePostAction({ ...post, published });
       setPost(result);
       setSaveStatus("success");
-      setTimeout(() => setSaveStatus("idle"), 3000);
       router.refresh();
-      if (!post.id) {
-          router.push(`/admin/blog/${result.id}`);
-      }
+      if (!post.id) router.push(`/admin/blog/${result.id}`);
     } catch (error) {
-      console.error("Failed to save post:", error);
       setSaveStatus("error");
-      setSaveError(error instanceof Error ? error.message : "Failed to save post. Please try again.");
-    } finally {
-      setIsSaving(false);
+      setSaveError(error instanceof Error ? error.message : "Failed to save the post. Try again.");
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) await uploadImage(file);
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) await uploadImage(file);
-  };
-
-  const uploadImage = async (file: File, target: "cover" | "content" = "cover") => {
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+  const uploadImage = async (file: File, target: "cover" | "content") => {
+    setUploadError(null);
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Choose an image file (PNG, JPEG, WebP, GIF or AVIF).");
       return;
     }
-
+    if (file.size > MAX_IMAGE_BYTES) {
+      setUploadError("Images must be 5 MB or smaller.");
+      return;
+    }
     setIsUploading(true);
     try {
-      const response = await fetch(`/api/admin/blog/upload?filename=${encodeURIComponent(file.name)}`, {
-        method: 'POST',
-        body: file,
-      });
-
+      const response = await fetch(`/api/admin/blog/upload?filename=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+      const body: unknown = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const message = typeof body === "object" && body !== null && "error" in body && typeof body.error === "string" ? body.error : "Upload failed.";
+        throw new Error(message);
       }
-
-      const blob = await response.json();
-      
-      if (target === "cover") {
-        setPost(prev => ({ ...prev, image: blob.url }));
-      } else {
-        // For inline images, insert into markdown
-        handleInsertMarkdown(`![image](${blob.url})`, "");
-      }
+      const url = (body as { url?: unknown } | null)?.url;
+      if (typeof url !== "string") throw new Error("The upload response had no image URL.");
+      if (target === "cover") setPost((prev) => ({ ...prev, image: url }));
+      else insert(`![image](${url})`);
     } catch (error) {
-      console.error("Upload failed:", error);
-      alert("Failed to upload image. Please check your connection and try again.");
+      setUploadError(error instanceof Error ? error.message : "Upload failed. Check your connection and try again.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleContentFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onPick = (target: "cover" | "content") => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      await uploadImage(file, "content");
-      // Clear value to allow same file re-upload
-      e.target.value = "";
-    }
+    if (file) await uploadImage(file, target);
+    e.target.value = "";
   };
 
   return (
     <div className="space-y-6">
-      {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-6">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/blog"
-            className="p-2 hover:bg-white/5 rounded-full transition-colors text-zinc-200"
-          >
-            <ArrowLeft size={20} />
+      <header className="flex flex-col gap-4 border-b border-nv-graphite-700 pb-6 md:flex-row md:items-end md:justify-between">
+        <div className="flex items-start gap-3">
+          <Link href="/admin/blog" aria-label="Back to blog posts" className={buttonClasses("ghost", "md", "size-11 px-0")}>
+            <ArrowLeft aria-hidden className="size-4" />
           </Link>
-          <h1 className="text-2xl font-bold">
-            {post.id ? "Edit Post" : "Create New Post"}
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsPreview(!isPreview)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-white/10 hover:border-white/20 transition-all text-sm font-medium"
-          >
-            {isPreview ? <Edit3 size={16} /> : <Eye size={16} />}
-            {isPreview ? "Edit Content" : "Preview"}
-          </button>
-          <button
-            onClick={() => handleSave(false)}
-            disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 border border-white/10 hover:border-white/20 transition-all text-sm font-medium disabled:opacity-50"
-          >
-            <Save size={16} />
-            Save Draft
-          </button>
-          <button
-            onClick={() => handleSave(true)}
-            disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 transition-all text-sm font-bold disabled:opacity-50"
-          >
-            <Send size={16} />
-            Publish
-          </button>
-        </div>
-      </div>
-
-      {saveStatus === "success" && (
-        <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-2 rounded-xl text-sm flex items-center gap-2">
-            <Globe size={14} /> Post saved successfully!
-        </div>
-      )}
-
-      {saveStatus === "error" && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm">
-            {saveError || "Failed to save post. Please try again."}
-        </div>
-      )}
-
-      {/* Main layout — sidebar is ALWAYS in column 3 so sticky works */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-
-        {/* Left 2 cols: editor OR preview — always occupies same columns */}
-        <div className="lg:col-span-2 space-y-4">
-
-          {/* Editor */}
-          {!isPreview && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between pl-1">
-                <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest">Content (Markdown)</label>
-                {/* Toolbar */}
-                <div className="flex items-center gap-1 text-zinc-200 bg-zinc-900/50 px-3 py-1.5 rounded-lg border border-white/5 flex-wrap">
-                  <button type="button" onClick={() => handleInsertMarkdown("# ")} className="hover:text-white transition-colors px-1 font-bold text-sm" title="Heading 1">H1</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("## ")} className="hover:text-white transition-colors px-1 font-bold text-sm" title="Heading 2">H2</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("### ")} className="hover:text-white transition-colors px-1 font-bold text-sm" title="Heading 3">H3</button>
-                  <div className="w-px h-4 bg-white/10 mx-1" />
-                  <button type="button" onClick={() => handleInsertMarkdown("**", "**")} className="hover:text-white transition-colors px-1 font-bold text-sm" title="Bold">B</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("_", "_")} className="hover:text-white transition-colors px-1 italic font-serif text-sm" title="Italic">I</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("~~", "~~")} className="hover:text-white transition-colors px-1 line-through text-sm" title="Strikethrough">S</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("`", "`")} className="hover:text-white transition-colors px-1 font-mono text-sm" title="Inline Code">{"`c`"}</button>
-                  <div className="w-px h-4 bg-white/10 mx-1" />
-                  <button type="button" onClick={() => handleInsertMarkdown("- ")} className="hover:text-white transition-colors px-1 text-sm" title="Bullet List">•</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("1. ")} className="hover:text-white transition-colors px-1 text-sm" title="Numbered List">1.</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("> ")} className="hover:text-white transition-colors px-1 text-sm" title="Blockquote">"</button>
-                  <div className="w-px h-4 bg-white/10 mx-1" />
-                  <button type="button" onClick={() => handleInsertMarkdown("[", "](url)")} className="hover:text-white transition-colors px-1 text-sm" title="Link">🔗</button>
-                  <button 
-                    type="button" 
-                    onClick={() => document.getElementById('content-image-upload')?.click()} 
-                    disabled={isUploading}
-                    className="hover:text-white transition-colors text-sm disabled:opacity-50" 
-                    title="Upload & Insert Image"
-                  >
-                    {isUploading ? (
-                      <div className="w-3 h-3 border border-purple-500 border-t-transparent rounded-full animate-spin mx-1" />
-                    ) : (
-                      <ImageIcon size={13} className="mx-1" />
-                    )}
-                  </button>
-                  <div className="w-px h-4 bg-white/10 mx-1" />
-                  <button type="button" onClick={() => handleInsertMarkdown("```mermaid\n", "\n```")} className="hover:text-white transition-colors px-1 text-xs font-mono" title="Mermaid Flowchart">mermaid</button>
-                  <button type="button" onClick={() => handleInsertMarkdown("```\n", "\n```")} className="hover:text-white transition-colors px-1 text-xs font-mono" title="Code Block">{"</>"}</button>
-                </div>
-              </div>
-              <input
-                id="content-image-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleContentFileChange}
-              />
-              <textarea
-                id="content-textarea"
-                name="content"
-                value={post.content ?? ""}
-                onChange={handleChange}
-                placeholder="Write your brilliant content here..."
-                className="w-full h-[600px] bg-zinc-900/50 border border-white/5 rounded-2xl p-6 text-zinc-300 outline-none focus:border-purple-500/30 transition-all font-mono text-sm leading-relaxed resize-none"
-              />
-            </div>
-          )}
-
-          {/* Preview */}
-          {isPreview && (
-            <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-8 overflow-y-auto min-h-[600px]">
-              <div className="max-w-none prose prose-invert">
-                  <EnhancedMarkdown content={post.content || ""} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right sidebar — always col 3, sticky */}
-        <div className="space-y-6 sticky top-8 self-start">
-          <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-6">
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Title</label>
-              <input
-                type="text"
-                name="title"
-                value={post.title ?? ""}
-                onChange={handleChange}
-                placeholder="Post title"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-purple-500/50 transition-colors"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Slug</label>
-              <input
-                type="text"
-                name="slug"
-                value={post.slug ?? ""}
-                onChange={handleChange}
-                placeholder="post-slug-url"
-                disabled={Boolean(post.id && (post.published || post.publishedAt))}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-purple-500/50 transition-colors disabled:opacity-50"
-              />
-              {Boolean(post.id && (post.published || post.publishedAt)) && (
-                <p className="text-[11px] text-zinc-300">
-                  Slug is locked after first publish to preserve canonical URLs.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Category</label>
-              <select
-                name="category"
-                value={post.category ?? "Engineering"}
-                onChange={handleChange}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-purple-500/50 transition-colors appearance-none"
-              >
-                <option value="Engineering">Engineering</option>
-                <option value="Security">Security</option>
-                <option value="Product">Product</option>
-                <option value="Announcement">Announcement</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1">Excerpt</label>
-              <textarea
-                name="excerpt"
-                value={post.excerpt ?? ""}
-                onChange={handleChange}
-                placeholder="Short summary for SEO and index page"
-                className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-purple-500/50 transition-colors resize-none"
-              />
-            </div>
-
-            {/* SEO Keywords — admin-only, written to DB and used in <meta keywords> */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1 flex items-center gap-2">
-                <Tag size={12} />
-                SEO Keywords
-              </label>
-              <input
-                type="text"
-                name="keywords"
-                value={post.keywords ?? ""}
-                onChange={handleChange}
-                placeholder="repo analysis, github, open source (comma separated)"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-purple-500/50 transition-colors"
-              />
-              <p className="text-[11px] text-zinc-600">
-                Used in &lt;meta name=&quot;keywords&quot;&gt; — not visible to readers.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <label className="text-xs font-bold text-zinc-300 uppercase tracking-widest pl-1 flex items-center gap-2">
-                <ImageIcon size={12} /> Cover Image
-              </label>
-
-              {/* Drag & Drop Zone */}
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`
-                  relative group cursor-pointer transition-all duration-300
-                  aspect-video rounded-2xl border-2 border-dashed
-                  flex flex-col items-center justify-center gap-3 overflow-hidden
-                  ${isDragging ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 bg-white/5 hover:border-white/20'}
-                  ${isUploading ? 'opacity-50 cursor-wait' : ''}
-                `}
-                onClick={() => document.getElementById('image-upload')?.click()}
-              >
-                {post.image ? (
-                  <div className="absolute inset-0">
-                    <img
-                      src={post.image}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => (e.currentTarget.src = "/assets/landing_page.png")}
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <p className="text-white text-xs font-bold bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                        Change Image
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors">
-                      <ImageIcon size={20} />
-                    </div>
-                    <div className="text-center px-4">
-                      <p className="text-xs font-bold text-zinc-300">Click or Drag Image</p>
-                      <p className="text-[10px] text-zinc-300 mt-1">Recommended 1200×630px</p>
-                    </div>
-                  </>
-                )}
-
-                {isUploading && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                      <p className="text-[10px] font-bold text-purple-400">Uploading...</p>
-                    </div>
-                  </div>
-                )}
-
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
-
-              {/* Direct URL Input Fallback */}
-              <div className="relative">
-                <input
-                  type="text"
-                  name="image"
-                  value={post.image ?? ""}
-                  onChange={handleChange}
-                  placeholder="Or paste direct image URL..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-purple-500/50 transition-colors pr-12"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-600 uppercase">
-                  URL
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-xs text-zinc-300">Status</span>
-                <span className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${post.published ? "text-green-400" : "text-yellow-400"}`}>
-                    {post.published ? <Globe size={14} /> : <Lock size={14} />}
-                    {post.published ? "Published" : "Draft"}
-                </span>
-            </div>
+          <div>
+            <p className="nv-eyebrow">Admin · blog</p>
+            <h1 className="nv-display mt-1 text-nv-display-md text-balance text-nv-ivory-50">{post.id ? "Edit post" : "New post"}</h1>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => setIsPreview((v) => !v)} aria-pressed={isPreview}>
+            {isPreview ? "Back to editing" : "Preview"}
+          </Button>
+          <Button leading={<Save aria-hidden className="size-4" />} loading={isSaving} onClick={() => handleSave(false)}>
+            Save draft
+          </Button>
+          <Button variant="primary" leading={<Send aria-hidden className="size-4" />} loading={isSaving} onClick={() => handleSave(true)}>
+            {post.published ? "Update" : "Publish"}
+          </Button>
+        </div>
+      </header>
+
+      {saveStatus === "success" && (
+        <Notice tone="success" title={post.published ? "Post published" : "Draft saved"} />
+      )}
+      {saveStatus === "error" && (
+        <Notice tone="danger" title="The post was not saved">
+          {saveError}
+        </Notice>
+      )}
+
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section aria-label="Content" className="min-w-0 space-y-3">
+          {isPreview ? (
+            <div className="min-h-[24rem] overflow-y-auto rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-900 p-6">
+              <EnhancedMarkdown content={post.content || ""} />
+            </div>
+          ) : (
+            <>
+              <div role="toolbar" aria-label="Markdown formatting" className="flex flex-wrap gap-1 rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-850 p-1">
+                {toolbar.map((t) => (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => insert(t.before, t.after)}
+                    className="min-h-11 touch-manipulation rounded-nv-xs px-3 text-nv-small text-nv-ivory-200 hover:bg-nv-graphite-700 hover:text-nv-ivory-50"
+                  >
+                    {t.label}
+                  </button>
+                ))}
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-nv-xs px-3 text-nv-small text-nv-ivory-200 hover:bg-nv-graphite-700 has-[:focus-visible]:outline has-[:focus-visible]:outline-2">
+                  <ImageIcon aria-hidden className="size-4" />
+                  {isUploading ? "Uploading" : "Insert image"}
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" disabled={isUploading} onChange={onPick("content")} />
+                </label>
+              </div>
+              <Textarea
+                id="content-textarea"
+                label="Content (Markdown)"
+                name="content"
+                rows={24}
+                value={post.content ?? ""}
+                onChange={handleChange}
+                className="font-mono text-nv-small"
+                placeholder="Write your post in Markdown"
+              />
+            </>
+          )}
+        </section>
+
+        <aside aria-label="Post details" className="space-y-5 rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-900 p-4 lg:sticky lg:top-20">
+          <Input label="Title" name="title" value={post.title ?? ""} onChange={handleChange} />
+          <Input
+            label="Slug"
+            name="slug"
+            value={post.slug ?? ""}
+            onChange={handleChange}
+            disabled={slugLocked}
+            hint={slugLocked ? "Locked after first publish to keep the canonical URL." : "Used in /blog/<slug>."}
+          />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="post-category" className="text-nv-small font-medium text-nv-ivory-200">
+              Category
+            </label>
+            <select
+              id="post-category"
+              name="category"
+              value={post.category ?? "Engineering"}
+              onChange={handleChange}
+              className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Textarea label="Excerpt" name="excerpt" rows={3} value={post.excerpt ?? ""} onChange={handleChange} />
+          <Input label="Keywords" name="keywords" value={post.keywords ?? ""} onChange={handleChange} hint="Comma separated." />
+
+          <div className="space-y-2">
+            <p className="text-nv-small font-medium text-nv-ivory-200">Cover image</p>
+            {post.image && (
+              // eslint-disable-next-line @next/next/no-img-element -- remote blob URL of arbitrary host
+              <img src={post.image} alt="Cover preview" className="aspect-video w-full rounded-nv-sm border border-nv-graphite-700 object-cover" />
+            )}
+            <label className={buttonClasses("secondary", "md", "w-full cursor-pointer has-[:focus-visible]:outline has-[:focus-visible]:outline-2")}>
+              <ImageIcon aria-hidden className="size-4" />
+              {isUploading ? "Uploading" : "Upload cover image"}
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" className="sr-only" disabled={isUploading} onChange={onPick("cover")} />
+            </label>
+            <p className="m-0 text-nv-micro text-nv-ivory-300">PNG, JPEG, WebP, GIF or AVIF, up to 5 MB. 1200 by 630 works best.</p>
+            <Input label="Or paste an image URL" name="image" value={post.image ?? ""} onChange={handleChange} />
+            {uploadError && (
+              <Notice tone="danger" title="Image not uploaded">
+                {uploadError}
+              </Notice>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between border-t border-nv-graphite-700 pt-4">
+            <span className="text-nv-small text-nv-ivory-300">Status</span>
+            <Badge status={post.published ? "success" : "warning"}>
+              {post.published ? <Globe aria-hidden className="mr-1 size-3" /> : <Lock aria-hidden className="mr-1 size-3" />}
+              {post.published ? "Published" : "Draft"}
+            </Badge>
+          </div>
+        </aside>
       </div>
     </div>
   );

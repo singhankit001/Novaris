@@ -22,6 +22,7 @@ vi.mock("@/lib/ai-client", () => ({
 vi.mock("@/lib/cache", () => ({
     getCachedQuerySelection: getCachedQuerySelectionMock,
     cacheQuerySelection: cacheQuerySelectionMock,
+    isRepoMarkedPrivate: vi.fn(async () => false),
 }));
 
 import { analyzeFileSelection } from "@/lib/gemini";

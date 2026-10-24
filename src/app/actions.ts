@@ -39,7 +39,8 @@ import {
 } from "@/lib/analytics";
 import { ANON_COOKIE_NAME, isValidAnonymousCookieId } from "@/lib/actor-id";
 import { getRepoIndexStatus } from "@/lib/services/repo-index-service";
-import type { StreamUpdate } from "@/lib/streaming-types";
+import { toSafeStreamError, type StreamUpdate } from "@/lib/streaming-types";
+import { GITHUB_NAME_PATTERN, MAX_FILE_PATH_LENGTH, MAX_FILE_PATHS, assertGithubName, assertMaxLength } from "@/lib/request-validation";
 import type { GitHubProfile } from "@/lib/github";
 import type { SearchResult } from "@/lib/search-engine";
 import { getCachedSecurityScanResult, cacheSecurityScanResult } from "@/lib/cache";
@@ -67,6 +68,7 @@ import {
 import {
     createScanShareLink as createScanShareLinkRecord,
     resolveScanFromShareToken as resolveScanFromShareTokenRecord,
+    peekScanFromShareToken as peekScanFromShareTokenRecord,
 } from "@/lib/services/scan-share-links";
 import {
     toProfileContext,
@@ -84,7 +86,7 @@ import {
     createFalsePositiveSubmission,
     updateFalsePositiveStatus,
 } from "@/lib/services/report-false-positives";
-import { saveScanFindingVerificationRecords } from "@/lib/services/finding-verification-store";
+import { getFixVerificationRun, saveScanFindingVerificationRecords } from "@/lib/services/finding-verification-store";
 import {
     finalizeFixVerificationRun,
     startFixVerificationRun,
@@ -107,21 +109,9 @@ function getErrorMessage(error: unknown): string {
     return String(error);
 }
 
-function classifyStreamError(error: unknown): { message: string; code?: string } {
-    const message = getErrorMessage(error) || "An error occurred";
-    if (/missing a thought_signature|thought_signature/i.test(message)) {
-        return {
-            message: "AI tool-call handoff failed while streaming (missing thought signature). Please retry.",
-            code: "AI_MISSING_THOUGHT_SIGNATURE",
-        };
-    }
-    if (/function response turn comes immediately after a function call turn/i.test(message)) {
-        return {
-            message: "AI tool-call handoff failed while streaming. Please retry.",
-            code: "AI_FUNCTION_TURN_ORDER",
-        };
-    }
-    return { message };
+function classifyStreamError(error: unknown): { message: string; code: string } {
+    // Raw text is logged by the caller; clients only get the fixed, user-safe message.
+    return toSafeStreamError(getErrorMessage(error), (error as { code?: unknown } | null)?.code);
 }
 
 // ─── Private: Analytics tracking ─────────────────────────────────────────────
@@ -397,7 +387,9 @@ async function buildCrossRepoContext(
 // ─── Public Actions — Data Fetching ──────────────────────────────────────────
 
 export async function fetchGitHubData(input: string) {
+    if (typeof input !== "string" || input.length > 201) return { error: "Invalid input format", code: "INPUT_INVALID" };
     const parts = input.split("/");
+    if (parts.some((part) => !GITHUB_NAME_PATTERN.test(part))) return { error: "Invalid input format", code: "INPUT_INVALID" };
     const session = await auth();
 
     if (parts.length === 1) {
@@ -408,7 +400,9 @@ export async function fetchGitHubData(input: string) {
             }
             return { type: "profile", data };
         } catch (e: unknown) {
-            return { error: `User not found: ${getErrorMessage(e)}` };
+            console.error("fetchGitHubData profile failed:", e);
+            const safe = classifyStreamError(e);
+            return { error: safe.message, code: safe.code };
         }
     }
     if (parts.length === 2) {
@@ -426,25 +420,31 @@ export async function fetchGitHubData(input: string) {
             }
             return { type: "repo", data: repoData, fileTree: tree, hiddenFiles, indexStatus };
         } catch (e: unknown) {
-            return { error: `Repository not found: ${getErrorMessage(e)}` };
+            console.error("fetchGitHubData repo failed:", e);
+            const safe = classifyStreamError(e);
+            return { error: safe.message, code: safe.code };
         }
     }
     return { error: "Invalid input format" };
 }
 
 export async function getRepoSuggestions(query: string) {
+    assertMaxLength(query, 200, "Search text");
     return _getRepoSuggestions(query);
 }
 
 export async function fetchProfile(username: string) {
+    assertGithubName(username, "username");
     return getProfile(username);
 }
 
 export async function fetchRecentProfileCommitSnapshot(username: string) {
+    assertGithubName(username, "username");
     return getRecentProfileCommitsSnapshot(username, 20);
 }
 
 export async function fetchGitHubAvatarUrl(username: string) {
+    assertGithubName(username, "username");
     try {
         const profile = await getProfile(username);
         return { url: profile.avatar_url };
@@ -476,6 +476,9 @@ export async function fetchRepoFiles(
     repo: string,
     files: Array<{ path: string; sha?: string }>
 ): Promise<{ context: string; fetchedFiles: string[] }> {
+    assertGithubName(owner, "owner");
+    assertGithubName(repo, "repo");
+    assertFileList(files);
     const { countTokens, MAX_TOKENS } = await import("@/lib/tokens");
     const results = await getFileContentBatch(owner, repo, files);
 
@@ -500,10 +503,12 @@ export async function fetchRepoFiles(
 
 
 export async function fetchProfileReadme(username: string) {
+    assertGithubName(username, "username");
     return getProfileReadme(username);
 }
 
 export async function fetchUserRepos(username: string) {
+    assertGithubName(username, "username");
     const repos = await getUserRepos(username);
     return repos.map((r) => ({
         repo: r.name,
@@ -517,6 +522,8 @@ export async function fetchUserRepos(username: string) {
 }
 
 export async function fetchRepoDetails(owner: string, repo: string) {
+    assertGithubName(owner, "owner");
+    assertGithubName(repo, "repo");
     return getRepo(owner, repo);
 }
 
@@ -847,8 +854,38 @@ export interface SecurityScanOptions {
 }
 
 type SecurityScanCoreResult = Awaited<ReturnType<typeof runSecurityScan>>;
-type SecurityScanResult = SecurityScanCoreResult & { scanId?: string };
+/**
+ * `reportAccess` tells the UI whether the saved report can be opened by this caller:
+ * "owner" (signed in, saved under their account) or "anonymous-unviewable" (anonymous scans are
+ * saved without an owner, so nobody can open them afterwards).
+ */
+type SecurityScanResult = SecurityScanCoreResult & { scanId?: string; reportAccess: "owner" | "anonymous-unviewable" };
 const DEEP_SCAN_MONTHLY_LIMIT = 15;
+const MAX_SCAN_PATTERNS = 50;
+const MAX_SCAN_PATTERN_LENGTH = 200;
+
+function assertFileList(files: Array<{ path: string; sha?: string }>): void {
+    if (!Array.isArray(files) || files.length > MAX_FILE_PATHS) {
+        throw new Error(`At most ${MAX_FILE_PATHS} files are accepted.`);
+    }
+    for (const file of files) {
+        if (typeof file?.path !== "string" || file.path.length === 0 || file.path.length > MAX_FILE_PATH_LENGTH) {
+            throw new Error("Invalid file path.");
+        }
+    }
+}
+
+function assertScanOptions(options: SecurityScanOptions): void {
+    for (const list of [options.includePatterns, options.excludePatterns, options.selectedPaths, options.filePaths]) {
+        if (list === undefined) continue;
+        if (!Array.isArray(list) || list.length > MAX_FILE_PATHS) throw new Error("Scan option list is too long.");
+    }
+    for (const list of [options.includePatterns, options.excludePatterns]) {
+        if (list && (list.length > MAX_SCAN_PATTERNS || list.some((p) => typeof p !== "string" || p.length > MAX_SCAN_PATTERN_LENGTH))) {
+            throw new Error("Scan patterns are too long.");
+        }
+    }
+}
 
 export async function scanRepositoryVulnerabilities(
     owner: string,
@@ -856,6 +893,10 @@ export async function scanRepositoryVulnerabilities(
     files: Array<{ path: string; sha?: string }>,
     options: SecurityScanOptions = {}
 ): Promise<SecurityScanResult> {
+    assertGithubName(owner, "owner");
+    assertGithubName(repo, "repo");
+    assertFileList(files);
+    assertScanOptions(options);
     const config = buildScanConfig(options);
     const filePaths = files.map(f => f.path);
 
@@ -927,24 +968,34 @@ export async function scanRepositoryVulnerabilities(
             },
         };
     } else {
+        // Deep scans reserve a monthly slot atomically (INCR first, refund on failure).
+        let slotReserved = false;
         if (config.analysisProfile === "deep" && limitKey) {
-            const currentScans = await kv.get<number>(limitKey) || 0;
-            if (currentScans >= DEEP_SCAN_MONTHLY_LIMIT) {
+            let used: number;
+            try {
+                used = await kv.incr(limitKey);
+                if (used === 1) await kv.expire(limitKey, 32 * 24 * 60 * 60);
+            } catch (error) {
+                console.error("Deep scan quota unavailable:", error);
+                throw new Error("Deep Scan is temporarily unavailable because your usage could not be verified. Try again shortly.");
+            }
+            if (used > DEEP_SCAN_MONTHLY_LIMIT) {
+                await kv.decr(limitKey).catch((error: unknown) => console.error("Deep scan quota refund failed:", error));
                 throw new Error(`Monthly Deep Scan limit reached (${DEEP_SCAN_MONTHLY_LIMIT}/${DEEP_SCAN_MONTHLY_LIMIT}).`);
             }
+            slotReserved = true;
         }
 
-        result = await runSecurityScan(owner, repo, files, config);
-
-        // Cache the full core result object for 7 days.
-        await cacheSecurityScanResult(owner, repo, cacheIdentity, result);
-    }
-
-    // Deep quota counts only fresh deep scans (cache hits do not consume quota).
-    if (config.analysisProfile === "deep" && limitKey && !isCacheHit) {
-        await kv.incr(limitKey);
-        // Expire key after 32 days to clean up
-        await kv.expire(limitKey, 32 * 24 * 60 * 60);
+        try {
+            result = await runSecurityScan(owner, repo, files, config);
+            // Cache the full core result object for 7 days.
+            await cacheSecurityScanResult(owner, repo, cacheIdentity, result);
+        } catch (error) {
+            if (slotReserved) {
+                await kv.decr(limitKey).catch((refundError: unknown) => console.error("Deep scan quota refund failed:", refundError));
+            }
+            throw error;
+        }
     }
 
     let scanId: string | undefined;
@@ -979,10 +1030,11 @@ export async function scanRepositoryVulnerabilities(
     return {
         ...result,
         scanId,
+        reportAccess: session?.user?.id ? "owner" : "anonymous-unviewable",
     };
 }
 
-export async function getRemainingDeepScans(): Promise<{ used: number; total: number; resetsAt: string; isUnlimited: boolean }> {
+export async function getRemainingDeepScans(): Promise<{ used: number; total: number; resetsAt: string; isUnlimited: boolean; unavailable?: boolean }> {
     const session = await auth();
     const total = DEEP_SCAN_MONTHLY_LIMIT;
     const now = new Date();
@@ -1001,9 +1053,14 @@ export async function getRemainingDeepScans(): Promise<{ used: number; total: nu
     const monthKey = `${now.getFullYear()}_${now.getMonth() + 1}`;
     const limitKey = `user:${session.user.id}:deep_scans:${monthKey}`;
 
-    const currentScans = await kv.get<number>(limitKey) || 0;
-
-    return { used: currentScans, total, resetsAt, isUnlimited: false };
+    try {
+        const currentScans = await kv.get<number>(limitKey) || 0;
+        return { used: currentScans, total, resetsAt, isUnlimited: false };
+    } catch (error) {
+        // Fail closed: show the allowance as spent rather than claim scans that cannot be verified.
+        console.error("Deep scan quota read failed:", error);
+        return { used: total, total, resetsAt, isUnlimited: false, unavailable: true };
+    }
 }
 
 export async function getLatestRepoScanId(owner: string, repo: string): Promise<string | null> {
@@ -1079,11 +1136,14 @@ export async function generateOutreachPack(scanId: string, ttlDays: number = 7) 
     };
 }
 
+const FALSE_POSITIVE_DETAILS_MAX_LENGTH = 2000;
+
 export async function submitReportFalsePositive(input: {
     scanId: string;
     findingIndex: number;
     findingFingerprint: string;
-    isSharedView: boolean;
+    /** Present when submitting from a shared report; it must resolve to the same scan. */
+    shareToken?: string;
     reason: ReportFalsePositiveReason;
     details: string;
 }) {
@@ -1096,7 +1156,13 @@ export async function submitReportFalsePositive(input: {
     }
 
     const scan = scanResult.scan;
-    if (!input.isSharedView && !canAccessPrivateReport(session, scan)) {
+    const isSharedView = typeof input.shareToken === "string" && input.shareToken.length > 0;
+    if (isSharedView) {
+        const share = await peekScanFromShareTokenRecord(input.shareToken as string);
+        if (share.status !== "ok" || share.scanId !== scan.id) {
+            throw new Error("Forbidden");
+        }
+    } else if (!canAccessPrivateReport(session, scan)) {
         throw new Error("Forbidden");
     }
 
@@ -1112,9 +1178,12 @@ export async function submitReportFalsePositive(input: {
     if (!FALSE_POSITIVE_REASONS.has(input.reason)) {
         throw new Error("Invalid false positive reason");
     }
-    const details = input.details.trim();
+    const details = typeof input.details === "string" ? input.details.trim() : "";
     if (!details) {
         throw new Error("Please include details for the false positive report");
+    }
+    if (details.length > FALSE_POSITIVE_DETAILS_MAX_LENGTH) {
+        throw new Error(`Details must be ${FALSE_POSITIVE_DETAILS_MAX_LENGTH} characters or fewer`);
     }
 
     await createFalsePositiveSubmission({
@@ -1131,7 +1200,7 @@ export async function submitReportFalsePositive(input: {
         confidence: finding.confidence,
         reason: input.reason,
         details,
-        isSharedView: input.isSharedView,
+        isSharedView,
         submittedByUserId: userId ?? null,
     });
 
@@ -1169,28 +1238,50 @@ export async function updateReportFalsePositiveReviewStatus(input: {
     return updated;
 }
 
+const FIX_VERIFICATION_MAX_CHANGED_FILES = 50;
+const FIX_VERIFICATION_MAX_PATH_LENGTH = 512;
+
 export async function startFindingFixVerification(input: {
-    scanId?: string;
+    scanId: string;
     findingFingerprint: string;
     changedFiles: string[];
 }) {
-    const session = await auth();
-    const userId = getSessionUserId(session);
+    const { session, userId } = await requireAuthenticatedActor();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
 
-    return startFixVerificationRun(
-        input.findingFingerprint,
-        input.changedFiles,
-        {
-            scanId: input.scanId,
-            requestedByUserId: userId ?? null,
-        }
-    );
+    const scanResult = await getScanResultWithStatus(input.scanId);
+    if (scanResult.status !== "ok" || !canAccessPrivateReport(session, scanResult.scan)) {
+        throw new Error("Forbidden");
+    }
+
+    const changedFiles = Array.isArray(input.changedFiles) ? input.changedFiles : [];
+    if (
+        changedFiles.length > FIX_VERIFICATION_MAX_CHANGED_FILES ||
+        changedFiles.some((file) => typeof file !== "string" || file.length === 0 || file.length > FIX_VERIFICATION_MAX_PATH_LENGTH)
+    ) {
+        throw new Error("Invalid changed files");
+    }
+    if (typeof input.findingFingerprint !== "string" || input.findingFingerprint.length === 0) {
+        throw new Error("Invalid finding fingerprint");
+    }
+
+    return startFixVerificationRun(input.findingFingerprint, changedFiles, {
+        scanId: scanResult.scan.id,
+        requestedByUserId: userId,
+    });
 }
 
 export async function finalizeFindingFixVerification(input: {
     runId: string;
 }) {
-    return finalizeFixVerificationRun(input.runId);
+    const { session, userId } = await requireAuthenticatedActor();
+    const run = await getFixVerificationRun(input.runId);
+    if (!run || (!isAdminUser(session) && (!userId || run.requestedByUserId !== userId))) {
+        throw new Error("Fix verification run not found.");
+    }
+    return finalizeFixVerificationRun(run.id);
 }
 
 export async function resetAdminReportFunnel() {
@@ -1249,6 +1340,10 @@ export async function searchRepositoryCode(
     query: string,
     type: "text" | "regex" | "ast" = "text"
 ): Promise<SearchResult[]> {
+    assertGithubName(owner, "owner");
+    assertGithubName(repo, "repo");
+    assertFileList(files);
+    assertMaxLength(query, 1000, "Search query");
     return _searchRepositoryCode(owner, repo, files, query, type);
 }
 

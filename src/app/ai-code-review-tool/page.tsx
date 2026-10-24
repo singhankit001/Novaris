@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import JsonLdScript from "@/components/JsonLdScript";
-import SeoVisual from "@/components/seo/SeoVisual";
+import SolutionPage from "@/components/seo/SolutionPage";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -83,136 +81,21 @@ const softwareSchema = buildSoftwareApplicationStructuredData({
 
 export default function AICodeReviewToolPage() {
   return (
-    <main className="min-h-screen bg-transparent text-white px-6 py-20 relative z-10">
-      <JsonLdScript data={breadcrumbSchema} />
-      <JsonLdScript data={faqSchema} />
-      <JsonLdScript data={softwareSchema} />
-
-      <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span>/</span>
-          <Link href="/solutions" className="hover:text-white transition-colors">Solutions</Link>
-          <span>/</span>
-          <span className="text-zinc-200">AI Code Review Tool</span>
-        </nav>
-
-        <header className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-            AI Code Review Tool with Full-File Context
-          </h1>
-          <p className="text-zinc-300 text-lg leading-relaxed mb-4">
-            Novaris helps engineering teams review code with repository-level context, making it easier
-            to catch high-impact issues before merge and reduce slow, repetitive review cycles.
-          </p>
-          <p className="text-zinc-200 leading-relaxed">
-            Instead of local-only diff reading, this workflow highlights architecture side effects,
-            dependency impact, and probable risk areas so reviewers can focus on what matters first.
-          </p>
-        </header>
-
-        <section className="mb-10">
-          <SeoVisual
-            variant="review-workflow"
-            ariaLabel="AI code review workflow from review intent to actionable feedback"
-            sizeMode="wide"
-            animate
-            priority="high"
-          />
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-10">
-          <h2 className="text-2xl font-semibold mb-4">How this AI code review workflow works</h2>
-          <p className="text-zinc-300 leading-relaxed mb-4">
-            Novaris starts with review intent, then evaluates changes with broader repository context.
-            This helps reviewers understand how a modification may affect behavior in adjacent modules and
-            where regression risk is most likely.
-          </p>
-          <h3 className="text-xl font-medium mb-2">Context before comment quality</h3>
-          <p className="text-zinc-300 leading-relaxed mb-4">
-            Better context improves feedback quality, lowers misprioritized comments, and makes review outcomes easier to action.
-          </p>
-          <h3 className="text-xl font-medium mb-2">Action-ready outcomes for teams</h3>
-          <p className="text-zinc-300 leading-relaxed">
-            Teams can move from findings to concrete follow-up tasks with clearer ownership and sequencing.
-          </p>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-2 mb-10">
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Review quality</h2>
-            <p className="text-zinc-200">
-              Catch hidden dependencies and system-level side effects that are easy to miss in diff-only reviews.
-            </p>
-          </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Reviewer productivity</h2>
-            <p className="text-zinc-200">
-              Spend less time rebuilding context and more time validating critical implementation decisions.
-            </p>
-          </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Team consistency</h2>
-            <p className="text-zinc-200">
-              Standardize how high-risk changes are reviewed across teams and repositories.
-            </p>
-          </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Release confidence</h2>
-            <p className="text-zinc-200">
-              Improve confidence before merge by highlighting areas that need deeper validation.
-            </p>
-          </article>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-10">
-          <h2 className="text-2xl font-semibold mb-4">Related review and analysis paths</h2>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/github-repository-analysis" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              GitHub Repository Analysis
-            </Link>
-            <Link href="/static-analysis-vs-novaris" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              Static Analysis vs Novaris
-            </Link>
-            <Link href="/security-scanner" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              Security Scanner
-            </Link>
-            <Link href="/compare" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              Comparison Hub
-            </Link>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-10">
-          <h2 className="text-2xl font-semibold mb-6">Frequently Asked Questions</h2>
-          <div className="space-y-5">
-            {faqItems.map((faq) => (
-              <article key={faq.question} className="border-b border-white/10 pb-4 last:border-0">
-                <h3 className="text-lg font-medium mb-2">{faq.question}</h3>
-                <p className="text-zinc-300 leading-relaxed">{faq.answer}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
-          <h2 className="text-2xl font-semibold mb-2">Take the next step</h2>
-          <p className="text-zinc-200 mb-6">
-            Run context-aware review on your highest-change repository and improve review outcomes this sprint.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/chat" className="px-5 py-3 rounded-lg bg-white text-black font-medium hover:bg-zinc-200 transition-colors">
-              Start AI Code Review
-            </Link>
-            <Link href="/github-repository-analysis" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors">
-              Analyze Repository Architecture
-            </Link>
-            <Link href="/solutions" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors">
-              Back to Solutions
-            </Link>
-          </div>
-        </section>
-      </div>
-    </main>
+    <SolutionPage
+      crumbTitle="AI Code Review Tool"
+      h1="AI Code Review Tool with Full-File Context"
+      lead={["Novaris helps engineering teams review code with repository-level context, making it easier to catch high-impact issues before merge and reduce slow, repetitive review cycles.", "Instead of local-only diff reading, this workflow highlights architecture side effects, dependency impact, and probable risk areas so reviewers can focus on what matters first."]}
+      visual={{ variant: "review-workflow", ariaLabel: "AI code review workflow from review intent to actionable feedback, illustrative" }}
+      mainTitle="How this AI code review workflow works"
+      mainIntro="Novaris starts with review intent, then evaluates changes with broader repository context. This helps reviewers understand how a modification may affect behavior in adjacent modules and where regression risk is most likely."
+      subsections={[{"title": "Context before comment quality", "text": "Better context improves feedback quality, lowers misprioritized comments, and makes review outcomes easier to action."}, {"title": "Action-ready outcomes for teams", "text": "Teams can move from findings to concrete follow-up tasks with clearer ownership and sequencing."}]}
+      cards={[{"title": "Review quality", "text": "Catch hidden dependencies and system-level side effects that are easy to miss in diff-only reviews."}, {"title": "Reviewer productivity", "text": "Spend less time rebuilding context and more time validating critical implementation decisions."}, {"title": "Team consistency", "text": "Standardize how high-risk changes are reviewed across teams and repositories."}, {"title": "Release confidence", "text": "Improve confidence before merge by highlighting areas that need deeper validation."}]}
+      relatedTitle="Related review and analysis paths"
+      related={[{"href": "/github-repository-analysis", "label": "GitHub Repository Analysis"}, {"href": "/static-analysis-vs-novaris", "label": "Static Analysis vs Novaris"}, {"href": "/security-scanner", "label": "Security Scanner"}, {"href": "/compare", "label": "Comparison Hub"}]}
+      faqItems={faqItems}
+      nextText="Run context-aware review on your highest-change repository and improve review outcomes this sprint."
+      ctas={[{"href": "/chat", "label": "Start AI Code Review", "primary": true}, {"href": "/github-repository-analysis", "label": "Analyze Repository Architecture"}, {"href": "/solutions", "label": "Back to Solutions"}]}
+      schemas={[breadcrumbSchema, faqSchema, softwareSchema]}
+    />
   );
 }

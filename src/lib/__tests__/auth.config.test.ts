@@ -43,4 +43,19 @@ describe("auth.config callbacks", () => {
         const resultWithError = result as { error?: string } | undefined;
         expect(resultWithError?.error).toBe(INVALID_SESSION_ERROR_CODE);
     });
+
+    it("never copies the GitHub OAuth token or scope onto the browser-visible session", async () => {
+        const session = authConfig.callbacks?.session;
+        const result = await session?.({
+            session: { expires: "2099-01-01T00:00:00.000Z", user: { name: "Test", email: null, image: null } },
+            token: { id: "user_1", username: "octocat", accessToken: "gho_secret", oauthScope: "repo" },
+            user: undefined,
+            newSession: undefined,
+            trigger: "update",
+        } as never);
+
+        expect(JSON.stringify(result)).not.toContain("gho_secret");
+        expect(JSON.stringify(result)).not.toContain("oauthScope");
+        expect((result as { user?: { username?: string } })?.user?.username).toBe("octocat");
+    });
 });

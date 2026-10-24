@@ -4,27 +4,17 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
-import { ArrowRight, ChevronDown, Star, GitFork, MessageSquare, Globe, TrendingUp } from "lucide-react";
-import { getRecentSearches } from "./actions";
-import TrustedByMarquee from "@/components/TrustedByMarquee";
-import { GitHubBadge } from "@/components/GitHubBadge";
-import { CAGBadge } from "@/components/CAGBadge";
-import { WhatsNewBadge } from "@/components/WhatsNewBadge";
-import Image from "next/image";
-import PublicStats from "@/components/PublicStats";
-import AuthButton from "@/components/AuthButton";
-import { Interactive3DCard } from "@/components/Interactive3DCard";
 import dynamic from "next/dynamic";
-
-const InteractiveDemo = dynamic(() => import("@/components/InteractiveDemo"), { ssr: true });
-const BentoFeatures = dynamic(() => import("@/components/BentoFeatures"), { ssr: true });
-const CAGComparison = dynamic(() => import("@/components/CAGComparison"), { ssr: true });
-const InstallPWA = dynamic(() => import("@/components/InstallPWA").then((mod) => mod.InstallPWA), { ssr: false });
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-const FeaturedIn = dynamic(() => import("@/components/FeaturedIn"), { ssr: true });
-const MediaShowcase = dynamic(() => import("@/components/MediaShowcase"), { ssr: true });
-const SecurityBanner = dynamic(() => import("@/components/SecurityBanner"), { ssr: true });
+import { ArrowUpRight } from "lucide-react";
+import { getRecentSearches } from "./actions";
+import RepoSearch from "@/components/RepoSearch";
+import PublicStats from "@/components/PublicStats";
+import { WhatsNewBadge } from "@/components/WhatsNewBadge";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { Notice } from "@/components/nv/notice";
+import { BasisTag } from "@/components/nv/badge";
+import { Citation } from "@/components/nv/evidence";
+import { FaqList } from "@/components/seo/blocks";
 import JsonLdScript from "@/components/JsonLdScript";
 import type { SearchHistoryItem } from "@/lib/services/history-service";
 import { INVALID_SESSION_ERROR_PARAM } from "@/lib/session-guard";
@@ -32,14 +22,72 @@ import { BlogPost } from "@prisma/client";
 import { CatalogRepoEntry } from "@/lib/repo-catalog";
 import { FAQ_PAGE_ITEMS } from "@/lib/faq-data";
 import { normalizeGitHubInput } from "@/lib/utils";
-import RepoSearch from "@/components/RepoSearch";
 import { buildFaqStructuredData, buildSoftwareApplicationStructuredData } from "@/lib/structured-data";
+
+const InstallPWA = dynamic(() => import("@/components/InstallPWA").then((mod) => mod.InstallPWA), { ssr: false });
 
 type PublicStatsData = {
     totalVisitors: number;
     totalQueries: number;
     totalScans: number;
 };
+
+/**
+ * Static, clearly illustrative poster for the Phase 4 repository atlas. The 3D component replaces
+ * the contents of the slot. Strata are module layers; copper lines are example evidence edges.
+ */
+function AtlasPoster() {
+    const layers = [
+        { y: 28, label: "app/", files: [34, 22, 46, 18] },
+        { y: 92, label: "components/", files: [26, 40, 20, 32, 16] },
+        { y: 156, label: "lib/", files: [44, 24, 30] },
+        { y: 220, label: "prisma/", files: [38, 28] },
+    ];
+    return (
+        <figure className="m-0">
+            <div data-atlas-slot="landing" aria-hidden="true" className="relative">
+                <svg viewBox="0 0 440 300" className="h-auto w-full" role="presentation" focusable="false">
+                    {layers.map((l) => (
+                        <g key={l.label}>
+                            <rect x="8" y={l.y} width="424" height="52" fill="var(--nv-graphite-900)" stroke="var(--nv-graphite-700)" />
+                            <text x="18" y={l.y + 16} fill="var(--nv-ivory-300)" fontFamily="var(--nv-font-mono)" fontSize="10">
+                                {l.label}
+                            </text>
+                            {l.files.map((w, i) => {
+                                const x = 120 + l.files.slice(0, i).reduce((a, b) => a + b + 14, 0);
+                                return <rect key={i} x={x} y={l.y + 12} width={w * 3} height="28" fill="var(--nv-graphite-800)" stroke="var(--nv-graphite-600)" />;
+                            })}
+                        </g>
+                    ))}
+                    <g fill="none" stroke="var(--nv-copper-400)" strokeWidth="1.5">
+                        <path d="M170 54 C 170 86, 150 90, 150 104" />
+                        <path d="M260 118 C 260 140, 200 140, 200 168" />
+                        <path d="M200 182 C 200 210, 160 210, 160 234" />
+                        <path d="M330 54 C 330 90, 300 100, 300 104" />
+                    </g>
+                    <g fill="var(--nv-copper-400)">
+                        <circle cx="170" cy="54" r="3" />
+                        <circle cx="150" cy="104" r="3" />
+                        <circle cx="260" cy="118" r="3" />
+                        <circle cx="200" cy="168" r="3" />
+                        <circle cx="160" cy="234" r="3" />
+                    </g>
+                </svg>
+            </div>
+            <figcaption className="mt-3 text-nv-micro text-nv-ivory-300">
+                <span className="nv-eyebrow mr-2">Illustrative</span>
+                Layers are modules, copper lines are imports. In a real result each line links to a file and line range.
+            </figcaption>
+        </figure>
+    );
+}
+
+const FACTS: { term: string; detail: string }[] = [
+    { term: "What it reads", detail: "Public GitHub data through the GitHub API: the file tree, the files chosen for your question, commit and language metadata." },
+    { term: "What it sends to Gemini", detail: "Those selected files and your question, so the model can answer. Nothing else leaves GitHub's data." },
+    { term: "Limits", detail: "Each question has a file budget. Deep security scans need sign-in. Reports are kept for 7 days." },
+    { term: "What it does not do", detail: "No cloning or running code, no developer rankings or scores. Private repositories only with the access you grant." },
+];
 
 export default function HomeClient({
     initialPosts = [],
@@ -54,18 +102,15 @@ export default function HomeClient({
 }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session } = useSession();
     const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
-    const [visibleReposCount, setVisibleReposCount] = useState(6);
     const hasInvalidSessionError = searchParams.get("error") === INVALID_SESSION_ERROR_PARAM;
 
     const [trendingTier, setTrendingTier] = useState<"weekly" | "monthly">("weekly");
     const trendingRepos = trendingTier === "weekly" ? weeklyTrending : monthlyTrending;
-    const visibleRepos = trendingRepos.slice(0, visibleReposCount);
-    const hasMoreRepos = visibleReposCount < trendingRepos.length;
+    const visibleRepos = trendingRepos.slice(0, 6);
     const softwareSchema = buildSoftwareApplicationStructuredData({
         name: "Novaris",
         description:
@@ -102,435 +147,177 @@ export default function HomeClient({
         }
     };
     return (
-        <main className="flex flex-col bg-transparent text-white overflow-x-hidden relative min-h-screen noise-bg">
-            {/* Premium background grid and glowing lights */}
-            <div className="absolute inset-0 premium-grid opacity-15 pointer-events-none z-0" />
-            <div className="absolute inset-0 premium-radial pointer-events-none z-0" />
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-950/10 rounded-full blur-[140px] pointer-events-none z-0 animate-mesh-1" />
-            <div className="absolute bottom-1/3 right-1/4 w-[600px] h-[600px] bg-blue-950/10 rounded-full blur-[160px] pointer-events-none z-0 animate-mesh-2" />
-
-            {/* Sticky Glass Navbar */}
-            <header className="sticky top-0 z-[100] w-full border-b border-white/10 bg-[#030303]/85 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all">
-                <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-6">
-                    <div className="flex items-center gap-8">
-                        <Link href="/" className="flex items-center gap-2.5 group">
-                            <span className="font-display font-extrabold text-xl tracking-[0.25em] bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-zinc-100 to-purple-500 hover:opacity-90 transition-opacity">
-                                NOVARIS
-                            </span>
-                        </Link>
-                        <nav className="hidden md:flex items-center gap-4 text-xs font-semibold tracking-wider uppercase text-zinc-200">
-                            <Link href="/solutions" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                Solutions
-                            </Link>
-                            <Link href="/compare" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                Compare
-                            </Link>
-                            <Link href="/blog" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                Insights
-                            </Link>
-                            <Link href="/faq" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                FAQ
-                            </Link>
-                        </nav>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <GitHubBadge />
-                        <AuthButton />
-                    </div>
-                </div>
-            </header>
-
-            <section className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-16 sm:py-20 md:py-24 relative overflow-hidden z-10">
-                {/* Animated connection web background */}
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30">
-                    <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                        <motion.circle cx="15%" cy="20%" r="4" fill="#a855f7" opacity="0.6" animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0.8, 0.4] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} />
-                        <motion.circle cx="85%" cy="30%" r="6" fill="#3b82f6" opacity="0.4" animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }} />
-                        <motion.circle cx="70%" cy="80%" r="5" fill="#10b981" opacity="0.5" animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.7, 0.4] }} transition={{ repeat: Infinity, duration: 6, ease: "easeInOut", delay: 2 }} />
-                        <motion.circle cx="25%" cy="75%" r="5" fill="#eab308" opacity="0.4" animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 3 }} />
-                        <path d="M 15% 20% L 25% 75%" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="5,5" />
-                        <path d="M 85% 30% L 70% 80%" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="5,5" />
-                        <path d="M 15% 20% L 85% 30%" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1.5" />
-                    </svg>
-                </div>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="z-10 flex flex-col items-center text-center max-w-4xl w-full px-4 gap-4 md:gap-5"
-                >
-                    <div className="w-full flex flex-col items-center gap-3 md:gap-4">
-                        <div className="conic-border-container neon-spin-ring rounded-full w-16 h-16 md:w-20 md:h-20 flex items-center justify-center">
-                            <Image
-                                src="/1080x1080.png"
-                                alt="Novaris Logo"
-                                width={96}
-                                height={96}
-                                className="w-full h-full object-cover rounded-full"
-                            />
-                        </div>
-                        <div className="inline-flex items-center justify-center gap-2 md:gap-3 w-full">
-                            <p className="whitespace-nowrap text-xs md:text-sm font-extrabold tracking-[0.4em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 leading-none">
-                                NOVARIS
-                            </p>
+        <SiteChrome>
+            <div className="mx-auto w-full max-w-[var(--nv-page-max)] px-[var(--nv-gutter)]">
+                <section aria-labelledby="home-h" className="grid grid-cols-1 gap-10 py-12 md:py-20 lg:grid-cols-12 lg:gap-12">
+                    <div className="lg:col-span-7">
+                        <p className="nv-eyebrow mb-5 flex flex-wrap items-center gap-x-3">
+                            Public repositories and profiles
                             <WhatsNewBadge />
-                        </div>
-                    </div>
-
-                    <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-100 to-zinc-300 relative leading-tight max-w-5xl text-balance animate-fade-in-up-blur drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                        GitHub Repository Analysis, Code Review & Security Scanning
-                    </h1>
-
-                    <CAGBadge />
-
-                    <p className="text-base sm:text-lg md:text-xl text-zinc-200 mb-4 max-w-3xl mx-auto leading-relaxed animate-fade-in-up-blur [animation-delay:200ms] font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                        Understand repositories faster with context-aware AI. Go from URL to architecture, code review, and security triage.
-                    </p>
-
-                    {hasInvalidSessionError && (
-                        <div className="w-full max-w-md mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-100">
-                            Your session could not be validated. Please sign in again.
-                        </div>
-                    )}
-
-                    <Interactive3DCard className="w-full max-w-4xl p-2" glowColor="cyan">
-                        <RepoSearch 
-                            onSearchSubmit={handleSearch}
-                            loading={loading}
-                            trendingRepos={weeklyTrending}
-                            recentSearches={recentSearches}
-                            isSessionActive={!!session}
-                        />
-                    </Interactive3DCard>
-
-                    {error && (
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="mt-5 text-red-400 text-sm"
-                        >
-                            {error}
-                        </motion.p>
-                    )}
-
-                    <PublicStats stats={publicStats} />
-                </motion.div>
-            </section>
-
-            <FeaturedIn />
-            <TrustedByMarquee trendingRepos={weeklyTrending} />
-            <InteractiveDemo />
-
-            <div className="relative z-10 w-full bg-transparent">
-                <BentoFeatures />
-                <SecurityBanner />
-            </div>
-
-            <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 gap-10 items-start">
-                        <div>
-                            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">Use Cases That Drive Decisions</h2>
-                            <p className="text-zinc-200 text-lg mb-8">
-                                Novaris helps teams reduce uncertainty before adoption, release, and remediation decisions.
-                            </p>
-                            <div className="space-y-4">
-                                <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
-                                    <h3 className="text-xl font-semibold mb-2 group-hover:text-cyan-400 transition-colors">Repository Due Diligence</h3>
-                                    <p className="text-zinc-200 text-sm mb-4">Evaluate unfamiliar repositories before adopting dependencies or onboarding teams. Get system-level snapshots for immediate clarity.</p>
-                                    <Link href="/github-repository-analysis" className="text-cyan-400 text-xs font-bold hover:text-cyan-300 transition-colors flex items-center gap-1">
-                                        Exploration Workflow <ArrowRight size={12} />
-                                    </Link>
-                                </article>
-                                <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
-                                    <h3 className="text-xl font-semibold mb-2 group-hover:text-purple-400 transition-colors">Context-Aware Code Review</h3>
-                                    <p className="text-zinc-200 text-sm mb-4">Review implementation quality with repository context, not isolated snippets. Surface logic flaws and blind spots.</p>
-                                    <Link href="/ai-code-review-tool" className="text-purple-400 text-xs font-bold hover:text-purple-300 transition-colors flex items-center gap-1">
-                                        Review Workflow <ArrowRight size={12} />
-                                    </Link>
-                                </article>
-                                <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
-                                    <h3 className="text-xl font-semibold mb-2 group-hover:text-red-400 transition-colors">Security Prioritization</h3>
-                                    <p className="text-zinc-200 text-sm mb-4">Surface actionable risk signals and triage findings with engineering context. Get severity-framed remediation direction.</p>
-                                    <Link href="/security-scanner" className="text-red-400 text-xs font-bold hover:text-red-300 transition-colors flex items-center gap-1">
-                                        Triage Workflow <ArrowRight size={12} />
-                                    </Link>
-                                </article>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-white via-cyan-100 to-zinc-400 bg-clip-text text-transparent">How Novaris Works</h2>
-                        <p className="text-zinc-200 text-lg max-w-3xl mx-auto">
-                            Intent-first workflows for repository analysis, architecture clarity, code review, and security prioritization.
                         </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">1. Start with a URL</h3>
-                            <p className="text-zinc-200 text-sm">Paste a GitHub repository URL and select your goal.</p>
-                        </article>
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-purple-500/40 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">2. Build context</h3>
-                            <p className="text-zinc-200 text-sm">Agentic CAG gathers full-file context needed for reliable understanding.</p>
-                        </article>
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-blue-500/40 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">3. Analyze deeply</h3>
-                            <p className="text-zinc-200 text-sm">Map architecture, review implementation, and identify risk hotspots.</p>
-                        </article>
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-emerald-500/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">4. Take action</h3>
-                            <p className="text-zinc-200 text-sm">Get outputs you can use immediately in engineering and security workflows.</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
+                        <h1 id="home-h" className="nv-display text-nv-display-xl text-balance text-nv-ivory-50">
+                            Read a repository. See which files back each answer.
+                        </h1>
+                        <p className="mt-6 max-w-[var(--nv-measure)] text-pretty text-nv-title leading-snug text-nv-ivory-200">
+                            Paste a GitHub URL, a username, or owner/repo. Novaris loads the relevant files and answers questions about architecture, code, and security, with the sources shown.
+                        </p>
 
-            <MediaShowcase />
-
-            <div className="relative z-10 w-full bg-transparent">
-                <CAGComparison />
-            </div>
-
-
-
-            <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                <div className="max-w-5xl mx-auto">
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-10">Frequently Asked Questions</h2>
-                    <div className="space-y-5">
-                        {FAQ_PAGE_ITEMS.map((item, index) => (
-                            <article
-                                key={item.question}
-                                className="rounded-2xl border border-zinc-800 bg-zinc-900/40"
-                            >
-                                <button
-                                    type="button"
-                                    aria-expanded={activeFaqIndex === index}
-                                    aria-controls={`homepage-faq-answer-${index}`}
-                                    onClick={() => setActiveFaqIndex((current) => (current === index ? null : index))}
-                                    className="flex w-full items-center justify-between gap-4 p-6 text-left"
-                                >
-                                    <h3 className="text-xl font-semibold text-white">{item.question}</h3>
-                                    <ChevronDown
-                                        className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform ${
-                                            activeFaqIndex === index ? "rotate-180 text-white" : ""
-                                        }`}
-                                    />
-                                </button>
-                                <motion.div
-                                    id={`homepage-faq-answer-${index}`}
-                                    aria-hidden={activeFaqIndex !== index}
-                                    initial={false}
-                                    animate={
-                                        activeFaqIndex === index
-                                            ? { height: "auto", opacity: 1 }
-                                            : { height: 0, opacity: 0 }
-                                    }
-                                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                                    className="overflow-hidden will-change-[height,opacity]"
-                                >
-                                    <div className="px-6 pb-6">
-                                        <p className="text-zinc-200 leading-relaxed">{item.answer}</p>
-                                    </div>
-                                </motion.div>
-                            </article>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-
-            {trendingRepos.length > 0 && (
-                <section id="trending-section" className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="mb-12 text-center">
-                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
-                                <TrendingUp className="inline-block text-cyan-400 mb-1 mr-2 md:mr-3" size={32} />
-                                Explore Trending <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Repositories</span>
-                            </h2>
-                            <p className="text-zinc-200 text-lg max-w-2xl mx-auto mb-8">
-                                Explore the projects getting the most heat on GitHub. Instantly analyze any of them with Novaris.
-                            </p>
-
-                            <div className="flex justify-center p-1 bg-zinc-900/60 border border-white/10 rounded-xl w-fit mx-auto backdrop-blur-md">
-                                <button
-                                    onClick={() => { setTrendingTier("weekly"); setVisibleReposCount(6); }}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                                        trendingTier === "weekly" 
-                                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]" 
-                                        : "text-zinc-500 hover:text-zinc-300"
-                                    }`}
-                                >
-                                    Weekly
-                                </button>
-                                <button
-                                    onClick={() => { setTrendingTier("monthly"); setVisibleReposCount(6); }}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                                        trendingTier === "monthly" 
-                                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]" 
-                                        : "text-zinc-500 hover:text-zinc-300"
-                                    }`}
-                                >
-                                    Monthly
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {visibleRepos.map((repo) => (
-                                <div 
-                                    key={`${repo.owner}/${repo.repo}`}
-                                    className="bg-[#09090b]/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-cyan-500/40 hover:shadow-[0_0_35px_rgba(6,182,212,0.18)] transition-all duration-300 group flex flex-col justify-between"
-                                >
-                                    <div>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2 text-zinc-300 font-medium">
-                                                <Image 
-                                                    src={`https://github.com/${repo.owner}.png`}
-                                                    alt={`${repo.owner} avatar`}
-                                                    width={20}
-                                                    height={20}
-                                                    className="rounded-full bg-white/10"
-                                                />
-                                                <span className="truncate max-w-[150px]">{repo.owner}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-zinc-300 uppercase">
-                                                <Globe size={10} /> {repo.language || 'Code'}
-                                            </div>
-                                        </div>
-                                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
-                                            {repo.repo}
-                                        </h3>
-                                        <p className="text-zinc-300 text-sm line-clamp-2 mb-6 min-h-[40px]">
-                                            {repo.description || 'Experience high-context AI analysis for this repository.'}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center justify-between mt-auto">
-                                        <div className="flex items-center gap-4 text-xs text-zinc-300">
-                                            <span className="flex items-center gap-1">
-                                                <Star size={12} className="text-yellow-500" />
-                                                {repo.stars.toLocaleString()}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <GitFork size={12} className="text-zinc-600" />
-                                                Trending
-                                            </span>
-                                        </div>
-                                        <Link 
-                                            href={`/chat?q=${repo.owner}/${repo.repo}`}
-                                            aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
-                                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white text-black text-xs font-bold hover:bg-zinc-200 transition-colors"
-                                        >
-                                            <MessageSquare size={12} />
-                                            Analyze
-                                        </Link>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {hasMoreRepos ? (
-                            <div className="mt-12 flex flex-col items-center gap-8">
-                                <button 
-                                    onClick={() => setVisibleReposCount(prev => prev + 6)}
-                                    className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-black font-bold hover:bg-zinc-200 transition-colors group"
-                                >
-                                    Show more repositories
-                                    <TrendingUp size={18} className="group-hover:scale-110 transition-transform" />
-                                </button>
-                                <Link 
-                                    href="/trending"
-                                    className="text-zinc-500 hover:text-white transition-colors text-sm font-medium flex items-center gap-1 group"
-                                >
-                                    Explore all trending repositories
-                                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="mt-12 text-center">
-                                <Link 
-                                    href="/trending"
-                                    className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-zinc-900 border border-white/10 text-white font-bold hover:bg-zinc-800 transition-colors group"
-                                >
-                                    Explore all trending repositories
-                                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                            </div>
+                        {hasInvalidSessionError && (
+                            <Notice tone="warning" title="Your session could not be validated" className="mt-6 max-w-xl">
+                                Sign in again to continue.
+                            </Notice>
                         )}
+
+                        <div className="mt-8 max-w-2xl">
+                            <RepoSearch
+                                onSearchSubmit={handleSearch}
+                                loading={loading}
+                                trendingRepos={weeklyTrending}
+                                recentSearches={recentSearches}
+                                isSessionActive={!!session}
+                            />
+                            {error && (
+                                <p role="alert" className="mt-3 text-nv-small text-nv-danger">
+                                    {error}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-5 lg:mt-24">
+                        <AtlasPoster />
                     </div>
                 </section>
-            )}
 
-            {initialPosts.length > 0 && (
-                <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="flex flex-col items-center text-center mb-12 gap-6">
-                            <div>
-                                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                                    Engineering <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Insights</span>
-                                </h2>
-                                <p className="text-zinc-200 text-lg max-w-2xl mx-auto">
-                                    Latest updates from the lab on AI-driven code intelligence and security.
-                                </p>
+                <section aria-labelledby="facts-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
+                    <h2 id="facts-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50 lg:col-span-4">
+                        What happens to your request
+                    </h2>
+                    <dl className="m-0 lg:col-span-8">
+                        {FACTS.map((f) => (
+                            <div key={f.term} className="grid gap-1 border-b border-nv-graphite-700 py-4 first:pt-0 md:grid-cols-[12rem_1fr] md:gap-8">
+                                <dt className="nv-eyebrow pt-1">{f.term}</dt>
+                                <dd className="m-0 max-w-[var(--nv-measure)] text-pretty text-nv-body text-nv-ivory-200">{f.detail}</dd>
                             </div>
-                            <Link 
-                                href="/blog" 
-                                className="inline-flex items-center gap-2 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors group px-4 py-2 rounded-xl bg-purple-500/5 border border-purple-500/10"
-                            >
-                                View all insights <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        ))}
+                    </dl>
+                </section>
+
+                <section aria-labelledby="sourced-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
+                    <div className="lg:col-span-4">
+                        <h2 id="sourced-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50">
+                            How a claim is sourced
+                        </h2>
+                        <p className="mt-3 text-nv-small text-nv-ivory-300">Sample layout with made-up values, not a real result.</p>
+                    </div>
+                    <ol className="m-0 list-none divide-y divide-nv-graphite-700 border-y border-nv-graphite-700 p-0 lg:col-span-8">
+                        {[
+                            { claim: "Requests pass through a single auth middleware.", basis: "measured" as const, cite: "src/middleware.ts", lines: "12-40" },
+                            { claim: "The retry policy probably protects against rate limits.", basis: "inferred" as const, cite: "src/lib/http.ts", lines: "55-71" },
+                            { claim: "Test coverage for this module.", basis: "unknown" as const },
+                        ].map((row) => (
+                            <li key={row.claim} className="grid items-center gap-2 py-4 md:grid-cols-[1fr_auto_auto] md:gap-6">
+                                <span className="text-pretty text-nv-body text-nv-ivory-100">{row.claim}</span>
+                                <BasisTag basis={row.basis} />
+                                {row.cite ? <Citation kind="file" target={row.cite} lines={row.lines} /> : <span className="text-nv-small text-nv-ivory-300">No source</span>}
+                            </li>
+                        ))}
+                    </ol>
+                </section>
+
+                <div className="border-t border-nv-graphite-700 py-12">
+                    <PublicStats stats={publicStats} />
+                </div>
+
+                {trendingRepos.length > 0 && (
+                    <section id="trending-section" aria-labelledby="trend-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
+                        <div className="lg:col-span-4">
+                            <h2 id="trend-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50">
+                                Trending in the catalog
+                            </h2>
+                            <div role="group" aria-label="Time window" className="mt-4 flex gap-2">
+                                {(["weekly", "monthly"] as const).map((tier) => (
+                                    <button
+                                        key={tier}
+                                        type="button"
+                                        aria-pressed={trendingTier === tier}
+                                        onClick={() => setTrendingTier(tier)}
+                                        className={`min-h-11 rounded-nv-sm border px-4 text-nv-small capitalize transition-colors duration-150 ${
+                                            trendingTier === tier ? "border-nv-copper-400 bg-nv-copper-wash text-nv-copper-300" : "border-nv-graphite-600 text-nv-ivory-200 hover:border-nv-graphite-500"
+                                        }`}
+                                    >
+                                        {tier}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="lg:col-span-8">
+                            <ul className="m-0 list-none border-t border-nv-graphite-700 p-0">
+                                {visibleRepos.map((repo) => (
+                                    <li key={`${repo.owner}/${repo.repo}`}>
+                                        <Link
+                                            href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
+                                            aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
+                                            className="group flex min-h-14 items-center justify-between gap-4 border-b border-nv-graphite-700 px-1 py-3 hover:bg-nv-graphite-900"
+                                        >
+                                            <span className="min-w-0">
+                                                <span className="block truncate font-mono text-nv-body text-nv-ivory-50 group-hover:text-nv-copper-300">
+                                                    {repo.owner}/{repo.repo}
+                                                </span>
+                                                <span className="block truncate text-nv-small text-nv-ivory-300">{repo.description || "No description in the catalog."}</span>
+                                            </span>
+                                            <span className="nv-num shrink-0 text-nv-small text-nv-ivory-300">
+                                                {repo.stars.toLocaleString()} <span className="sr-only">stars</span>
+                                                <span aria-hidden>★</span>
+                                            </span>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                            <Link href="/trending" className="mt-4 inline-flex min-h-11 items-center gap-1 text-nv-small text-nv-copper-400 hover:text-nv-copper-300">
+                                All trending repositories <ArrowUpRight aria-hidden className="size-4" />
                             </Link>
                         </div>
+                    </section>
+                )}
 
-                        <div className="grid md:grid-cols-3 gap-8">
-                            {initialPosts.map((post) => (
-                                <Link 
-                                    key={post.slug} 
-                                    href={`/blog/${post.slug}`}
-                                    className="group flex flex-col h-full bg-[#09090b]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-5 hover:border-purple-500/40 hover:shadow-[0_0_35px_rgba(168,85,247,0.18)] transition-all duration-300"
-                                >
-                                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-5 border border-white/5">
-                                        <Image 
-                                            src={post.image} 
-                                            alt={post.title}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold border border-purple-500/20 uppercase">
-                                            {post.category}
-                                        </span>
-                                        <span className="text-zinc-600 text-[10px] uppercase font-bold tracking-tighter">
-                                            {post.date}
-                                        </span>
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-3 group-hover:text-purple-400 transition-colors line-clamp-2">
-                                        {post.title}
-                                    </h3>
-                                    <p className="text-zinc-200 text-sm italic opacity-80 line-clamp-2 mb-6">
-                                        {post.excerpt}
-                                    </p>
-                                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                                        <span className="text-xs font-bold text-zinc-300">Read insight</span>
-                                        <ArrowRight size={14} className="text-zinc-300 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
-                                    </div>
-                                </Link>
-                            ))}
+                {initialPosts.length > 0 && (
+                    <section aria-labelledby="posts-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
+                        <h2 id="posts-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50 lg:col-span-4">
+                            Latest insights
+                        </h2>
+                        <div className="lg:col-span-8">
+                            <ul className="m-0 list-none border-t border-nv-graphite-700 p-0">
+                                {initialPosts.map((post) => (
+                                    <li key={post.slug}>
+                                        <Link href={`/blog/${post.slug}`} className="group block border-b border-nv-graphite-700 px-1 py-4 hover:bg-nv-graphite-900">
+                                            <span className="nv-eyebrow nv-num block">
+                                                {post.date} · {post.category}
+                                            </span>
+                                            <span className="mt-1 block text-nv-title font-medium text-nv-ivory-50 group-hover:text-nv-copper-300">{post.title}</span>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                            <Link href="/blog" className="mt-4 inline-flex min-h-11 items-center gap-1 text-nv-small text-nv-copper-400 hover:text-nv-copper-300">
+                                All insights <ArrowUpRight aria-hidden className="size-4" />
+                            </Link>
                         </div>
+                    </section>
+                )}
+
+                <section aria-labelledby="faq-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
+                    <h2 id="faq-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50 lg:col-span-4">
+                        Frequently asked questions
+                    </h2>
+                    <div className="lg:col-span-8">
+                        <FaqList items={FAQ_PAGE_ITEMS} />
                     </div>
                 </section>
-            )}
-
-            <Footer />
+            </div>
             <JsonLdScript data={softwareSchema} />
             <JsonLdScript data={faqSchema} />
             <InstallPWA />
-        </main>
+        </SiteChrome>
     );
 }

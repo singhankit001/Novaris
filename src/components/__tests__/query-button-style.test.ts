@@ -1,24 +1,40 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import { ChatInput } from "@/components/ChatInput";
 
-const chatInputSource = readFileSync(
-    path.resolve(process.cwd(), "src/components/ChatInput.tsx"),
-    "utf8"
-);
-const repoSearchSource = readFileSync(
-    path.resolve(process.cwd(), "src/components/RepoSearch.tsx"),
-    "utf8"
-);
+vi.mock("next-auth/react", () => ({ useSession: () => ({ data: null }) }));
 
-describe("query button modernized styling", () => {
-    it("applies accessible focus-ring and active purple styling to chat send button", () => {
-        expect(chatInputSource).toContain("focus-visible:ring-purple-500/60");
-        expect(chatInputSource).toContain("bg-purple-500/10 text-purple-400 border-purple-500/20");
+function renderComposer(props: Partial<Parameters<typeof ChatInput>[0]> = {}) {
+    return renderToStaticMarkup(createElement(ChatInput, {
+        value: "",
+        onChange: () => undefined,
+        onSubmit: () => undefined,
+        ...props,
+    }));
+}
+
+function submitButton(markup: string) {
+    return markup.match(/<button[^>]*type="submit"[^>]*>/)?.[0] ?? "";
+}
+
+describe("chat composer controls", () => {
+    it("disables sending an empty message and enables a question", () => {
+        expect(submitButton(renderComposer())).toContain('disabled=""');
+        expect(submitButton(renderComposer({ value: "Explain this repository" }))).not.toContain('disabled=""');
     });
 
-    it("applies visible keyboard focus styling to repo search submit button", () => {
-        expect(repoSearchSource).toContain("focus-visible:ring-1");
-        expect(repoSearchSource).toContain("focus-visible:ring-white/10");
+    it("prevents duplicate sending while a response is running", () => {
+        const html = renderComposer({ value: "Explain this repository", loading: true });
+        expect(submitButton(html)).toContain('disabled=""');
+        expect(submitButton(html)).toContain('aria-busy="true"');
+        expect(html).toContain("Working");
+    });
+
+    it("labels the question field and explains a disabled composer", () => {
+        const html = renderComposer({ disabled: true, disabledReason: "Choose a repository first" });
+        expect(html).toContain("Your question</label>");
+        expect(html).toContain("aria-describedby=");
+        expect(html).toContain("Choose a repository first");
     });
 });

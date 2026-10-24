@@ -8,22 +8,20 @@ const AUTH_COOKIE_PREFIXES = [
     "__Secure-next-auth.",
 ];
 
-function getSafeCallbackPath(rawValue: string | null): string {
-    if (!rawValue) {
-        return INVALID_SESSION_REDIRECT_PATH;
+function getSafeCallbackUrl(rawValue: string | null, requestUrl: string): URL {
+    const fallback = new URL(INVALID_SESSION_REDIRECT_PATH, requestUrl);
+    if (!rawValue || !rawValue.startsWith("/")) {
+        return fallback;
     }
 
-    // Only allow local absolute paths for redirect safety.
-    if (!rawValue.startsWith("/")) {
-        return INVALID_SESSION_REDIRECT_PATH;
-    }
-
-    return rawValue;
+    // "//host" and "/\host" are protocol-relative; resolving and comparing origins rejects them.
+    const target = new URL(rawValue, requestUrl);
+    return target.origin === fallback.origin ? target : fallback;
 }
 
 export async function GET(request: NextRequest) {
-    const callbackPath = getSafeCallbackPath(request.nextUrl.searchParams.get("callbackUrl"));
-    const response = NextResponse.redirect(new URL(callbackPath, request.url));
+    const callbackUrl = getSafeCallbackUrl(request.nextUrl.searchParams.get("callbackUrl"), request.url);
+    const response = NextResponse.redirect(callbackUrl);
 
     for (const cookie of request.cookies.getAll()) {
         if (!AUTH_COOKIE_PREFIXES.some((prefix) => cookie.name.startsWith(prefix))) {

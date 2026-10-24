@@ -32,3 +32,23 @@ describe("actor-id helpers", () => {
         expect(getAnonymousCookieIdFromActorId("anon_bad")).toBeNull();
     });
 });
+
+describe("anonymous network identity", () => {
+    it("is stable per client IP, ignores the cookie, and never contains the raw IP", async () => {
+        const { getAnonymousNetworkId } = await import("@/lib/actor-id");
+        const a = getAnonymousNetworkId(new Headers({ "x-real-ip": "203.0.113.10" }));
+        const b = getAnonymousNetworkId(new Headers({ "x-forwarded-for": "203.0.113.10, 10.0.0.1" }));
+        const c = getAnonymousNetworkId(new Headers({ "x-real-ip": "203.0.113.11" }));
+        expect(a).toBe(b);
+        expect(a).not.toBe(c);
+        expect(a).toMatch(/^ip_[a-f0-9]{24}$/);
+        expect(a).not.toContain("203");
+    });
+
+    it("keys IPv6 clients by /64 so rotating the host part does not mint a new identity", async () => {
+        const { getAnonymousNetworkId } = await import("@/lib/actor-id");
+        const a = getAnonymousNetworkId(new Headers({ "x-real-ip": "2001:db8:1:2:aaaa:bbbb:cccc:1" }));
+        const b = getAnonymousNetworkId(new Headers({ "x-real-ip": "2001:db8:1:2:1111:2222:3333:4444" }));
+        expect(a).toBe(b);
+    });
+});

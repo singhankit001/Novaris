@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import JsonLdScript from "@/components/JsonLdScript";
-import SeoVisual from "@/components/seo/SeoVisual";
+import SolutionPage from "@/components/seo/SolutionPage";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -83,135 +81,21 @@ const softwareSchema = buildSoftwareApplicationStructuredData({
 
 export default function GitHubRepositoryAnalysisPage() {
   return (
-    <main className="min-h-screen bg-transparent text-white px-6 py-20 relative z-10">
-      <JsonLdScript data={breadcrumbSchema} />
-      <JsonLdScript data={faqSchema} />
-      <JsonLdScript data={softwareSchema} />
-
-      <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span>/</span>
-          <Link href="/solutions" className="hover:text-white transition-colors">Solutions</Link>
-          <span>/</span>
-          <span className="text-zinc-200">GitHub Repository Analysis</span>
-        </nav>
-
-        <header className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-            GitHub Repository Analysis with Full-Context AI
-          </h1>
-          <p className="text-zinc-300 text-lg leading-relaxed mb-4">
-            Novaris helps teams evaluate unfamiliar repositories by mapping architecture, tracing
-            implementation behavior, and surfacing risk hotspots that affect delivery confidence.
-          </p>
-          <p className="text-zinc-200 leading-relaxed">
-            The workflow is designed for practical decisions: whether to adopt a dependency, how to
-            onboard quickly, and where to focus review effort when timelines are tight.
-          </p>
-        </header>
-
-        <section className="mb-10">
-          <SeoVisual
-            variant="analysis-workflow"
-            ariaLabel="GitHub repository analysis workflow from ingest to insights"
-            sizeMode="wide"
-            animate
-            priority="high"
-          />
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-10">
-          <h2 className="text-2xl font-semibold mb-4">What this workflow delivers</h2>
-          <p className="text-zinc-300 leading-relaxed mb-4">
-            Novaris does more than summarize files. It highlights how modules connect, where critical
-            logic resides, and which areas deserve deeper review before engineering investment increases.
-          </p>
-          <h3 className="text-xl font-medium mb-2">Architecture clarity for faster onboarding</h3>
-          <p className="text-zinc-300 leading-relaxed mb-4">
-            Teams can understand major boundaries and dependencies early, reducing time spent in manual code discovery.
-          </p>
-          <h3 className="text-xl font-medium mb-2">Risk visibility before expensive decisions</h3>
-          <p className="text-zinc-300 leading-relaxed">
-            By revealing high-impact hotspots and fragile paths, teams can prioritize mitigation before they commit to integrations or rewrites.
-          </p>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-2 mb-10">
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Due diligence</h2>
-            <p className="text-zinc-200">
-              Evaluate open-source or third-party repositories for maintainability and risk before integration.
-            </p>
-          </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Onboarding</h2>
-            <p className="text-zinc-200">
-              Help new engineers understand architecture faster and contribute with fewer review cycles.
-            </p>
-          </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Migration planning</h2>
-            <p className="text-zinc-200">
-              Identify critical module dependencies and likely migration friction before planning execution.
-            </p>
-          </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-            <h2 className="text-xl font-semibold mb-2">Security preparation</h2>
-            <p className="text-zinc-200">
-              Establish repository context first so security findings can be prioritized with better confidence.
-            </p>
-          </article>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-10">
-          <h2 className="text-2xl font-semibold mb-4">Related analysis paths</h2>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/github-code-analyzer" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              GitHub Code Analyzer
-            </Link>
-            <Link href="/typescript-code-analyzer" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              TypeScript Code Analyzer
-            </Link>
-            <Link href="/repository-risk-analysis" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              Repository Risk Analysis
-            </Link>
-            <Link href="/security-scanner" className="px-4 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-900 transition-colors">
-              Security Scanner
-            </Link>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-10">
-          <h2 className="text-2xl font-semibold mb-6">Frequently Asked Questions</h2>
-          <div className="space-y-5">
-            {faqItems.map((faq) => (
-              <article key={faq.question} className="border-b border-white/10 pb-4 last:border-0">
-                <h3 className="text-lg font-medium mb-2">{faq.question}</h3>
-                <p className="text-zinc-300 leading-relaxed">{faq.answer}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
-          <h2 className="text-2xl font-semibold mb-2">Take the next step</h2>
-          <p className="text-zinc-200 mb-6">
-            Analyze one critical repository and convert context into a prioritized review and security plan.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/chat" className="px-5 py-3 rounded-lg bg-white text-black font-medium hover:bg-zinc-200 transition-colors">
-              Analyze a GitHub Repository
-            </Link>
-            <Link href="/ai-code-review-tool" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors">
-              Open AI Code Review Tool
-            </Link>
-            <Link href="/solutions" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors">
-              Back to Solutions
-            </Link>
-          </div>
-        </section>
-      </div>
-    </main>
+    <SolutionPage
+      crumbTitle="GitHub Repository Analysis"
+      h1="GitHub Repository Analysis with Full-Context AI"
+      lead={["Novaris helps teams evaluate unfamiliar repositories by mapping architecture, tracing implementation behavior, and surfacing risk hotspots that affect delivery confidence.", "The workflow is designed for practical decisions: whether to adopt a dependency, how to onboard quickly, and where to focus review effort when timelines are tight."]}
+      visual={{ variant: "analysis-workflow", ariaLabel: "GitHub repository analysis workflow from ingest to insights, illustrative" }}
+      mainTitle="What this workflow delivers"
+      mainIntro="Novaris does more than summarize files. It highlights how modules connect, where critical logic resides, and which areas deserve deeper review before engineering investment increases."
+      subsections={[{"title": "Architecture clarity for faster onboarding", "text": "Teams can understand major boundaries and dependencies early, reducing time spent in manual code discovery."}, {"title": "Risk visibility before expensive decisions", "text": "By revealing high-impact hotspots and fragile paths, teams can prioritize mitigation before they commit to integrations or rewrites."}]}
+      cards={[{"title": "Due diligence", "text": "Evaluate open-source or third-party repositories for maintainability and risk before integration."}, {"title": "Onboarding", "text": "Help new engineers understand architecture faster and contribute with fewer review cycles."}, {"title": "Migration planning", "text": "Identify critical module dependencies and likely migration friction before planning execution."}, {"title": "Security preparation", "text": "Establish repository context first so security findings can be prioritized with better confidence."}]}
+      relatedTitle="Related analysis paths"
+      related={[{"href": "/github-code-analyzer", "label": "GitHub Code Analyzer"}, {"href": "/typescript-code-analyzer", "label": "TypeScript Code Analyzer"}, {"href": "/repository-risk-analysis", "label": "Repository Risk Analysis"}, {"href": "/security-scanner", "label": "Security Scanner"}]}
+      faqItems={faqItems}
+      nextText="Analyze one critical repository and convert context into a prioritized review and security plan."
+      ctas={[{"href": "/chat", "label": "Analyze a GitHub Repository", "primary": true}, {"href": "/ai-code-review-tool", "label": "Open AI Code Review Tool"}, {"href": "/solutions", "label": "Back to Solutions"}]}
+      schemas={[breadcrumbSchema, faqSchema, softwareSchema]}
+    />
   );
 }

@@ -3,6 +3,16 @@ import type { SecurityFinding } from "@/lib/security-scanner";
 
 export type ChatRole = "user" | "model";
 
+/** Why an answer stopped early. The partial text stays on the message; this explains the stop. */
+export interface MessageFailure {
+    /** Stable code from the stream protocol (AI_TIMEOUT, GITHUB_RATE_LIMITED, STREAM_TRUNCATED, ...). */
+    code: string;
+    message: string;
+    retryable: boolean;
+    /** Seconds until a rate limit lifts, when the server said so. */
+    retryAfterSeconds?: number;
+}
+
 export interface ChatMessageBase {
     [key: string]: unknown;
     id: string;
@@ -16,6 +26,9 @@ export interface ChatMessageBase {
     toolsUsed?: string[];
     processingSummary?: string[];
     sourceScope?: string;
+    failure?: MessageFailure;
+    /** Set when the server reported tools were off for this answer (budget store down). */
+    toolsDisabled?: boolean;
 }
 
 export interface ThinkingChatMessage extends ChatMessageBase {

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
 import { Loader2, CheckCircle2, FileCode } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -94,6 +95,7 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function ProfileLoader({ username }: ProfileLoaderProps) {
+    const reduceMotion = useReducedMotion();
     const [steps, setSteps] = useState<LoadingStep[]>([]);
     const [profileData, setProfileData] = useState<ProfileLoaderData | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -188,21 +190,22 @@ export function ProfileLoader({ username }: ProfileLoaderProps) {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen bg-black text-white gap-4">
+            <div className="flex flex-col items-center justify-center h-screen bg-nv-graphite-950 text-nv-ivory-50 gap-4">
                 <UserIcon className="w-16 h-16 text-red-500" />
-                <h1 className="text-2xl font-bold">Error Loading Profile</h1>
-                <p className="text-zinc-200">{error}</p>
+                <h1 className="text-2xl font-bold">Profile unavailable</h1>
+                <p className="text-nv-ivory-300">{error}</p>
+                <Link href="/" className="rounded-xl border border-nv-graphite-700 bg-nv-graphite-900 px-5 py-3 text-sm font-medium hover:bg-nv-graphite-800">Search another profile</Link>
             </div>
         );
     }
 
     if (!profileData) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-transparent text-white relative z-10">
-                <div className="max-w-md w-full p-8">
+            <div className="nv-analysis-loader flex items-center justify-center min-h-screen bg-nv-graphite-950 text-nv-ivory-50 relative z-10">
+                <div className="nv-loading-panel max-w-md w-full p-8">
                     <div className="mb-8 text-center">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={reduceMotion ? false : { opacity: 0 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="mb-4 inline-block"
                         >
@@ -211,33 +214,33 @@ export function ProfileLoader({ username }: ProfileLoaderProps) {
                                 alt={username}
                                 width={96}
                                 height={96}
-                                className="w-24 h-24 rounded-2xl border-2 border-cyan-400/50 shadow-[0_0_35px_rgba(6,182,212,0.3)]"
+                                className="w-24 h-24 rounded-2xl border-2 border-nv-graphite-700 shadow-sm"
                                 unoptimized
                             />
                         </motion.div>
-                        <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-white via-cyan-100 to-zinc-400 bg-clip-text text-transparent">Loading @{username}</h2>
-                        <p className="text-sm text-zinc-200">Analyzing profile and repositories...</p>
+                        <h2 className="text-2xl font-bold mb-2 text-nv-ivory-50">Loading @{username}</h2>
+                        <p className="text-sm text-nv-ivory-300">Analyzing profile and repositories...</p>
                     </div>
 
-                    <div className="space-y-3">
+                    <div role="status" aria-live="polite" className="nv-loading-steps space-y-3">
                         {steps.map((step, index) => (
                             <motion.div
                                 key={step.id}
-                                initial={{ opacity: 0, x: -20 }}
+                                initial={reduceMotion ? false : { opacity: 0 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="flex items-center gap-3 p-3.5 bg-[#09090b]/55 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+                                transition={{ delay: reduceMotion ? 0 : index * 0.06 }}
+                                className="flex items-center gap-3 p-3.5 bg-nv-graphite-900 backdrop-blur-xl border border-nv-graphite-700 rounded-xl shadow-sm"
                             >
                                 {step.status === "loading" && (
-                                    <Loader2 className="w-5 h-5 text-purple-400 animate-spin shrink-0" />
+                                    <Loader2 className="w-5 h-5 text-nv-copper-400 animate-spin motion-reduce:animate-none shrink-0" />
                                 )}
                                 {step.status === "complete" && (
-                                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                    <CheckCircle2 className="w-5 h-5 text-nv-copper-400 shrink-0" />
                                 )}
                                 {step.status === "error" && (
                                     <FileCode className="w-5 h-5 text-red-500 shrink-0" />
                                 )}
-                                <span className="text-sm text-zinc-300">{step.message}</span>
+                                <span className="text-sm text-nv-ivory-300">{step.message}</span>
                             </motion.div>
                         ))}
                     </div>

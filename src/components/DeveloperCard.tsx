@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { MapPin, Link as LinkIcon, Github, Loader2 } from "lucide-react";
-import { UserIcon } from "@/components/icons/UserIcon";
+import { ExternalLink } from "lucide-react";
+import { buttonClasses } from "@/components/nv/button-styles";
 import { fetchProfile } from "@/app/actions";
 
 interface DeveloperCardProps {
@@ -17,146 +16,75 @@ interface DeveloperCardProps {
     blog?: string;
 }
 
-export function DeveloperCard({ username, name: initialName, avatar: initialAvatar, bio: initialBio, location: initialLocation, blog: initialBlog }: DeveloperCardProps) {
-    const [profile, setProfile] = useState({
-        name: initialName,
-        avatar: initialAvatar,
-        bio: initialBio,
-        location: initialLocation,
-        blog: initialBlog
-    });
+function safeBlogHref(blog: string): string | null {
+    try {
+        const url = new URL(blog.startsWith("http") ? blog : `https://${blog}`);
+        return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null;
+    } catch {
+        return null;
+    }
+}
+
+export function DeveloperCard({ username, name, avatar, bio, location, blog }: DeveloperCardProps) {
+    const [profile, setProfile] = useState({ name, avatar, bio, location, blog });
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const shouldFetch = !initialAvatar || !initialBio || !initialName || username === "singhankit001";
-        if (!username || !shouldFetch) return;
-
+        if (!username || (avatar && bio && name)) return;
         let cancelled = false;
-
-        const run = async () => {
-            setLoading(true);
-            try {
-                const data = await fetchProfile(username);
-                if (!cancelled && data) {
-                    setProfile((prev) => ({
-                        name: data.name || prev.name,
-                        avatar: data.avatar_url || prev.avatar,
-                        bio: data.bio || prev.bio,
-                        location: data.location || prev.location,
-                        blog: data.blog || prev.blog
-                    }));
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        void run();
-
+        queueMicrotask(() => { if (!cancelled) setLoading(true); });
+        fetchProfile(username)
+            .then((data) => {
+                if (cancelled || !data) return;
+                setProfile((prev) => ({
+                    name: data.name || prev.name,
+                    avatar: data.avatar_url || prev.avatar,
+                    bio: data.bio || prev.bio,
+                    location: data.location || prev.location,
+                    blog: data.blog || prev.blog,
+                }));
+            })
+            .catch(() => undefined)
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
         return () => {
             cancelled = true;
         };
-    }, [username, initialAvatar, initialBio, initialName]);
+    }, [username, avatar, bio, name]);
 
-    // Use a stable avatar source: provided -> fetched -> github direct fallback
-    const avatarSrc = profile.avatar || `https://github.com/${username}.png`;
-
+    const blogHref = profile.blog ? safeBlogHref(profile.blog) : null;
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="my-4 group"
-        >
-            <div className="relative bg-zinc-900 border border-white/10 rounded-xl p-5 hover:border-purple-600/50 transition-all duration-300">
-                {/* Gradient glow on hover */}
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-500" />
-
-                <div className="relative flex gap-4">
-                    {/* Avatar */}
-                    <div className="relative w-16 h-16 shrink-0">
-                        <Image
-                            src={avatarSrc}
-                            alt={username}
-                            width={64}
-                            height={64}
-                            className="w-16 h-16 rounded-full border-2 border-white/20 bg-zinc-800 object-cover"
-                            onError={(e) => {
-                                // Fallback to icon if image fails to load
-                                e.currentTarget.style.display = "none";
-                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                            }}
-                            unoptimized
-                        />
-                        <div className="hidden w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center overflow-hidden">
-                            <UserIcon className="w-full h-full text-white" />
-                        </div>
-                        {loading && !profile.avatar && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
-                                <Loader2 className="w-5 h-5 animate-spin text-white" />
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                        {/* Name & Username */}
-                        <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-white truncate">
-                                {profile.name || username}
-                            </h3>
-                            {loading && <Loader2 className="w-3 h-3 animate-spin text-zinc-300" />}
-                        </div>
-                        <p className="text-sm text-zinc-200 mb-2 truncate">@{username}</p>
-
-                        {/* Bio */}
-                        {profile.bio && (
-                            <p className="text-zinc-200 text-sm mb-3 line-clamp-2">{profile.bio}</p>
-                        )}
-
-                        {/* Additional info */}
-                        <div className="flex flex-wrap gap-3 text-xs text-zinc-300 mb-4">
-                            {profile.location && (
-                                <span className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {profile.location}
-                                </span>
-                            )}
-                            {profile.blog && (
-                                <a
-                                    href={profile.blog.startsWith('http') ? profile.blog : `https://${profile.blog}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 hover:text-purple-400 transition-colors truncate max-w-[200px]"
-                                >
-                                    <LinkIcon className="w-3 h-3" />
-                                    {profile.blog.replace(/https?:\/\//, '').slice(0, 30)}
-                                </a>
-                            )}
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex gap-2">
-                            <Link
-                                href={`/chat?q=${username}`}
-                                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
-                            >
-                                View Profile
-                            </Link>
-                            <a
-                                href={`https://github.com/${username}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg transition-colors flex items-center gap-2"
-                            >
-                                <Github className="w-4 h-4" />
+        <aside aria-label={`Developer ${username}`} aria-busy={loading} className="not-prose my-4 flex flex-col gap-4 sm:flex-row rounded-nv-lg border border-nv-graphite-600 bg-nv-graphite-800 p-5 shadow-[0_8px_26px_-22px_rgba(37,93,76,0.35)]">
+            <Image
+                src={profile.avatar || `https://github.com/${encodeURIComponent(username)}.png`}
+                alt=""
+                width={56}
+                height={56}
+                unoptimized
+                className="size-14 shrink-0 rounded-nv-sm border border-nv-graphite-600 bg-nv-graphite-800 object-cover"
+            />
+            <div className="min-w-0 flex-1">
+                <h3 className="truncate text-nv-body font-medium text-nv-ivory-50">{profile.name || username}</h3>
+                <p className="truncate font-mono text-nv-micro text-nv-ivory-300">@{username}</p>
+                {profile.bio && <p className="mt-2 line-clamp-2 text-nv-small text-nv-ivory-200">{profile.bio}</p>}
+                {(profile.location || blogHref) && (
+                    <p className="mt-2 flex flex-wrap gap-x-3 text-nv-micro text-nv-ivory-300">
+                        {profile.location && <span>{profile.location}</span>}
+                        {blogHref && (
+                            <a href={blogHref} target="_blank" rel="noopener noreferrer" className="truncate text-nv-copper-400 underline underline-offset-2">
+                                {blogHref.replace(/^https?:\/\//, "").slice(0, 30)}
                             </a>
-                        </div>
-                    </div>
+                        )}
+                    </p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                    <Link href={`/chat?q=${encodeURIComponent(username)}`} className={buttonClasses("primary")}>Analyze profile</Link>
+                    <a href={`https://github.com/${encodeURIComponent(username)}`} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary")}>
+                        GitHub <ExternalLink aria-hidden className="size-4" />
+                    </a>
                 </div>
             </div>
-        </motion.div>
+        </aside>
     );
 }

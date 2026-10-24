@@ -18,6 +18,11 @@ on:
 permissions:
   contents: write
 
+# Serialize refreshes; a queued run waits instead of cancelling one that is mid-fetch.
+concurrency:
+  group: refresh-repo-catalog
+  cancel-in-progress: false
+
 jobs:
   refresh:
     name: Refresh Catalog with Trending Algorithm
@@ -36,62 +41,80 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Catalog tests
+        run: node --test tests/catalog/refresh.test.mjs
+
       - name: Check if all-time tier needs refresh
         id: check_alltime
+        env:
+          FORCE_ALL_TIME: ${{ github.event.inputs.force_all_time }}
         run: |
-          # Check last all-time refresh date from git log
-          LAST_ALLTIME=$(git log --all --grep="all-time tier" --date=format:'%Y-%m-%d' --pretty=format:'%ad' -1 2>/dev/null || echo "1970-01-01")
-          DAYS_SINCE=$(( ($(date +%s) - $(date -d "$LAST_ALLTIME" +%s)) / 86400 ))
-
-          # Refresh all-time tier every 1825 days (5 years) or if forced
-          if [ "${{ github.event.inputs.force_all_time }}" == "true" ] || [ $DAYS_SINCE -gt 1825 ]; then
-            echo "refresh_alltime=true" >> $GITHUB_OUTPUT
-            echo "All-time tier will be refreshed (last refresh: $DAYS_SINCE days ago)"
-          else
-            echo "refresh_alltime=false" >> $GITHUB_OUTPUT
-            echo "All-time tier skipped (last refresh: $DAYS_SINCE days ago, next in $((1825 - DAYS_SINCE)) days)"
+          # Source of truth is public/data/catalog-meta.json (no git history dependency).
+          # Missing file or missing/invalid timestamp means refresh.
+          LAST=""
+          if [ -f public/data/catalog-meta.json ]; then
+            LAST=$(jq -r '.allTimeRefreshedAt // empty' public/data/catalog-meta.json)
+          fi
+          LAST_EPOCH=""
+          if [ -n "$LAST" ]; then
+            LAST_EPOCH=$(date -d "$LAST" +%s 2>/dev/null || true)
           fi
 
-      - name: Refresh trending tiers (weekly, monthly, 6-month, yearly)
+          if [ "$FORCE_ALL_TIME" = "true" ]; then
+            REASON="forced"
+          elif [ -z "$LAST_EPOCH" ]; then
+            REASON="no valid allTimeRefreshedAt in catalog-meta.json"
+          else
+            DAYS_SINCE=$(( ($(date +%s) - LAST_EPOCH) / 86400 ))
+            if [ "$DAYS_SINCE" -gt 1825 ]; then
+              REASON="last refresh $DAYS_SINCE days ago"
+            else
+              echo "refresh_alltime=false" >> "$GITHUB_OUTPUT"
+              echo "All-time tier skipped (last refresh: $DAYS_SINCE days ago, next in $((1825 - DAYS_SINCE)) days)"
+              exit 0
+            fi
+          fi
+          echo "refresh_alltime=true" >> "$GITHUB_OUTPUT"
+          echo "All-time tier will be refreshed ($REASON)"
+
+      - name: Refresh catalog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SKIP_ALL_TIME: ${{ steps.check_alltime.outputs.refresh_alltime == 'false' }}
+          REFRESH_ALLTIME: ${{ steps.check_alltime.outputs.refresh_alltime }}
         run: |
-          if [ "$SKIP_ALL_TIME" == "true" ]; then
-            echo "⏭️  Skipping all-time tier (not due for refresh)"
-            # Run script with all-time tier disabled
-            node scripts/fetch-trending-repos.mjs --skip-all-time
+          # The script validates schema and per-tier counts, and only replaces
+          # the dataset (atomically) on success. Any failure fails this step.
+          if [ "$REFRESH_ALLTIME" = "true" ]; then
+            node scripts/fetch-trending-repos.mjs
           else
-            echo "🔄 Refreshing all tiers including all-time"
-            npm run data:refresh:repos
-          fi
-
-      - name: Validate data integrity
-        run: |
-          REPO_COUNT=$(grep -c '"owner"' public/data/top-repos.json)
-          echo "Found $REPO_COUNT repositories."
-          if [ "$REPO_COUNT" -lt 3000 ]; then
-            echo "Error: Catalog size ($REPO_COUNT) is below the minimum threshold (3000)."
-            exit 1
+            node scripts/fetch-trending-repos.mjs --skip-all-time
           fi
 
       - name: Commit refreshed dataset
+        env:
+          REFRESH_ALLTIME: ${{ steps.check_alltime.outputs.refresh_alltime }}
         run: |
-          if git diff --quiet -- public/data/top-repos.json; then
+          FILES="public/data/top-repos.json public/data/catalog-meta.json"
+          git add $FILES
+          if git diff --cached --quiet -- $FILES; then
             echo "No dataset changes detected."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/top-repos.json
-
-          # Create commit message based on what was refreshed
-          if [ "${{ steps.check_alltime.outputs.refresh_alltime }}" == "true" ]; then
-            git commit -m "chore(data): refresh all tiers including all-time tier (trending algorithm)"
+          if [ "$REFRESH_ALLTIME" = "true" ]; then
+            git commit -m "chore(data): refresh all tiers including all-time tier"
           else
             git commit -m "chore(data): refresh trending tiers (weekly, monthly, 6-month, yearly)"
           fi
 
-          git push
+          # Rebase onto anything pushed while we were fetching; a conflict fails the job loudly.
+          BRANCH="${GITHUB_REF_NAME}"
+          if ! git pull --rebase origin "$BRANCH"; then
+            echo "::error::Rebase onto origin/$BRANCH conflicted; aborting without pushing."
+            git rebase --abort || true
+            exit 1
+          fi
+          git push origin "HEAD:$BRANCH"
         # NOTE: Sitemap is refreshed automatically on the next Vercel deployment after this commit.

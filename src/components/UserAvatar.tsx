@@ -95,7 +95,7 @@ export function UserAvatar({ username, className }: UserAvatarProps) {
     }, [effectiveUsername, userId]);
 
     if (!avatarUrl || error) {
-        return <UserIcon className={cn("w-full h-full text-zinc-300", className)} />;
+        return <UserIcon className={cn("w-full h-full text-nv-ivory-300", className)} />;
     }
 
     // eslint-disable-next-line @next/next/no-img-element

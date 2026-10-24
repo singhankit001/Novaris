@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'fs';
 
 const path = '/Users/gojo/Documents/GitHub/novaris/src/lib/prompt-builder.ts';
 let content = fs.readFileSync(path, 'utf8');

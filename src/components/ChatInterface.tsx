@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { BotIcon } from "@/components/icons/BotIcon";
 import { UserAvatar } from "./UserAvatar";
 import { CopySquaresIcon } from "@/components/icons/CopySquaresIcon";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 
 import { scanRepositoryVulnerabilities, fetchProfile, getRemainingDeepScans, getLatestRepoScanId, createScanShareLink } from "@/app/actions";
@@ -174,6 +174,7 @@ function formatToolStatusLabel(name: string, detail?: string): string {
 }
 
 export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: ChatInterfaceProps) {
+    const reduceMotion = useReducedMotion();
     const { data: session, status: sessionStatus } = useSession();
     const shouldUseCloudStorage = sessionStatus !== "unauthenticated";
     const [messages, setMessages] = useState<RepoChatMessage[]>([
@@ -226,7 +227,6 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 return null;
             }
             const quota = await response.json() as ToolQuotaState;
-            setToolQuota(quota);
             return quota;
         } catch {
             return null;
@@ -260,7 +260,9 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
     }, [session?.user, showSecurityModal, repoContext.owner, repoContext.repo]);
 
     useEffect(() => {
-        void refreshToolQuota();
+        void refreshToolQuota().then((quota) => {
+            if (quota) setToolQuota(quota);
+        });
     }, [refreshToolQuota, session?.user?.id]);
 
     useEffect(() => {
@@ -410,15 +412,17 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
 
     const tokenWarningLevel = getTokenWarningLevel(totalTokens);
 
-    useEffect(() => {
-        const nextShowSuggestions = shouldShowRepoSuggestions({
+    const suggestionsKey = `${messages.length}|${loading}|${scanning}|${input}`;
+    const [prevSuggestionsKey, setPrevSuggestionsKey] = useState<string | null>(null);
+    if (prevSuggestionsKey !== suggestionsKey) {
+        setPrevSuggestionsKey(suggestionsKey);
+        setShowSuggestions(shouldShowRepoSuggestions({
             messagesCount: messages.length,
             input,
             loading,
             scanning,
-        });
-        setShowSuggestions(nextShowSuggestions);
-    }, [messages.length, input, loading, scanning]);
+        }));
+    }
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
         messagesEndRef.current?.scrollIntoView({ behavior });
@@ -912,6 +916,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 window.sessionStorage.removeItem(activeRunKey);
             }
             const latestQuota = await refreshToolQuota();
+            if (latestQuota) setToolQuota(latestQuota);
             if (
                 latestQuota &&
                 previousToolQuotaRemaining !== null &&
@@ -989,39 +994,39 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
     };
 
     return (
-        <div className="flex flex-col h-full bg-transparent text-white relative z-10">
+        <div className="nv-workspace flex flex-col h-full bg-nv-graphite-950 text-nv-ivory-50 relative z-10">
             {/* Repo Header */}
-            <div className="sticky top-0 z-40 border-b border-white/15 bg-[#09090b]/45 backdrop-blur-xl shrink-0 shadow-[0_4px_30px_rgba(6,182,212,0.12)]">
+            <div className="sticky top-0 z-40 border-b border-nv-graphite-700 bg-nv-graphite-900 backdrop-blur-xl shrink-0 shadow-sm">
                 <div className="flex items-center justify-between px-4 h-16 w-full gap-4">
                     {/* Left Section: Breadcrumbs & Context */}
                     <div className="flex items-center gap-3 min-w-0 shrink">
                         {onToggleSidebar && (
                             <button
                                 onClick={onToggleSidebar}
-                                className="md:hidden p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors text-zinc-400 hover:text-white"
+                                className="md:hidden p-2 -ml-2 hover:bg-nv-graphite-800 rounded-lg transition-colors text-nv-ivory-300 hover:text-nv-ivory-50"
                             >
                                 <Menu className="w-5 h-5" />
                             </button>
                         )}
                         <Link
                             href="/"
-                            className="hidden md:flex p-2 -ml-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                            className="hidden md:flex p-2 -ml-2 text-nv-ivory-300 hover:text-nv-ivory-50 hover:bg-nv-graphite-800 rounded-lg transition-colors"
                             title="Back to home"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
 
                         <div className="flex items-center gap-2 min-w-0 ml-2">
-                             <h1 className="text-sm font-medium text-zinc-200 truncate flex items-center gap-1.5">
-                                 <Link href="/" className="hidden md:inline font-display font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500 hover:opacity-90 transition-opacity">novaris</Link>
-                                <span className="hidden md:inline text-zinc-700">/</span>
-                                <span className="text-zinc-100 font-semibold tracking-tight">{repoContext.owner}</span>
-                                <span className="text-zinc-700">/</span>
-                                <span className="text-white font-bold">{repoContext.repo}</span>
+                             <h1 className="text-sm font-medium text-nv-ivory-300 truncate flex items-center gap-1.5">
+                                 <Link href="/" className="hidden md:inline font-display font-extrabold tracking-wider text-nv-copper-400 hover:opacity-90 transition-opacity">novaris</Link>
+                                <span className="hidden md:inline text-nv-ivory-300">/</span>
+                                <span className="text-nv-ivory-300 font-semibold tracking-tight">{repoContext.owner}</span>
+                                <span className="text-nv-ivory-300">/</span>
+                                <span className="text-nv-ivory-50 font-bold">{repoContext.repo}</span>
                             </h1>
                             <Link
                                 href={`/repo/${repoContext.owner}/${repoContext.repo}`}
-                                className="hidden lg:flex items-center text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:text-purple-300 transition-all border border-purple-500/20"
+                                className="hidden lg:flex items-center text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-nv-graphite-800 text-nv-copper-400 hover:bg-nv-graphite-800 hover:text-nv-copper-400 transition-all border border-nv-graphite-700"
                             >
                                 Profile
                             </Link>
@@ -1030,11 +1035,11 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
 
                     {/* Right Section: Actions & Metrics */}
                     <div className="flex items-center gap-3 shrink-0 overflow-x-auto no-scrollbar pr-2">
-                        <div className="hidden md:flex items-center p-1 bg-zinc-900/50 border border-white/5 rounded-xl shadow-inner gap-1">
+                        <div className="hidden md:flex items-center p-1 bg-nv-graphite-900 border border-nv-graphite-700 rounded-xl shadow-inner gap-1">
                             <button
                                 onClick={() => handleSubmit(undefined, ARCHITECTURE_PROMPT)}
                                 disabled={loading || scanning}
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all disabled:opacity-50"
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-nv-ivory-300 hover:text-nv-ivory-50 hover:bg-nv-graphite-800 rounded-lg transition-all disabled:opacity-50"
                             >
                                 <GitFork className="w-3.5 h-3.5" />
                                 <span className="hidden lg:inline">Architecture</span>
@@ -1048,7 +1053,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                     setShowSecurityModal(true);
                                 }}
                                 disabled={loading || scanning}
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-nv-ivory-300 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
                             >
                                 <Shield className="w-3.5 h-3.5" />
                                 <span className="hidden lg:inline">Security</span>
@@ -1062,7 +1067,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                             "hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border shadow-inner shrink-0 transition-colors",
                             tokenWarningLevel === 'danger' ? "bg-red-500/5 text-red-400 border-red-500/20" :
                                 tokenWarningLevel === 'warning' ? "bg-yellow-500/5 text-yellow-400 border-yellow-500/20" :
-                                    "bg-zinc-900 text-zinc-400 border-white/5"
+                                    "bg-nv-graphite-900 text-nv-ivory-300 border-nv-graphite-700"
                         )}>
                             <MessageCircle className="w-3.5 h-3.5" />
                             <span>{formatTokenCount(totalTokens)} / <span className="opacity-50">{formatTokenCount(MAX_TOKENS)}</span></span>
@@ -1075,8 +1080,8 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                 className={cn(
                                     "hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border shadow-inner shrink-0 transition-colors",
                                     isToolQuotaExhausted
-                                        ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                                        : "bg-zinc-900 text-zinc-400 border-white/5 hover:text-white hover:border-white/15"
+                                        ? "bg-amber-500/10 text-amber-800 border-amber-500/30"
+                                        : "bg-nv-graphite-900 text-nv-ivory-300 border-nv-graphite-700 hover:text-nv-ivory-50 hover:border-nv-graphite-700"
                                 )}
                                 title="Open tool quota details"
                             >
@@ -1086,7 +1091,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                         )}
 
                         {/* Utility Bar */}
-                        <div className="flex items-center gap-0.5 pl-3 border-l border-white/10 shrink-0">
+                        <div className="flex items-center gap-0.5 pl-3 border-l border-nv-graphite-700 shrink-0">
                             <SearchModal
                                 repoContext={repoContext}
                                 onSendMessage={(role, content) => {
@@ -1095,14 +1100,14 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                             />
                             <button
                                 onClick={handleExportChat}
-                                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors group relative"
+                                className="p-2 text-nv-ivory-300 hover:text-nv-ivory-50 hover:bg-nv-graphite-800 rounded-lg transition-colors group relative"
                                 title="Export Chat"
                             >
                                 <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
                             </button>
                             <button
                                 onClick={() => setShowClearConfirm(true)}
-                                className="p-2 text-zinc-200 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors group relative"
+                                className="p-2 text-nv-ivory-300 hover:text-red-400 hover:bg-nv-graphite-800 rounded-lg transition-colors group relative"
                                 title="Clear Chat"
                             >
                                 <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -1117,11 +1122,11 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
             <div
                 ref={chatScrollRef}
                 onMouseUp={handleSelection}
-                className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 relative isolate z-0 selection:bg-blue-500/50 selection:text-white [&_*::selection]:bg-blue-500/50 [&_*::selection]:text-white"
+                className="nv-conversation flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 relative isolate z-0 selection:bg-nv-copper-400/20 selection:text-nv-ivory-50 [&_*::selection]:bg-nv-copper-400/20 [&_*::selection]:text-nv-ivory-50"
             >
                 {connectionLost && (
                     <div className="max-w-4xl mx-auto">
-                        <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                        <div className="text-xs text-amber-800 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
                             Connection lost. We&apos;ll keep saving the response and reconnect when possible.
                         </div>
                     </div>
@@ -1137,7 +1142,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                             event.preventDefault();
                             event.stopPropagation();
                         }}
-                        className="absolute z-20 -translate-y-full -mt-2 px-3 py-1 bg-white text-black text-xs rounded-full shadow-lg border border-black/10 transition-transform transition-shadow duration-150 ease-out hover:-translate-y-[110%] hover:scale-105 hover:shadow-xl"
+                        className="absolute z-20 -translate-y-full -mt-2 px-3 py-1 bg-nv-graphite-900 text-nv-ivory-50 text-xs rounded-full shadow-lg border border-nv-graphite-700 transition-transform transition-shadow duration-150 ease-out hover:-translate-y-[110%] hover:scale-105 hover:shadow-xl"
                         style={{ left: selectionAnchor.x, top: selectionAnchor.y }}
                     >
                         Ask NovarisAI
@@ -1174,8 +1179,8 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                 <div className={cn(
                                     "w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden",
                                     msg.role === "model"
-                                        ? "bg-zinc-950 ring-2 ring-purple-500/60"
-                                        : "bg-zinc-800 ring-2 ring-blue-500/50"
+                                        ? "bg-nv-graphite-900 ring-2 ring-nv-copper-400/20"
+                                        : "bg-nv-graphite-800 ring-2 ring-nv-copper-400/20"
                                 )}>
                                     {msg.role === "model" ? (
                                         <BotIcon className="w-full h-full" />
@@ -1213,34 +1218,34 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                         <div className={cn(
                                             "relative px-4 py-2.5 rounded-2xl overflow-hidden w-full min-w-0",
                                             msg.role === "user"
-                                                ? "bg-blue-600 text-white rounded-tr-none"
-                                                : "bg-zinc-900 border border-white/10 rounded-tl-none"
+                                                ? "nv-user-message rounded-tr-md"
+                                                : "nv-model-message rounded-tl-md"
                                         )}
                                             data-message-role={msg.role}
                                         >
                                             {msg.role === "model" && msg.content && (
                                                 <button
                                                     onClick={() => handleCopyMessage(msg)}
-                                                    className="absolute top-2 right-2 p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                                                    className="absolute top-2 right-2 p-1.5 text-nv-ivory-300 hover:text-nv-ivory-50 hover:bg-nv-graphite-800 rounded-md transition-colors"
                                                     title="Copy response"
                                                 >
                                                     <CopySquaresIcon
                                                         className={cn(
                                                             "w-4 h-4",
-                                                            copiedMessageId === msg.id && "text-emerald-400"
+                                                            copiedMessageId === msg.id && "text-nv-copper-400"
                                                         )}
                                                     />
                                                 </button>
                                             )}
-                                            <div className="prose prose-invert prose-sm max-w-none leading-relaxed break-words [overflow-wrap:anywhere] overflow-x-hidden w-full min-w-0">
+                                            <div className="prose nv-message-prose prose-sm max-w-none leading-relaxed break-words [overflow-wrap:anywhere] overflow-x-hidden w-full min-w-0">
                                                 {isStreamingScanPlaceholder && (
-                                                    <div className="not-prose flex items-center gap-2 py-1 text-sm font-medium text-zinc-300">
+                                                    <div className="not-prose flex items-center gap-2 py-1 text-sm font-medium text-nv-ivory-300">
                                                         <span>{msg.scanStatus === "deep_running" ? "Deep Scan Running" : "Quick Scan Running"}</span>
                                                         <span className="flex gap-1 items-center">
                                                             {[0, 1, 2].map((i) => (
                                                                 <span
                                                                     key={i}
-                                                                    className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse"
+                                                                    className="w-1.5 h-1.5 rounded-full bg-nv-copper-400 animate-pulse"
                                                                     style={{ animationDelay: `${i * 0.2}s` }}
                                                                 />
                                                             ))}
@@ -1265,7 +1270,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                                                         "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors outline-none",
                                                                         isFolder 
                                                                             ? "bg-orange-500/20 text-orange-200 hover:bg-orange-500/30"
-                                                                            : "bg-white/20 text-white hover:bg-white/30"
+                                                                            : "bg-nv-graphite-800 text-nv-ivory-50 hover:bg-nv-graphite-800"
                                                                     )}
                                                                 >
                                                                     {isFolder ? (
@@ -1292,11 +1297,11 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                             )}
                                             </div>
                                             {msg.scanId && (
-                                                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-3">
+                                                <div className="mt-4 pt-4 border-t border-nv-graphite-700 flex items-center gap-3">
                                                     <Link
                                                         href={`/report/${msg.scanId}`}
                                                         target="_blank"
-                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors shadow-sm"
+                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-nv-ivory-50 bg-nv-graphite-800 hover:bg-nv-graphite-700 rounded-lg transition-colors shadow-sm"
                                                     >
                                                         <Shield className="w-3.5 h-3.5" />
                                                         View Full Report
@@ -1314,7 +1319,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                                                 toast.error("Failed to share report", { description: message });
                                                             }
                                                         }}
-                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded-lg transition-colors shadow-sm"
+                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-nv-ivory-300 bg-nv-graphite-800 hover:bg-nv-graphite-800 border border-nv-graphite-700 rounded-lg transition-colors shadow-sm"
                                                     >
                                                         <CopySquaresIcon className="w-3.5 h-3.5" />
                                                         Share Report
@@ -1322,12 +1327,12 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                                 </div>
                                             )}
                                             {msg.isQuickSecurityScan && (
-                                                <div className="mt-4 pt-4 border-t border-white/10">
-                                                    <p className="text-sm text-zinc-200 mb-3">Want a more thorough analysis?</p>
+                                                <div className="mt-4 pt-4 border-t border-nv-graphite-700">
+                                                    <p className="text-sm text-nv-ivory-300 mb-3">Want a more thorough analysis?</p>
                                                     <button
                                                         onClick={() => handleSubmit(undefined, DEEP_SCAN_PROMPT, "deep_scan")}
                                                         disabled={loading || scanning}
-                                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded-xl transition-all disabled:opacity-50 group"
+                                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-nv-ivory-50 bg-nv-graphite-800 hover:bg-nv-graphite-800 border border-nv-graphite-700 rounded-xl transition-all disabled:opacity-50 group"
                                                     >
                                                         <Shield className="w-4 h-4 text-red-400 group-hover:scale-110 transition-transform" />
                                                         Run Deep Scan
@@ -1337,7 +1342,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                         </div>
                                     )}
                                     {msg.role === "model" && (msg.commitFreshnessLabel || (msg.toolsUsed && msg.toolsUsed.length > 0) || msg.sourceScope || (msg.processingSummary && msg.processingSummary.length > 0)) && (
-                                        <div className="hidden md:block text-[11px] text-zinc-300 pl-1">
+                                        <div className="hidden md:block text-[11px] text-nv-ivory-300 pl-1">
                                             {msg.sourceScope && <span>Scope: {msg.sourceScope}</span>}
                                             {msg.commitFreshnessLabel && <span>{msg.commitFreshnessLabel}</span>}
                                             {msg.toolsUsed && msg.toolsUsed.length > 0 && (
@@ -1355,12 +1360,12 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
 
                                     {msg.relevantFiles && msg.relevantFiles.length > 0 && !(loading && msg.id === messages[messages.length - 1]?.id) && (
                                         <details className="group mt-1">
-                                            <summary className="flex items-center gap-2 text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 transition-colors select-none">
+                                            <summary className="flex items-center gap-2 text-xs text-nv-ivory-300 cursor-pointer hover:text-nv-ivory-300 transition-colors select-none">
                                                 <FileCode className="w-3 h-3" />
                                                 <span>{msg.relevantFiles.length} files analyzed</span>
                                                 <ChevronRight className="w-3 h-3 group-open:rotate-90 transition-transform" />
                                             </summary>
-                                            <ul className="mt-2 space-y-1 text-xs text-zinc-600 pl-4">
+                                            <ul className="mt-2 space-y-1 text-xs text-nv-ivory-300 pl-4">
                                                 {msg.relevantFiles.map((file, i) => (
                                                     <li key={i} className="font-mono">{file}</li>
                                                 ))}
@@ -1376,15 +1381,15 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="relative z-40 p-4 border-t border-white/15 bg-[#09090b]/45 backdrop-blur-xl shadow-[0_-4px_30px_rgba(6,182,212,0.12)] space-y-3">
+            <div className="nv-workspace-composer relative z-40 p-4 border-t border-nv-graphite-700 bg-nv-graphite-900 backdrop-blur-xl shadow-sm space-y-3">
                 {referenceText && (
                     <div className="max-w-4xl mx-auto">
-                        <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-300">
-                            <span className="text-zinc-200">Ask NovarisAI</span>
+                        <div className="flex items-center gap-2 bg-nv-graphite-900 border border-nv-graphite-700 rounded-lg px-3 py-2 text-xs text-nv-ivory-300">
+                            <span className="text-nv-ivory-300">Ask NovarisAI</span>
                             <span className="truncate">{referenceText}</span>
                             <button
                                 onClick={clearReference}
-                                className="ml-auto p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded"
+                                className="ml-auto p-1 text-nv-ivory-300 hover:text-nv-ivory-50 hover:bg-nv-graphite-800 rounded"
                                 title="Clear reference"
                             >
                                 <X className="w-3.5 h-3.5" />
@@ -1395,20 +1400,20 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 {/* Suggestions */}
                 {showSuggestions && messages.length === 1 && (
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="max-w-4xl mx-auto"
                     >
                         <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-purple-400" />
-                            <span className="text-sm text-zinc-200">Try asking:</span>
+                            <Sparkles className="w-4 h-4 text-nv-copper-400" />
+                            <span className="text-sm text-nv-ivory-300">Try asking:</span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {REPO_SUGGESTIONS.map((suggestion, index) => (
                                 <button
                                     key={index}
                                     onClick={() => handleSuggestionClick(suggestion)}
-                                    className="text-sm px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-purple-600/50 rounded-full text-zinc-300 hover:text-white transition-all"
+                                    className="text-sm px-4 py-2 bg-nv-graphite-900 hover:bg-nv-graphite-800 border border-nv-graphite-700 hover:border-nv-copper-400 rounded-full text-nv-ivory-300 hover:text-nv-ivory-50 transition-all"
                                 >
                                     {suggestion}
                                 </button>
@@ -1426,8 +1431,8 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                 className={cn(
                                     "flex md:hidden items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold border transition-all",
                                     isToolQuotaExhausted
-                                        ? "bg-amber-900/20 text-amber-300 border-amber-500/30 hover:bg-amber-900/30"
-                                        : "bg-zinc-800/50 text-zinc-400 border-white/5 hover:bg-zinc-800 hover:text-zinc-300"
+                                        ? "bg-amber-900/20 text-amber-800 border-amber-500/30 hover:bg-amber-900/30"
+                                        : "bg-nv-graphite-800 text-nv-ivory-300 border-nv-graphite-700 hover:bg-nv-graphite-800 hover:text-nv-ivory-300"
                                 )}
                                 title="Open tool quota details"
                             >

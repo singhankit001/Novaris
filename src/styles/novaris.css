@@ -1,0 +1,261 @@
+/*
+ * Novaris design foundation: "a clearer view of your code".
+ * Import AFTER `@import "tailwindcss"` (root globals.css, or workbench.css).
+ * All raw tokens are --nv-*. Tailwind utilities carry the `nv-` name prefix
+ * (bg-nv-graphite-900, text-nv-ivory-100, font-nv-display, ...).
+ * Light mineral palette. Legacy token names remain for shared component compatibility.
+ */
+
+:root {
+  /* Graphite surfaces (cool, slightly green-black) */
+  --nv-graphite-950: #f7f9f6;
+  --nv-graphite-900: #ffffff;
+  --nv-graphite-850: #f0f4ee;
+  --nv-graphite-800: #eef3ed;
+  --nv-graphite-700: #dce5da;
+  --nv-graphite-600: #c6d4c7;
+  --nv-graphite-500: #7a8e80; /* UI boundary, >= 3:1 on 900/800 */
+  --nv-graphite-400: #607368; /* muted text */
+
+  /* Warm ivory text */
+  --nv-ivory-50: #122820;
+  --nv-ivory-100: #182b28; /* primary text */
+  --nv-ivory-200: #41594e; /* secondary text */
+  --nv-ivory-300: #5c7065; /* tertiary text */
+
+  /* Oxidized copper: the only brand accent */
+  --nv-copper-300: #1d4b3d;
+  --nv-copper-400: #255d4c; /* links, active, evidence edges */
+  --nv-copper-500: #183f34; /* fills (dark text on top) */
+  --nv-copper-600: #36715b;
+  --nv-copper-700: #174334;
+  --nv-copper-wash: #e8f1e5;
+
+  /* Patina: data series B only, never status */
+  --nv-patina-400: #498875;
+  --nv-patina-600: #376b5a;
+
+  /* Semantic status: separate hues from copper */
+  --nv-success: #24633d;
+  --nv-success-wash: #edf6ec;
+  --nv-success-edge: #a9cba8;
+  --nv-warning: #885800;
+  --nv-warning-wash: #fff5d7;
+  --nv-warning-edge: #dfc47e;
+  --nv-danger: #ad342e;
+  --nv-danger-wash: #fff0ec;
+  --nv-danger-edge: #e7b5ac;
+  --nv-info: #2b5f99;
+  --nv-info-wash: #edf4ff;
+  --nv-info-edge: #b3cce7;
+
+  /* Role aliases (use these in components) */
+  --nv-bg: var(--nv-graphite-950);
+  --nv-surface: var(--nv-graphite-900);
+  --nv-surface-raised: var(--nv-graphite-800);
+  --nv-surface-sunken: var(--nv-graphite-850);
+  --nv-text: var(--nv-ivory-100);
+  --nv-text-2: var(--nv-ivory-200);
+  --nv-text-3: var(--nv-ivory-300);
+  --nv-text-muted: var(--nv-graphite-400);
+  --nv-hairline: var(--nv-graphite-700);
+  --nv-border: var(--nv-graphite-600);
+  --nv-border-strong: var(--nv-graphite-500);
+  --nv-accent: var(--nv-copper-400);
+  --nv-on-accent: var(--nv-graphite-950);
+  --nv-scrim: rgb(24 43 40 / 0.35);
+
+  /* Focus: 2px ivory ring over a 2px graphite gap; visible on every surface */
+  --nv-focus: var(--nv-copper-400);
+  --nv-focus-gap: var(--nv-graphite-950);
+
+  /* Radius: small, engineered */
+  --nv-radius-xs: 6px;
+  --nv-radius-sm: 10px;
+  --nv-radius-md: 14px;
+  --nv-radius-lg: 18px;
+
+  /* Elevation: tone + hairline; shadow only for overlays */
+  --nv-shadow-overlay: 0 0 0 1px rgb(24 43 40 / 0.08), 0 24px 70px -20px rgb(24 43 40 / 0.2);
+  --nv-shadow-popover: 0 0 0 1px rgb(24 43 40 / 0.08), 0 12px 32px -10px rgb(24 43 40 / 0.16);
+
+  /* Motion */
+  --nv-dur-micro: 140ms;
+  --nv-dur-small: 220ms;
+  --nv-dur-large: 450ms;
+  --nv-dur-scene: 650ms;
+  --nv-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --nv-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --nv-ease-spring-lite: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* Layout */
+  --nv-gutter: 16px;
+  --nv-page-max: 1360px;
+  --nv-measure: 68ch;
+  --nv-touch: 44px;
+  --nv-header-h: 76px;
+}
+
+@media (min-width: 768px) {
+  :root { --nv-gutter: 24px; }
+}
+@media (min-width: 1280px) {
+  :root { --nv-gutter: 32px; }
+}
+
+@theme inline {
+  --color-nv-graphite-950: var(--nv-graphite-950);
+  --color-nv-graphite-900: var(--nv-graphite-900);
+  --color-nv-graphite-850: var(--nv-graphite-850);
+  --color-nv-graphite-800: var(--nv-graphite-800);
+  --color-nv-graphite-700: var(--nv-graphite-700);
+  --color-nv-graphite-600: var(--nv-graphite-600);
+  --color-nv-graphite-500: var(--nv-graphite-500);
+  --color-nv-graphite-400: var(--nv-graphite-400);
+  --color-nv-ivory-50: var(--nv-ivory-50);
+  --color-nv-ivory-100: var(--nv-ivory-100);
+  --color-nv-ivory-200: var(--nv-ivory-200);
+  --color-nv-ivory-300: var(--nv-ivory-300);
+  --color-nv-copper-300: var(--nv-copper-300);
+  --color-nv-copper-400: var(--nv-copper-400);
+  --color-nv-copper-500: var(--nv-copper-500);
+  --color-nv-copper-600: var(--nv-copper-600);
+  --color-nv-copper-700: var(--nv-copper-700);
+  --color-nv-copper-wash: var(--nv-copper-wash);
+  --color-nv-patina-400: var(--nv-patina-400);
+  --color-nv-patina-600: var(--nv-patina-600);
+  --color-nv-success: var(--nv-success);
+  --color-nv-success-wash: var(--nv-success-wash);
+  --color-nv-success-edge: var(--nv-success-edge);
+  --color-nv-warning: var(--nv-warning);
+  --color-nv-warning-wash: var(--nv-warning-wash);
+  --color-nv-warning-edge: var(--nv-warning-edge);
+  --color-nv-danger: var(--nv-danger);
+  --color-nv-danger-wash: var(--nv-danger-wash);
+  --color-nv-danger-edge: var(--nv-danger-edge);
+  --color-nv-info: var(--nv-info);
+  --color-nv-info-wash: var(--nv-info-wash);
+  --color-nv-info-edge: var(--nv-info-edge);
+
+  --font-nv-display: var(--nv-font-display);
+  --font-nv-sans: var(--nv-font-sans);
+  --font-nv-mono: var(--nv-font-mono);
+
+  --radius-nv-xs: var(--nv-radius-xs);
+  --radius-nv-sm: var(--nv-radius-sm);
+  --radius-nv-md: var(--nv-radius-md);
+  --radius-nv-lg: var(--nv-radius-lg);
+
+  --shadow-nv-overlay: var(--nv-shadow-overlay);
+  --shadow-nv-popover: var(--nv-shadow-popover);
+
+  --ease-nv-out: var(--nv-ease-out);
+  --ease-nv-in-out: var(--nv-ease-in-out);
+
+  --text-nv-display-xl: clamp(2.75rem, 1.6rem + 5.2vw, 5.75rem);
+  --text-nv-display-lg: clamp(2.25rem, 1.5rem + 3.2vw, 4rem);
+  --text-nv-display-md: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
+  --text-nv-title: 1.375rem;
+  --text-nv-body: 0.9375rem;
+  --text-nv-small: 0.8125rem;
+  --text-nv-micro: 0.75rem;
+}
+
+/* Root scope: apply data-nv-root to the wrapper of every redesigned surface. */
+/* Font stacks resolve here, where next/font's face variables are defined (layout wrapper class). */
+[data-nv-root] {
+  --nv-font-display: var(--nv-font-sans-face), ui-sans-serif, system-ui, sans-serif;
+  --nv-font-sans: var(--nv-font-sans-face), ui-sans-serif, system-ui, sans-serif;
+  --nv-font-mono: var(--nv-font-mono-face), ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--nv-bg);
+  color: var(--nv-text);
+  font-family: var(--nv-font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+  color-scheme: light;
+}
+[data-nv-root] ::selection { background: #d7f87e; color: #182b28; }
+[data-nv-root] * { scrollbar-color: var(--nv-graphite-600) transparent; }
+
+/* Tabular numerals for every metric */
+.nv-num { font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "tnum", "lnum"; }
+.nv-eyebrow {
+  font-family: var(--nv-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nv-text-3);
+}
+.nv-display { font-family: var(--nv-font-display); font-optical-sizing: auto; letter-spacing: -0.02em; line-height: 1.02; font-weight: 600; }
+
+/* Focus: one ring for everything, keyboard only */
+.nv-focus:focus-visible,
+[data-nv-root] :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--nv-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--nv-focus-gap);
+}
+[data-nv-root] :where(input, textarea):focus-visible { outline-offset: 0; }
+
+/* Skeleton and indeterminate progress (no fake percentages) */
+@keyframes nv-sheen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes nv-slide { from { transform: translateX(-100%); } to { transform: translateX(350%); } }
+@keyframes nv-spin { to { transform: rotate(360deg); } }
+@keyframes nv-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes nv-fade { from { opacity: 0; } to { opacity: 1; } }
+.nv-skeleton {
+  background: linear-gradient(90deg, var(--nv-graphite-800) 30%, var(--nv-graphite-700) 50%, var(--nv-graphite-800) 70%);
+  background-size: 200% 100%;
+  animation: nv-sheen 1.8s linear infinite;
+}
+.nv-indeterminate::after {
+  content: ""; position: absolute; inset: 0; width: 30%;
+  background: var(--nv-copper-400);
+  animation: nv-slide 1.4s var(--nv-ease-in-out) infinite;
+}
+.nv-spin { animation: nv-spin 0.9s linear infinite; }
+.nv-rise { animation: nv-rise var(--nv-dur-small) var(--nv-ease-out) both; }
+.nv-fade { animation: nv-fade var(--nv-dur-small) var(--nv-ease-out) both; }
+
+dialog.nv-dialog::backdrop { background: var(--nv-scrim); }
+dialog.nv-dialog[open] { animation: nv-rise var(--nv-dur-small) var(--nv-ease-out); }
+
+/* Reduced motion: static and crossfade only */
+@media (prefers-reduced-motion: reduce) {
+  [data-nv-root] *, [data-nv-root] *::before, [data-nv-root] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .nv-skeleton { background: var(--nv-graphite-800); }
+  .nv-indeterminate::after { width: 100%; opacity: 0.5; transform: none; }
+  .nv-rise { animation: none; }
+}
+
+/* Increased contrast: stronger boundaries, brighter secondary text */
+@media (prefers-contrast: more) {
+  :root {
+    --nv-hairline: var(--nv-graphite-500);
+    --nv-border: var(--nv-graphite-400);
+    --nv-border-strong: var(--nv-ivory-300);
+    --nv-text-2: var(--nv-ivory-100);
+    --nv-text-3: var(--nv-ivory-200);
+    --nv-text-muted: var(--nv-ivory-300);
+  }
+}
+@media (forced-colors: active) {
+  .nv-indeterminate::after { background: Highlight; }
+}
+
+/* Shared product chrome: deliberate space, tactile feedback and legible surfaces. */
+.nv-site-header { background: rgb(247 249 246 / 0.9); backdrop-filter: blur(20px); }
+.nv-brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 36px; border-radius: 11px; background: #255d4c; color: #d7f87e; transform: rotate(-5deg); transition: transform 240ms var(--nv-ease-out); }
+a:hover .nv-brand-mark { transform: rotate(0deg); }
+.nv-header-link { position: relative; font-weight: 500; transition: color 180ms, background 180ms, transform 220ms var(--nv-ease-out); }
+.nv-header-link:hover { transform: translateY(-1px); }
+.nv-footer-link { transition: color 180ms, transform 220ms var(--nv-ease-out); }
+.nv-footer-link:hover { color: #255d4c; transform: translateX(3px); }
+@media (prefers-reduced-transparency: reduce) { .nv-site-header { background: #f7f9f6; backdrop-filter: none; } }

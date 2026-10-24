@@ -1,38 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
+import {
+    BODY_LIMIT_CONVERSATION,
+    bodyStatus,
+    readJsonBody,
+    validateConversationMessages,
+    validateConversationParams,
+    validationResponse,
+    type Validation,
+} from "@/lib/request-validation";
 import { getInvalidSessionApiError, getSessionAuthState, getSessionUserId } from "@/lib/session-guard";
 
 type ConversationParams =
     | { scope: "repo"; conversationKey: string; owner: string; repo: string; username: null }
     | { scope: "profile"; conversationKey: string; owner: null; repo: null; username: string };
 
-function resolveConversation(
-    owner: string | null,
-    repo: string | null,
-    username: string | null
-): ConversationParams | null {
-    if (owner && repo) {
+const STORAGE_DOWN = { error: "Storage is temporarily unavailable. Please try again shortly.", code: "STORAGE_UNAVAILABLE" };
+
+function resolveConversation(owner: unknown, repo: unknown, username: unknown): Validation<ConversationParams> {
+    const checked = validateConversationParams(owner, repo, username);
+    if (!checked.ok) return checked;
+    const value = checked.value;
+    if (value.owner !== null) {
         return {
-            scope: "repo",
-            conversationKey: `repo:${owner}:${repo}`,
-            owner,
-            repo,
-            username: null,
+            ok: true,
+            value: { scope: "repo", conversationKey: `repo:${value.owner}:${value.repo}`, owner: value.owner, repo: value.repo, username: null },
         };
     }
-
-    if (username) {
-        return {
-            scope: "profile",
-            conversationKey: `profile:${username}`,
-            owner: null,
-            repo: null,
-            username,
-        };
-    }
-
-    return null;
+    return {
+        ok: true,
+        value: { scope: "profile", conversationKey: `profile:${value.username}`, owner: null, repo: null, username: value.username },
+    };
 }
 
 export async function GET(req: NextRequest) {
@@ -56,10 +56,9 @@ export async function GET(req: NextRequest) {
         const repo = searchParams.get('repo');
         const username = searchParams.get('username');
 
-        const conversation = resolveConversation(owner, repo, username);
-        if (!conversation) {
-            return NextResponse.json({ error: 'Missing repository or profile parameters' }, { status: 400 });
-        }
+        const resolved = resolveConversation(owner, repo, username);
+        if (!resolved.ok) return validationResponse(resolved);
+        const conversation = resolved.value;
 
         const record = await prisma.chatConversation.findUnique({
             where: {
@@ -75,7 +74,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ messages });
     } catch (error) {
         console.error('Error fetching chat history:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json(STORAGE_DOWN, { status: 503 });
     }
 }
 
@@ -95,13 +94,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(getInvalidSessionApiError(), { status: 401 });
         }
 
-        const body = await req.json();
-        const { owner, repo, username, messages } = body;
-
-        const conversation = resolveConversation(owner ?? null, repo ?? null, username ?? null);
-        if (!conversation) {
-            return NextResponse.json({ error: 'Missing repository or profile parameters' }, { status: 400 });
+        const raw = await readJsonBody(req, BODY_LIMIT_CONVERSATION);
+        if (!raw.ok) return validationResponse(raw, bodyStatus(raw.code));
+        const body = raw.value;
+        if (typeof body !== "object" || body === null || Array.isArray(body)) {
+            return validationResponse({ code: "BODY_INVALID", message: "Request body must be a JSON object." });
         }
+        const { owner, repo, username, messages } = body as Record<string, unknown>;
+
+        const resolved = resolveConversation(owner, repo, username);
+        if (!resolved.ok) return validationResponse(resolved);
+        const conversation = resolved.value;
+        const checkedMessages = validateConversationMessages(messages);
+        if (!checkedMessages.ok) return validationResponse(checkedMessages, bodyStatus(checkedMessages.code));
 
         await prisma.chatConversation.upsert({
             where: {
@@ -115,7 +120,7 @@ export async function POST(req: NextRequest) {
                 owner: conversation.owner,
                 repo: conversation.repo,
                 username: conversation.username,
-                messages: Array.isArray(messages) ? messages : [],
+                messages: checkedMessages.value as Prisma.InputJsonValue,
             },
             create: {
                 userId,
@@ -124,14 +129,14 @@ export async function POST(req: NextRequest) {
                 owner: conversation.owner,
                 repo: conversation.repo,
                 username: conversation.username,
-                messages: Array.isArray(messages) ? messages : [],
+                messages: checkedMessages.value as Prisma.InputJsonValue,
             },
         });
 
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error saving chat history:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json(STORAGE_DOWN, { status: 503 });
     }
 }
 
@@ -156,10 +161,9 @@ export async function DELETE(req: NextRequest) {
         const repo = searchParams.get('repo');
         const username = searchParams.get('username');
 
-        const conversation = resolveConversation(owner, repo, username);
-        if (!conversation) {
-            return NextResponse.json({ error: 'Missing repository or profile parameters' }, { status: 400 });
-        }
+        const resolved = resolveConversation(owner, repo, username);
+        if (!resolved.ok) return validationResponse(resolved);
+        const conversation = resolved.value;
 
         await prisma.chatConversation.deleteMany({
             where: {
@@ -170,6 +174,6 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error deleting chat history:', error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json(STORAGE_DOWN, { status: 503 });
     }
 }

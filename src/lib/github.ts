@@ -123,7 +123,7 @@ export const octokit = new Octokit({
     // layer via KV (see cache.ts) using SHA-based keys for automatic invalidation.
     fetch: (url: string, options?: RequestInit) => {
       // Use our custom fetch wrapper that dynamically injects the token
-      // and throws specific GitHubAuthError on 401/403.
+      // and throws GitHubAuthError on 401 and on rate limits.
       return fetchGitHubAPI(url, options);
     },
   },
@@ -400,8 +400,10 @@ export async function getRepo(owner: string, repo: string): Promise<GitHubRepo> 
   const cacheKey = `${owner}/${repo}`;
 
   // Check memory cache
-  if (repoCache.has(cacheKey)) {
-    return repoCache.get(cacheKey)!;
+  // Private repos are never served from shared caches: GitHub must authorize each caller.
+  const memoryCached = repoCache.get(cacheKey);
+  if (memoryCached && !memoryCached.private) {
+    return memoryCached;
   }
 
   // Check KV cache
@@ -417,8 +419,10 @@ export async function getRepo(owner: string, repo: string): Promise<GitHubRepo> 
     repo,
   });
 
-  // Cache in both memory and KV
-  repoCache.set(cacheKey, data);
+  // Cache in both memory and KV (cacheRepoMetadata only records a private marker for private repos)
+  if (!data.private) {
+    repoCache.set(cacheKey, data);
+  }
   await cacheRepoMetadata(owner, repo, data);
 
   return data;
@@ -828,17 +832,48 @@ export const getUserRepos = unstable_cache(
 /**
  * Get public starred repositories for a user
  */
-export async function getStarredRepos(username: string): Promise<GitHubRepo[]> {
+export type StarredReposResult =
+  | { status: "ok"; repos: GitHubRepo[]; truncated: boolean }
+  | { status: "error"; reason: "rate_limited" | "not_found" | "unauthorized" | "unavailable"; message: string };
+
+const STARRED_PAGE_SIZE = 100;
+const STARRED_MAX_PAGES = 4;
+
+/**
+ * Lists a user's starred repositories, newest first, up to STARRED_MAX_PAGES pages.
+ * Failures are reported as errors instead of an empty list, so callers can tell
+ * "no stars" from "GitHub could not be reached".
+ */
+export async function getStarredRepos(username: string): Promise<StarredReposResult> {
+  const repos: GitHubRepo[] = [];
   try {
-    const { data } = await octokit.rest.activity.listReposStarredByUser({
-      username,
-      sort: "created",
-      per_page: 50,
-    });
-    return data as unknown as GitHubRepo[];
+    for (let page = 1; page <= STARRED_MAX_PAGES; page += 1) {
+      const { data } = await octokit.rest.activity.listReposStarredByUser({
+        username,
+        sort: "created",
+        per_page: STARRED_PAGE_SIZE,
+        page,
+      });
+      const pageRepos = (data as unknown[]).filter(isGitHubRepo);
+      repos.push(...pageRepos);
+      if (data.length < STARRED_PAGE_SIZE) {
+        return { status: "ok", repos, truncated: false };
+      }
+    }
+    return { status: "ok", repos, truncated: true };
   } catch (e) {
     console.error("Failed to fetch starred repos", e);
-    return [];
+    const status = getErrorStatus(e);
+    if (status === 403 || status === 429) {
+      return { status: "error", reason: "rate_limited", message: "GitHub rate limit reached. Try again in a few minutes." };
+    }
+    if (status === 404) {
+      return { status: "error", reason: "not_found", message: `GitHub has no user named @${username}.` };
+    }
+    if (status === 401) {
+      return { status: "error", reason: "unauthorized", message: "Your GitHub session expired. Sign in again to load your stars." };
+    }
+    return { status: "error", reason: "unavailable", message: "GitHub could not be reached. Try again shortly." };
   }
 }
 

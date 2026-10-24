@@ -55,6 +55,8 @@ export interface ToolBudgetUsage {
     used: number;
     limit: number;
     remaining: number;
+    /** True when KV could not be read; `remaining` is then 0 (fail closed). */
+    unavailable?: boolean;
 }
 
 export interface ToolBudgetWindowUsage extends ToolBudgetUsage {
@@ -70,6 +72,34 @@ async function safeKvOperation<T>(operation: () => Promise<T>): Promise<T | null
         console.warn("KV operation failed (gracefully degrading):", error);
         return null;
     }
+}
+
+// Shared repo-scoped keys (metadata, full context, commit snapshots, scan results, index) are not
+// partitioned by caller. Once GitHub reports a repo as private it is marked here, and those keys
+// are neither read nor written for it, so every request goes to GitHub with the caller's token.
+const TTL_PRIVATE_MARKER = 30 * 24 * 60 * 60; // 30 days, longer than any shared repo cache TTL
+const privateRepoMarkers = new Set<string>();
+
+function getPrivateRepoMarkerKey(owner: string, repo: string): string {
+    return `repo:private:${owner.toLowerCase()}/${repo.toLowerCase()}`;
+}
+
+function isPrivateRepoPayload(data: unknown): boolean {
+    return typeof data === "object" && data !== null && (data as { private?: unknown }).private === true;
+}
+
+export async function markRepoPrivate(owner: string, repo: string): Promise<void> {
+    const key = getPrivateRepoMarkerKey(owner, repo);
+    privateRepoMarkers.add(key);
+    await safeKvOperation(() => kv.setex(key, TTL_PRIVATE_MARKER, 1));
+}
+
+export async function isRepoMarkedPrivate(owner: string, repo: string): Promise<boolean> {
+    const key = getPrivateRepoMarkerKey(owner, repo);
+    if (privateRepoMarkers.has(key)) return true;
+    const marked = (await safeKvOperation(() => kv.get<number>(key))) === 1;
+    if (marked) privateRepoMarkers.add(key);
+    return marked;
 }
 
 function normalizePolicy(policy?: FileCachePolicy): Required<FileCachePolicy> {
@@ -230,58 +260,151 @@ export async function resolveAnonymousConsecutivePaths(
     return consecutive;
 }
 
+type BudgetActors = string | string[] | undefined;
+
+function toBudgetActorList(actorIds: BudgetActors): Array<string | undefined> {
+    if (Array.isArray(actorIds)) return actorIds.length > 0 ? actorIds : [undefined];
+    return [actorIds];
+}
+
+/**
+ * Read-only view for the quota endpoint. With several actor keys (cookie + network) the stricter
+ * (highest-used) key wins. A KV failure fails closed: reported as exhausted with `unavailable`.
+ */
 export async function getToolBudgetUsage(
     scope: ToolBudgetScope,
     audience: CacheAudience,
-    actorId?: string
+    actorIds?: BudgetActors
 ): Promise<ToolBudgetUsage> {
-    const key = getToolBudgetKey(scope, audience, actorId);
-    const usedRaw = await safeKvOperation(() => kv.get<number>(key));
-    const used = typeof usedRaw === "number" ? usedRaw : 0;
     const limit = getToolBudgetLimit(audience);
-    const remaining = Math.max(0, limit - used);
-    return { used, limit, remaining };
+    const keys = toBudgetActorList(actorIds).map((actor) => getToolBudgetKey(scope, audience, actor));
+    try {
+        const values = await Promise.all(keys.map((key) => kv.get<number>(key)));
+        const used = Math.max(0, ...values.map((value) => (typeof value === "number" ? value : 0)));
+        return { used, limit, remaining: Math.max(0, limit - used) };
+    } catch (error) {
+        console.warn("Tool budget read failed (failing closed):", error);
+        return { used: limit, limit, remaining: 0, unavailable: true };
+    }
 }
 
 export async function getToolBudgetWindowUsage(
     scope: ToolBudgetScope,
     audience: CacheAudience,
-    actorId?: string
+    actorIds?: BudgetActors
 ): Promise<ToolBudgetWindowUsage> {
-    const usage = await getToolBudgetUsage(scope, audience, actorId);
+    const usage = await getToolBudgetUsage(scope, audience, actorIds);
     return {
         ...usage,
         ...getBudgetResetInfo(),
     };
 }
 
-export async function consumeToolBudgetUsage(
+/**
+ * Units held up front for one chat request. Budget model: reserve-then-settle.
+ * ponytail: fixed hold, not the exact tool count (unknown before generation). Ceiling: a request
+ * that uses more than this overshoots the day limit by at most the excess, once. Upgrade: pass
+ * a per-request tool cap into the generator and reserve exactly that cap.
+ */
+export const TOOL_UNITS_RESERVED_PER_REQUEST = 3;
+
+export type ToolBudgetReservation =
+    | {
+          status: "granted";
+          reserved: number;
+          /** Settle once. Completed runs keep `usedUnits`; failed runs refund everything. Never throws. */
+          settle: (usedUnits: number, completed: boolean) => Promise<void>;
+      }
+    | { status: "exhausted" }
+    | { status: "unavailable" };
+
+/**
+ * Atomically take up to `units` from one day key: INCRBY first, and if that crossed the limit,
+ * hand the excess straight back. Concurrent callers cannot overshoot because each INCRBY result is
+ * unique. Returns units granted. Throws on KV failure (caller fails closed).
+ */
+async function reserveOnKey(key: string, limit: number, units: number): Promise<number> {
+    const next = await kv.incrby(key, units);
+    if (next === units) {
+        // Expiry is set once, when this call created the key.
+        await kv.expire(key, Math.max(1, Math.min(TTL_BUDGET_WINDOW, getBudgetResetInfo().windowSecondsRemaining + 60)));
+    }
+    const over = next - limit;
+    if (over <= 0) return units;
+    const granted = Math.max(0, units - over);
+    await kv.decrby(key, units - granted);
+    return granted;
+}
+
+export async function reserveToolBudget(
     scope: ToolBudgetScope,
     audience: CacheAudience,
-    actorId: string | undefined,
-    units: number = 1
-): Promise<ToolBudgetWindowUsage> {
-    const key = getToolBudgetKey(scope, audience, actorId);
-    const normalizedUnits = Math.max(0, Math.floor(units));
-    if (normalizedUnits === 0) {
-        return getToolBudgetWindowUsage(scope, audience, actorId);
-    }
-
-    const { resetAt, windowSecondsRemaining } = getBudgetResetInfo();
-    const nextRaw = await safeKvOperation(() => kv.incrby(key, normalizedUnits));
-    const next = typeof nextRaw === "number" ? nextRaw : normalizedUnits;
-    if (next === normalizedUnits) {
-        await safeKvOperation(() => kv.expire(key, Math.max(1, Math.min(TTL_BUDGET_WINDOW, windowSecondsRemaining + 60))));
-    }
-
+    actorIds: BudgetActors,
+    units: number = TOOL_UNITS_RESERVED_PER_REQUEST
+): Promise<ToolBudgetReservation> {
     const limit = getToolBudgetLimit(audience);
+    const want = Math.max(1, Math.floor(units));
+    const keys = toBudgetActorList(actorIds).map((actor) => getToolBudgetKey(scope, audience, actor));
+    const grantedByKey: number[] = [];
+    try {
+        // Sequential on purpose: a later key's grant can be smaller, and earlier keys are trimmed to match.
+        for (const key of keys) {
+            grantedByKey.push(await reserveOnKey(key, limit, want));
+        }
+    } catch (error) {
+        console.warn("Tool budget reservation failed (failing closed):", error);
+        // Best-effort rollback of what this call already took.
+        await Promise.all(
+            grantedByKey.map((granted, i) => (granted > 0 ? safeKvOperation(() => kv.decrby(keys[i], granted)) : null))
+        );
+        return { status: "unavailable" };
+    }
+
+    const granted = Math.min(...grantedByKey);
+    // Trim every key down to the stricter grant so all keys hold exactly `granted`.
+    try {
+        await Promise.all(
+            grantedByKey.map((g, i) => (g > granted ? kv.decrby(keys[i], g - granted) : null))
+        );
+    } catch (error) {
+        console.warn("Tool budget trim failed (failing closed):", error);
+        return { status: "unavailable" };
+    }
+    if (granted <= 0) return { status: "exhausted" };
+
+    let settled = false;
     return {
-        used: next,
-        limit,
-        remaining: Math.max(0, limit - next),
-        resetAt,
-        windowSecondsRemaining,
+        status: "granted",
+        reserved: granted,
+        settle: async (usedUnits, completed) => {
+            if (settled) return;
+            settled = true;
+            const used = completed ? Math.max(0, Math.floor(usedUnits)) : 0;
+            const delta = used - granted; // negative: refund, positive: charge the excess
+            if (delta === 0) return;
+            await Promise.all(
+                keys.map((key) =>
+                    safeKvOperation(() => (delta < 0 ? kv.decrby(key, -delta) : kv.incrby(key, delta)))
+                )
+            );
+        },
     };
+}
+
+/**
+ * Best-effort single-flight lock for a chat run so a duplicate POST cannot generate (and charge)
+ * the same run twice. KV failure allows the request: the budget path already fails closed.
+ */
+export async function acquireRunLock(runId: string, ttlSeconds: number = 600): Promise<boolean> {
+    const result = await safeKvOperation(() => kv.set(`run_lock:${runId}`, 1, { nx: true, ex: ttlSeconds }));
+    // safeKvOperation returns null both on failure and when NX loses; distinguish with a probe.
+    if (result === "OK") return true;
+    const held = await safeKvOperation(() => kv.get<number>(`run_lock:${runId}`));
+    return held === null;
+}
+
+export async function releaseRunLock(runId: string): Promise<void> {
+    await safeKvOperation(() => kv.del(`run_lock:${runId}`));
 }
 
 export async function getCachedProfileCommitSnapshot<T>(
@@ -317,6 +440,7 @@ export async function getCachedRepoCommitSnapshot<T>(
     repo: string,
     limit: number
 ): Promise<CommitSnapshotCachePayload<T> | null> {
+    if (await isRepoMarkedPrivate(owner, repo)) return null;
     const key = getRepoCommitSnapshotKey(owner, repo, limit);
     const cached = await safeKvOperation(() => kv.get<CommitSnapshotCachePayload<T>>(key));
     if (!cached || typeof cached !== "object") {
@@ -334,6 +458,7 @@ export async function cacheRepoCommitSnapshot<T>(
     limit: number,
     data: T
 ): Promise<void> {
+    if (await isRepoMarkedPrivate(owner, repo)) return;
     const key = getRepoCommitSnapshotKey(owner, repo, limit);
     const payload: CommitSnapshotCachePayload<T> = {
         data,
@@ -504,6 +629,11 @@ export async function cacheRepoMetadata(
     data: unknown,
     ttl: number = TTL_REPO
 ): Promise<void> {
+    if (isPrivateRepoPayload(data)) {
+        await markRepoPrivate(owner, repo);
+        return;
+    }
+    if (await isRepoMarkedPrivate(owner, repo)) return;
     const key = `repo:${owner}/${repo}`;
     await safeKvOperation(() => kv.setex(key, ttl, data));
 }
@@ -515,8 +645,10 @@ export async function getCachedRepoMetadata(
     owner: string,
     repo: string
 ): Promise<unknown | null> {
+    if (await isRepoMarkedPrivate(owner, repo)) return null;
     const key = `repo:${owner}/${repo}`;
-    return await safeKvOperation(() => kv.get<unknown>(key));
+    const cached = await safeKvOperation(() => kv.get<unknown>(key));
+    return isPrivateRepoPayload(cached) ? null : cached;
 }
 
 /**
@@ -550,6 +682,11 @@ export async function cacheRepoFullContext(
     repo: string,
     context: RepoFullContextCachePayload
 ): Promise<void> {
+    if (isPrivateRepoPayload(context.metadata)) {
+        await markRepoPrivate(owner, repo);
+        return;
+    }
+    if (await isRepoMarkedPrivate(owner, repo)) return;
     const key = `repo:full:${owner}/${repo}`;
     // Compress readme if it exists to keep payload reasonable
     let readmeValue = context.readme;
@@ -568,8 +705,10 @@ export async function getCachedRepoFullContext(
     owner: string,
     repo: string
 ): Promise<RepoFullContextCachePayload | null> {
+    if (await isRepoMarkedPrivate(owner, repo)) return null;
     const key = `repo:full:${owner}/${repo}`;
     const cached = await safeKvOperation(() => kv.get<RepoFullContextCachePayload>(key));
+    if (cached && isPrivateRepoPayload(cached.metadata)) return null;
 
     if (cached && cached.readme && typeof cached.readme === 'string' && cached.readme.startsWith('gz:')) {
         try {
@@ -613,6 +752,7 @@ export async function cacheFileTree(
     branch: string,
     tree: unknown[]
 ): Promise<void> {
+    if (await isRepoMarkedPrivate(owner, repo)) return;
     const key = `tree:${owner}/${repo}:${branch}`;
     await safeKvOperation(() => kv.setex(key, TTL_REPO, tree));
 }
@@ -622,6 +762,7 @@ export async function getCachedFileTree(
     repo: string,
     branch: string
 ): Promise<unknown[] | null> {
+    if (await isRepoMarkedPrivate(owner, repo)) return null;
     const key = `tree:${owner}/${repo}:${branch}`;
     return await safeKvOperation(() => kv.get<unknown[]>(key));
 }
@@ -808,6 +949,7 @@ export async function cacheSecurityScanResult(
     identity: SecurityScanCacheIdentity,
     result: unknown
 ): Promise<void> {
+    if (await isRepoMarkedPrivate(owner, repo)) return;
     const key = buildSecurityScanCacheKey(owner, repo, identity);
 
     try {
@@ -830,6 +972,7 @@ export async function getCachedSecurityScanResult(
     repo: string,
     identity: SecurityScanCacheIdentity
 ): Promise<unknown | null> {
+    if (await isRepoMarkedPrivate(owner, repo)) return null;
     const key = buildSecurityScanCacheKey(owner, repo, identity);
     const cached = await safeKvOperation(() => kv.get<string>(key));
     if (!cached) return null;

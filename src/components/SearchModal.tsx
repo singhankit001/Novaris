@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Search, X, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+"use client";
+
+import { useId, useState } from "react";
+import { Search, Loader2 } from "lucide-react";
+import { Dialog } from "@/components/nv/dialog";
+import { Button } from "@/components/nv/button";
+import { cn } from "@/components/nv/cn";
 import { toast } from "sonner";
 import { searchRepositoryCode } from "@/app/actions";
 import { stripEmojiCharacters } from "@/lib/no-emoji";
@@ -21,11 +24,7 @@ export function SearchModal({ repoContext, onSendMessage }: SearchModalProps) {
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchType, setSearchType] = useState<'text' | 'regex' | 'ast'>('text');
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const uid = useId();
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -65,128 +64,66 @@ export function SearchModal({ repoContext, onSendMessage }: SearchModalProps) {
     return (
         <>
             <button
+                type="button"
                 onClick={() => setIsOpen(true)}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors group relative"
-                title="Search Codebase"
+                className="group grid size-11 place-items-center rounded-nv-sm text-nv-ivory-300 transition-colors hover:bg-nv-copper-wash hover:text-nv-copper-400"
+                title="Search codebase"
+                aria-label="Search codebase"
             >
-                <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <Search aria-hidden className="size-5 transition-transform motion-safe:group-hover:scale-110" />
             </button>
-
-            {mounted && createPortal(
-                <AnimatePresence>
-                    {isOpen && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col"
-                            >
-                                <div className="flex items-center justify-between p-4 border-b border-white/10 bg-zinc-950/50 rounded-t-2xl">
-                                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                                        <Search className="w-5 h-5 text-purple-400" />
-                                        Search Codebase
-                                    </h2>
-                                    <button
-                                        onClick={() => !loading && setIsOpen(false)}
-                                        className={`text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        disabled={loading}
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <div className="p-6">
-                                    <form onSubmit={handleSearch} className="space-y-5">
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-2">Search Query</label>
-                                            <input
-                                                type="text"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-shadow"
-                                                placeholder="Function name, exact string, pattern..."
-                                                disabled={loading}
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-300 mb-2">Search Type</label>
-                                            <div className="flex gap-2">
-                                                <Tooltip text="Standard string search" className="flex-1 w-full">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSearchType('text')}
-                                                        disabled={loading}
-                                                        className={`w-full py-2 rounded-xl text-xs font-semibold uppercase tracking-wider border transition-all ${searchType === 'text' ? 'bg-purple-500/10 border-purple-500/50 text-purple-300 shadow-sm' : 'bg-zinc-800/50 border-white/10 text-zinc-400 hover:bg-zinc-700/50'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                    >
-                                                        Text
-                                                    </button>
-                                                </Tooltip>
-                                                <Tooltip text="Regular expression pattern matching" className="flex-1 w-full">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSearchType('regex')}
-                                                        disabled={loading}
-                                                        className={`w-full py-2 rounded-xl text-xs font-semibold uppercase tracking-wider border transition-all ${searchType === 'regex' ? 'bg-purple-500/10 border-purple-500/50 text-purple-300 shadow-sm' : 'bg-zinc-800/50 border-white/10 text-zinc-400 hover:bg-zinc-700/50'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                    >
-                                                        Regex
-                                                    </button>
-                                                </Tooltip>
-                                                <Tooltip text="Abstract Syntax Tree matching (finds code structures)" className="flex-1 w-full">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSearchType('ast')}
-                                                        disabled={loading}
-                                                        className={`w-full py-2 rounded-xl text-xs font-semibold uppercase tracking-wider border transition-all ${searchType === 'ast' ? 'bg-purple-500/10 border-purple-500/50 text-purple-300 shadow-sm' : 'bg-zinc-800/50 border-white/10 text-zinc-400 hover:bg-zinc-700/50'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                    >
-                                                        AST
-                                                    </button>
-                                                </Tooltip>
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-2">
-                                            <button
-                                                type="submit"
-                                                disabled={loading || !searchQuery}
-                                                className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
-                                            >
-                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                                                Search Codebase
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </motion.div>
+            <Dialog
+                open={isOpen}
+                onClose={() => { if (!loading) setIsOpen(false); }}
+                title="Search your codebase"
+                description={`Find a function, pattern or code structure in ${repoContext.owner}/${repoContext.repo}.`}
+            >
+                <form onSubmit={handleSearch} className="space-y-6 p-1" aria-busy={loading}>
+                    <div>
+                        <label htmlFor={`${uid}-query`} className="mb-2 block text-nv-small font-medium text-nv-ivory-100">Search query</label>
+                        <input
+                            id={`${uid}-query`}
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="min-h-12 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-950 px-4 text-nv-body text-nv-ivory-50 placeholder:text-nv-graphite-400 focus:border-nv-copper-400"
+                            placeholder="Function name, exact string, pattern…"
+                            disabled={loading}
+                            autoFocus
+                        />
+                    </div>
+                    <fieldset className="min-w-0">
+                        <legend className="mb-3 text-nv-small font-medium text-nv-ivory-100">Search type</legend>
+                        <div className="grid grid-cols-3 gap-2">
+                            {([
+                                { value: "text", label: "Text", hint: "Exact strings" },
+                                { value: "regex", label: "Regex", hint: "Pattern matching" },
+                                { value: "ast", label: "AST", hint: "Code structures" },
+                            ] as const).map((type) => (
+                                <button
+                                    key={type.value}
+                                    type="button"
+                                    aria-pressed={searchType === type.value}
+                                    onClick={() => setSearchType(type.value)}
+                                    disabled={loading}
+                                    className={cn(
+                                        "min-h-20 rounded-nv-md border p-2 text-left transition-colors disabled:opacity-50 sm:p-3",
+                                        searchType === type.value
+                                            ? "border-nv-copper-400 bg-nv-copper-wash text-nv-copper-300"
+                                            : "border-nv-graphite-600 bg-nv-graphite-850 text-nv-ivory-200 hover:border-nv-copper-400",
+                                    )}
+                                >
+                                    <span className="block text-nv-small font-semibold">{type.label}</span>
+                                    <span className="mt-1 block text-[11px] leading-snug text-nv-ivory-300">{type.hint}</span>
+                                </button>
+                            ))}
                         </div>
-                    )}
-                </AnimatePresence>,
-                document.body
-            )}
+                    </fieldset>
+                    <Button variant="primary" type="submit" disabled={loading || !searchQuery.trim()} className="w-full" leading={loading ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <Search aria-hidden className="size-4" />}>
+                        {loading ? "Searching codebase…" : "Search codebase"}
+                    </Button>
+                </form>
+            </Dialog>
         </>
-    );
-}
-
-function Tooltip({ children, text, className = "" }: { children: React.ReactNode; text: string; className?: string }) {
-    const [isVisible, setIsVisible] = useState(false);
-
-    return (
-        <div className={`relative flex items-center justify-center ${className}`} onMouseEnter={() => setIsVisible(true)} onMouseLeave={() => setIsVisible(false)}>
-            {children}
-            <AnimatePresence>
-                {isVisible && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
-                        className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max max-w-[200px] text-center px-3 py-2 bg-zinc-800 text-xs text-zinc-200 rounded-lg shadow-xl border border-white/10 z-[200] pointer-events-none font-medium"
-                    >
-                        {text}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-800" />
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
     );
 }

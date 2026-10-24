@@ -7,7 +7,10 @@ export default function robots(): MetadataRoute.Robots {
     return {
         rules: {
             userAgent: "*",
-            allow: "/",
+            // Badges and stat cards are embedded in external READMEs.
+            allow: ["/", "/api/badge/", "/api/stats/"],
+            // Signed-in, admin and API surfaces have nothing to index; shared reports are noindex too.
+            disallow: ["/api/", "/admin", "/dashboard", "/report/", "/design-system"],
         },
         sitemap: `${baseUrl}/sitemap.xml`,
         host: baseUrl,

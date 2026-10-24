@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { getContrastRatio } from "@/lib/color-contrast";
 import { MERMAID_THEME_CSS, MERMAID_THEME_VARIABLES } from "@/lib/mermaid-init";
 
 const mermaidInitSource = readFileSync(
@@ -9,13 +10,16 @@ const mermaidInitSource = readFileSync(
 );
 
 describe("mermaid init theme", () => {
-    it("includes branded high-contrast defaults", () => {
-        expect(MERMAID_THEME_VARIABLES.primaryColor).toBe("#4f46e5");
-        expect(MERMAID_THEME_VARIABLES.mainBkg).toBe("#111827");
-        expect(MERMAID_THEME_VARIABLES.nodeTextColor).toBe("#f8fafc");
-        expect(MERMAID_THEME_VARIABLES.lineColor).toBe("#6366f1");
-        expect(MERMAID_THEME_VARIABLES.rowOdd).toBe("#1f2937");
-        expect(MERMAID_THEME_VARIABLES.rowEven).toBe("#0f172a");
+    it("uses light surfaces and readable forest diagram colors", () => {
+        expect(MERMAID_THEME_VARIABLES.primaryColor).toBe("#dceee4");
+        expect(MERMAID_THEME_VARIABLES.mainBkg).toBe("#ffffff");
+        expect(MERMAID_THEME_VARIABLES.nodeTextColor).toBe("#182b28");
+        expect(MERMAID_THEME_VARIABLES.lineColor).toBe("#255d4c");
+        expect(MERMAID_THEME_VARIABLES.rowOdd).toBe("#edf3ee");
+        expect(MERMAID_THEME_VARIABLES.rowEven).toBe("#ffffff");
+        for (const surface of [MERMAID_THEME_VARIABLES.primaryColor, MERMAID_THEME_VARIABLES.mainBkg, MERMAID_THEME_VARIABLES.rowOdd]) {
+            expect(getContrastRatio(MERMAID_THEME_VARIABLES.nodeTextColor, surface)).toBeGreaterThanOrEqual(4.5);
+        }
         expect(MERMAID_THEME_CSS).toContain(".er .entityBox");
         expect(MERMAID_THEME_CSS).toContain(".er .relationshipLabelBox");
         expect(MERMAID_THEME_CSS).toContain(".er g.row-rect-odd path");
@@ -24,7 +28,7 @@ describe("mermaid init theme", () => {
 
     it("provides xychart defaults and shared edge/node style hooks", () => {
         expect(MERMAID_THEME_VARIABLES.xyChart.backgroundColor).toBe("transparent");
-        expect(MERMAID_THEME_VARIABLES.xyChart.plotColorPalette).toContain("#4f46e5");
+        expect(MERMAID_THEME_VARIABLES.xyChart.plotColorPalette).toContain("#dceee4");
         expect(MERMAID_THEME_CSS).not.toContain(".mindmap .node:nth-of-type");
         expect(MERMAID_THEME_CSS).not.toContain(".xychart .plot");
         expect(MERMAID_THEME_CSS).toContain(".edgePath path");
