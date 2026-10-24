@@ -28,7 +28,7 @@ export const metadata: Metadata = staticMetadata;
 
 export default function ChatPage() {
     return (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div aria-hidden className="nv-aurora fixed inset-0 z-30 bg-nv-graphite-950" />}>
             <ChatPageClient />
         </Suspense>
     );
