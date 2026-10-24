@@ -88,6 +88,9 @@
   --nv-gradient-signal: linear-gradient(105deg, #2f54ff 0%, #7a4dff 55%, #19b6e6 100%);
   --nv-gradient-holo: conic-gradient(from 210deg at 50% 50%, #c9d4ff, #e3d4ff, #ffd9ef, #d4f3ff, #c9d4ff);
   --nv-gradient-silver: linear-gradient(180deg, #ffffff 0%, #f3f4f7 100%);
+  /* Dusk: violet to magenta to orange. Gradient-only (bands, ribbons, packets); never text or status. */
+  --nv-gradient-dusk: linear-gradient(115deg, #7a4dff 0%, #c04bd8 38%, #ff5e8a 66%, #ff9a3d 100%);
+  --nv-dusk-400: #ff7a45;
   --nv-gradient-aurora:
     radial-gradient(60% 50% at 18% 10%, rgb(47 84 255 / 0.12), transparent 70%),
     radial-gradient(45% 40% at 84% 6%, rgb(122 77 255 / 0.12), transparent 70%),
@@ -157,6 +160,7 @@
   --color-nv-ion-400: var(--nv-ion-400);
   --color-nv-ion-600: var(--nv-ion-600);
   --color-nv-ion-wash: var(--nv-ion-wash);
+  --color-nv-dusk-400: var(--nv-dusk-400);
   --color-nv-patina-400: var(--nv-patina-400);
   --color-nv-patina-600: var(--nv-patina-600);
   --color-nv-success: var(--nv-success);
