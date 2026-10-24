@@ -2,9 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ArrowUp, FileCode, Folder, Network, X } from "lucide-react";
+import { ArrowUp, AtSign, FileCode, Folder, Loader2, Network, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ModelPreference } from "@/lib/ai-client";
+import s from "./chat/chat.module.css";
 
 interface ChatInputProps {
     value: string;
@@ -27,10 +28,13 @@ interface ChatInputProps {
     taggedFiles?: string[];
     onTaggedFilesChange?: (files: string[]) => void;
     quotaNode?: React.ReactNode;
+    /** Changing this number moves focus into the field (suggestion picked, prefill). */
+    focusSignal?: number;
 }
 
-const chip =
-    "inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-nv-sm border px-3 text-nv-small transition-colors disabled:cursor-not-allowed disabled:opacity-45";
+/** 44px on touch, a tighter 36px with a fine pointer. */
+const pill =
+    "inline-flex min-h-9 touch-manipulation items-center gap-1.5 rounded-full px-3 text-nv-small font-medium transition-[background-color,color,box-shadow] duration-150 [@media(pointer:coarse)]:min-h-11 disabled:cursor-not-allowed disabled:opacity-45";
 
 export function ChatInput({
     value,
@@ -52,6 +56,7 @@ export function ChatInput({
     taggedFiles = [],
     onTaggedFilesChange,
     quotaNode,
+    focusSignal,
 }: ChatInputProps) {
     const { data: session } = useSession();
     const uid = useId();
@@ -61,6 +66,7 @@ export function ChatInput({
     const [mentionQuery, setMentionQuery] = useState("");
     const [mentionIndex, setMentionIndex] = useState(0);
     const [dragging, setDragging] = useState(false);
+    const wasLoading = useRef(false);
 
     useEffect(() => {
         const mq = window.matchMedia("(pointer: coarse)");
@@ -74,9 +80,23 @@ export function ChatInput({
         const t = textareaRef.current;
         if (!t) return;
         t.style.height = "auto";
-        t.style.height = `${Math.min(t.scrollHeight, 200)}px`;
-        t.style.overflowY = t.scrollHeight > 200 ? "auto" : "hidden";
+        t.style.height = `${Math.min(t.scrollHeight, 220)}px`;
+        t.style.overflowY = t.scrollHeight > 220 ? "auto" : "hidden";
     }, [value]);
+
+    // Focus returns to the field when an answer finishes, so the next question is one keystroke away.
+    useEffect(() => {
+        if (wasLoading.current && !loading && !disabled && !document.querySelector("dialog[open]")) textareaRef.current?.focus({ preventScroll: true });
+        wasLoading.current = Boolean(loading);
+    }, [loading, disabled]);
+
+    useEffect(() => {
+        if (focusSignal) {
+            const t = textareaRef.current;
+            t?.focus();
+            t?.setSelectionRange(t.value.length, t.value.length);
+        }
+    }, [focusSignal]);
 
     const matches = repositoryFiles.filter((f) => f.path.toLowerCase().includes(mentionQuery.toLowerCase()) && !taggedFiles.includes(f.path)).slice(0, 10);
     const menuOpen = mentionOpen && matches.length > 0;
@@ -102,7 +122,7 @@ export function ChatInput({
             if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); if (matches[mentionIndex]) addTag(matches[mentionIndex].path); return; }
             if (e.key === "Escape") { e.preventDefault(); setMentionOpen(false); return; }
         }
-        if (e.key === "Enter" && !e.shiftKey && !coarse) {
+        if (e.key === "Enter" && !e.shiftKey && !coarse && !e.nativeEvent.isComposing) {
             e.preventDefault();
             if (canSend) onSubmit(e);
         }
@@ -114,6 +134,17 @@ export function ChatInput({
         const m = next.slice(0, cursor).match(/@([a-zA-Z0-9_.\-/]*)$/);
         setMentionOpen(Boolean(m));
         if (m) { setMentionQuery(m[1] || ""); setMentionIndex(0); }
+    };
+
+    const startMention = () => {
+        const t = textareaRef.current;
+        const cursor = t?.selectionStart ?? value.length;
+        const next = `${value.slice(0, cursor)}${cursor > 0 && !/\s$/.test(value.slice(0, cursor)) ? " " : ""}@${value.slice(cursor)}`;
+        onChange(next);
+        setMentionOpen(true);
+        setMentionQuery("");
+        setMentionIndex(0);
+        window.setTimeout(() => t?.focus(), 0);
     };
 
     const onDrop = (e: React.DragEvent) => {
@@ -140,7 +171,8 @@ export function ChatInput({
     return (
         <div className="relative flex flex-col gap-2">
             {menuOpen && (
-                <ul id={`${uid}-mentions`} role="listbox" aria-label="Files to tag" className="shadow-nv-popover absolute bottom-full left-0 z-30 mb-2 max-h-60 w-full max-w-md list-none overflow-y-auto rounded-nv-md border border-nv-graphite-600 bg-nv-graphite-800 p-1.5">
+                <ul id={`${uid}-mentions`} role="listbox" aria-label="Files to tag" className="nv-fade absolute bottom-full left-0 z-30 mb-3 max-h-64 w-full max-w-md list-none overflow-y-auto rounded-nv-lg border border-nv-graphite-700 bg-white p-1.5 shadow-nv-popover">
+                    <li role="presentation" className="nv-eyebrow px-3 pb-1 pt-1.5">Tag a file</li>
                     {matches.map((f, i) => (
                         <li
                             key={f.path}
@@ -148,30 +180,31 @@ export function ChatInput({
                             role="option"
                             aria-selected={i === mentionIndex}
                             onMouseDown={(e) => { e.preventDefault(); addTag(f.path); }}
-                            className={cn("flex min-h-11 cursor-pointer items-center gap-2 rounded-nv-sm px-3 text-nv-small", i === mentionIndex ? "bg-nv-copper-wash text-nv-copper-300" : "text-nv-ivory-200 hover:bg-nv-graphite-700")}
+                            className={cn("flex min-h-11 cursor-pointer items-center gap-2 rounded-nv-sm px-3 text-nv-small", i === mentionIndex ? "bg-nv-copper-wash text-nv-copper-300" : "text-nv-ivory-200 hover:bg-nv-graphite-800")}
                         >
                             {f.type === "tree" ? <Folder aria-hidden className="size-4 shrink-0" /> : <FileCode aria-hidden className="size-4 shrink-0" />}
-                            <span className="truncate font-mono">{f.path}</span>
+                            <span className="truncate font-nv-mono text-[0.78rem]">{f.path}</span>
                         </li>
                     ))}
                 </ul>
             )}
 
             <div
+                data-drop={dragging || undefined}
                 onDragOver={(e) => { e.preventDefault(); if (!disabled) setDragging(true); }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
-                className={cn("rounded-nv-lg border bg-nv-graphite-800 p-3 shadow-[0_12px_38px_-24px_rgba(37,93,76,0.35)] transition-[border-color,box-shadow] duration-200 focus-within:border-nv-copper-400 focus-within:shadow-[0_12px_38px_-20px_rgba(37,93,76,0.3)]", dragging ? "border-nv-copper-400 bg-nv-copper-wash" : "border-nv-graphite-500")}
+                className={cn("nv-holo-ring p-3 sm:p-4", s.composer, disabled && "opacity-80")}
             >
                 {taggedFiles.length > 0 && (
-                    <ul aria-label="Tagged files" className="m-0 mb-2 flex list-none flex-wrap gap-2 p-0">
+                    <ul aria-label="Tagged files" className="m-0 mb-2 flex list-none flex-wrap gap-1.5 p-0">
                         {taggedFiles.map((path) => {
                             const folder = repositoryFiles.find((r) => r.path === path)?.type === "tree";
                             return (
-                                <li key={path} className="inline-flex max-w-full items-center gap-1 rounded-nv-xs border border-nv-copper-600 bg-nv-copper-wash pl-2 font-mono text-nv-micro text-nv-copper-300">
+                                <li key={path} className="inline-flex max-w-full items-center gap-1 rounded-md border border-nv-copper-700 bg-nv-copper-wash pl-2 font-nv-mono text-[0.71875rem] text-nv-copper-300">
                                     {folder ? <Folder aria-hidden className="size-3 shrink-0" /> : <FileCode aria-hidden className="size-3 shrink-0" />}
                                     <span className="truncate">{path}</span>
-                                    <button type="button" onClick={() => onTaggedFilesChange?.(taggedFiles.filter((f) => f !== path))} aria-label={`Remove ${path}`} className="grid size-8 place-items-center hover:text-nv-ivory-50">
+                                    <button type="button" onClick={() => onTaggedFilesChange?.(taggedFiles.filter((f) => f !== path))} aria-label={`Remove ${path}`} className="grid size-8 place-items-center rounded-md hover:text-nv-ivory-50">
                                         <X aria-hidden className="size-3" />
                                     </button>
                                 </li>
@@ -195,11 +228,37 @@ export function ChatInput({
                     placeholder={placeholderText}
                     disabled={disabled}
                     rows={1}
-                    className="block max-h-[200px] min-h-12 w-full resize-none bg-transparent px-2 py-3 text-nv-body text-nv-ivory-100 placeholder:text-nv-graphite-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                    className="block max-h-[220px] min-h-12 w-full resize-none bg-transparent px-1.5 py-2 text-[1rem] leading-[1.6] text-nv-ivory-100 placeholder:text-nv-graphite-400 focus:outline-none focus-visible:!shadow-none focus-visible:!outline-none disabled:cursor-not-allowed"
                 />
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-nv-graphite-700 pt-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                        {quotaNode}
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        {repositoryFiles.length > 0 && (
+                            <button type="button" disabled={disabled} onClick={startMention} aria-label="Tag a file" className={cn(pill, "text-nv-ivory-200 hover:bg-nv-graphite-850 hover:text-nv-ivory-50")}>
+                                <AtSign aria-hidden className="size-4" />
+                                <span className="hidden sm:inline">Tag</span>
+                            </button>
+                        )}
+                        <div role="group" aria-label="Model mode" className="inline-flex rounded-full bg-nv-graphite-850 p-0.5 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)]">
+                            <button
+                                type="button"
+                                disabled={disabled}
+                                aria-pressed={modelPreference === "flash"}
+                                onClick={() => setModelPreference?.("flash")}
+                                className={cn(pill, modelPreference === "flash" ? "bg-white text-nv-ivory-50 shadow-nv-xs" : "text-nv-ivory-200 hover:text-nv-ivory-50")}
+                            >
+                                Lite
+                            </button>
+                            <button
+                                type="button"
+                                disabled={disabled}
+                                aria-pressed={modelPreference === "thinking"}
+                                onClick={() => (session ? setModelPreference?.("thinking") : onRequireAuth?.())}
+                                className={cn(pill, modelPreference === "thinking" ? "bg-white text-nv-violet-600 shadow-nv-xs" : "text-nv-ivory-200 hover:text-nv-ivory-50")}
+                            >
+                                <Sparkles aria-hidden className="size-3.5" />
+                                Thinking{!session && <span className="text-nv-micro font-normal text-nv-ivory-300">sign in</span>}
+                            </button>
+                        </div>
                         {showCrossRepoToggle && (
                             <button
                                 type="button"
@@ -209,43 +268,33 @@ export function ChatInput({
                                     if (!crossRepoEnabled && !session) return onRequireCrossRepoAuth?.();
                                     setCrossRepoEnabled?.(!crossRepoEnabled);
                                 }}
-                                className={cn(chip, crossRepoEnabled ? "border-nv-copper-600 bg-nv-copper-wash text-nv-copper-300" : "border-nv-graphite-600 text-nv-ivory-200 hover:bg-nv-graphite-800")}
+                                className={cn(pill, "border", crossRepoEnabled ? "border-nv-copper-700 bg-nv-copper-wash text-nv-copper-300" : "border-nv-graphite-600 text-nv-ivory-200 hover:bg-nv-graphite-800")}
                             >
-                                <Network aria-hidden className="size-4" /> Cross-repo{!session && <span className="text-nv-micro text-nv-ivory-300">sign in</span>}
+                                <Network aria-hidden className="size-4" /> Cross-repo{!session && <span className="text-nv-micro font-normal text-nv-ivory-300">sign in</span>}
                             </button>
                         )}
-                        <div role="group" aria-label="Model mode" className="inline-flex">
-                            <button
-                                type="button"
-                                disabled={disabled}
-                                aria-pressed={modelPreference === "flash"}
-                                onClick={() => setModelPreference?.("flash")}
-                                className={cn(chip, "rounded-r-none", modelPreference === "flash" ? "border-nv-copper-400 bg-nv-copper-wash text-nv-copper-300" : "border-nv-graphite-600 text-nv-ivory-200 hover:bg-nv-graphite-800")}
-                            >
-                                Lite
-                            </button>
-                            <button
-                                type="button"
-                                disabled={disabled}
-                                aria-pressed={modelPreference === "thinking"}
-                                onClick={() => (session ? setModelPreference?.("thinking") : onRequireAuth?.())}
-                                className={cn(chip, "-ml-px rounded-l-none", modelPreference === "thinking" ? "border-nv-copper-400 bg-nv-copper-wash text-nv-copper-300" : "border-nv-graphite-600 text-nv-ivory-200 hover:bg-nv-graphite-800")}
-                            >
-                                Thinking{!session && <span className="text-nv-micro text-nv-ivory-300">sign in</span>}
-                            </button>
-                        </div>
+                        {quotaNode}
                     </div>
-                    <button
-                        type="submit"
-                        disabled={!canSend}
-                        aria-busy={loading || undefined}
-                        className="inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-nv-sm bg-nv-copper-400 px-5 font-medium text-white transition-[background-color,transform] duration-200 hover:bg-nv-copper-300 motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                        {loading ? "Working" : "Send"} <ArrowUp aria-hidden className="size-4" />
-                    </button>
+                    <div className="ml-auto flex items-center gap-3">
+                        {!coarse && (
+                            <p className="m-0 hidden items-center gap-1.5 text-nv-micro text-nv-ivory-300 md:flex">
+                                <kbd className="rounded border border-nv-graphite-600 bg-nv-graphite-800 px-1.5 font-nv-mono text-[0.65rem]">Enter</kbd> send
+                                <kbd className="ml-1 rounded border border-nv-graphite-600 bg-nv-graphite-800 px-1.5 font-nv-mono text-[0.65rem]">Shift Enter</kbd> new line
+                            </p>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={!canSend}
+                            aria-busy={loading || undefined}
+                            aria-label={loading ? "Working on your question" : "Send question"}
+                            className="inline-flex size-11 touch-manipulation items-center justify-center rounded-full bg-nv-copper-500 text-white shadow-nv-accent transition-[background-color,transform,box-shadow] duration-200 hover:bg-nv-copper-300 motion-safe:active:scale-95 disabled:cursor-not-allowed disabled:bg-nv-graphite-600 disabled:shadow-none"
+                        >
+                            {loading ? <Loader2 aria-hidden className="nv-spin size-5" /> : <ArrowUp aria-hidden className="size-5" />}
+                        </button>
+                    </div>
                 </div>
             </div>
-            {disabled && disabledReason && <p id={`${uid}-why`} className="text-nv-small text-nv-warning">{disabledReason}</p>}
+            {disabled && disabledReason && <p id={`${uid}-why`} className="m-0 px-2 text-nv-small text-nv-warning">{disabledReason}</p>}
         </div>
     );
 }

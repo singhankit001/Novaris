@@ -5,19 +5,19 @@ export const APP_FONT_STACK = 'var(--nv-font-sans), ui-sans-serif, system-ui, sa
 
 // Novaris tokens as hex: Mermaid computes colours itself and cannot read CSS variables.
 export const DIAGRAM_THEME = {
-    primary: "#dceee4",
-    secondary: "#edf3ee",
-    accent1: "#dce8ef",
-    accent2: "#d9ebe5",
-    accent3: "#e7efce",
-    accent4: "#f3ead4",
-    accent5: "#e4e1f1",
-    accent6: "#f2ded9",
-    line: "#255d4c",
+    primary: "#e6ebff",
+    secondary: "#f4f1ff",
+    accent1: "#dde5ff",
+    accent2: "#e3f6fc",
+    accent3: "#ece6ff",
+    accent4: "#fdebf5",
+    accent5: "#eef1f6",
+    accent6: "#fff2dc",
+    line: "#2f54ff",
     surface: "#ffffff",
-    border: "#6b857b",
-    textOnColor: "#182b28",
-    axis: "#61776e",
+    border: "#9aa3c0",
+    textOnColor: "#14161d",
+    axis: "#626775",
 } as const;
 
 export const MERMAID_THEME_VARIABLES = {

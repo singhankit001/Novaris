@@ -1,12 +1,25 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FileIcon, FolderIcon } from "./FileIcon";
 import { ancestorsOf, buildTree, filterTree, flattenTree, typeAheadIndex, visibleWindow } from "./repo-tree";
 
-const ROW_HEIGHT = 44;
+const ROW_HEIGHT_TOUCH = 44;
+const ROW_HEIGHT_FINE = 34;
+
+function useCoarsePointer(): boolean {
+    return useSyncExternalStore(
+        (cb) => {
+            const mq = window.matchMedia("(pointer: coarse)");
+            mq.addEventListener("change", cb);
+            return () => mq.removeEventListener("change", cb);
+        },
+        () => window.matchMedia("(pointer: coarse)").matches,
+        () => false,
+    );
+}
 
 interface RepoFileTreeProps {
     files: { path: string; type?: "blob" | "tree" }[];
@@ -20,6 +33,7 @@ interface RepoFileTreeProps {
  */
 export function RepoFileTree({ files, onOpenFile, className }: RepoFileTreeProps) {
     const uid = useId();
+    const ROW_HEIGHT = useCoarsePointer() ? ROW_HEIGHT_TOUCH : ROW_HEIGHT_FINE;
     const tree = buildTree(files);
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
     const [query, setQuery] = useState("");
@@ -65,7 +79,7 @@ export function RepoFileTree({ files, onOpenFile, className }: RepoFileTreeProps
         };
         window.addEventListener("reveal-folder", reveal);
         return () => window.removeEventListener("reveal-folder", reveal);
-    }, [files]);
+    }, [files, ROW_HEIGHT]);
 
     useEffect(() => {
         if (!focusAfterRender.current || !activePath) return;
@@ -148,7 +162,7 @@ export function RepoFileTree({ files, onOpenFile, className }: RepoFileTreeProps
                         value={query}
                         onChange={(e) => { setQuery(e.target.value); setScrollTop(0); if (scroller.current) scroller.current.scrollTop = 0; }}
                         placeholder="Filter files"
-                        className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 pl-9 pr-3 text-nv-small text-nv-ivory-100 placeholder:text-nv-graphite-400"
+                        className="min-h-11 w-full rounded-full border border-nv-graphite-600 bg-nv-graphite-850 pl-9 pr-3 text-nv-small text-nv-ivory-100 transition-colors placeholder:text-nv-graphite-400 focus:border-nv-copper-400 focus:bg-white [@media(pointer:fine)]:min-h-9"
                     />
                 </div>
                 <p role="status" aria-live="polite" className="nv-num mt-1.5 px-1 text-nv-micro text-nv-ivory-300">{status}</p>
@@ -182,8 +196,8 @@ export function RepoFileTree({ files, onOpenFile, className }: RepoFileTreeProps
                                     onFocus={() => setFocusPath(node.path)}
                                     style={{ position: "absolute", top: index * ROW_HEIGHT, height: ROW_HEIGHT, left: 0, right: 0, paddingLeft: 8 + row.depth * 14 }}
                                     className={cn(
-                                        "flex cursor-pointer select-none items-center gap-1.5 pr-3 text-nv-small text-nv-ivory-200 hover:bg-nv-graphite-800",
-                                        selected === node.path && "bg-nv-copper-wash text-nv-ivory-50 shadow-[inset_2px_0_0_var(--nv-copper-400)]",
+                                        "flex cursor-pointer select-none items-center gap-1.5 pr-3 text-nv-small text-nv-ivory-200 transition-colors hover:bg-nv-graphite-800",
+                                        selected === node.path && "bg-nv-copper-wash font-medium text-nv-ivory-50 shadow-[inset_2px_0_0_var(--nv-copper-400)]",
                                     )}
                                     title={node.path}
                                 >

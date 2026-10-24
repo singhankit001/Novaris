@@ -3,21 +3,21 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --scrollbar-track: var(--nv-graphite-900);
+  --scrollbar-track: transparent;
   --scrollbar-thumb: var(--nv-graphite-600);
   --scrollbar-thumb-hover: var(--nv-graphite-500);
-  --diagram-color-primary: #4f46e5;
-  --diagram-color-secondary: #1f2937;
-  --diagram-color-accent-1: #1d4ed8;
-  --diagram-color-accent-2: #0e7490;
-  --diagram-color-accent-3: #047857;
-  --diagram-color-accent-4: #6d28d9;
-  --diagram-color-accent-5: #b45309;
-  --diagram-color-accent-6: #be185d;
-  --diagram-color-line: #6366f1;
-  --diagram-color-surface: #111827;
-  --diagram-color-border: #475569;
-  --diagram-color-text-on-color: #f8fafc;
+  --diagram-color-primary: #2f54ff;
+  --diagram-color-secondary: #f4f1ff;
+  --diagram-color-accent-1: #2f54ff;
+  --diagram-color-accent-2: #19b6e6;
+  --diagram-color-accent-3: #7a4dff;
+  --diagram-color-accent-4: #0a7aa3;
+  --diagram-color-accent-5: #9a5a00;
+  --diagram-color-accent-6: #b0306f;
+  --diagram-color-line: #2f54ff;
+  --diagram-color-surface: #ffffff;
+  --diagram-color-border: #9aa3c0;
+  --diagram-color-text-on-color: #14161d;
   --mindmap-branch-1-fill: var(--diagram-color-accent-1);
   --mindmap-branch-1-stroke: var(--diagram-color-accent-1);
   --mindmap-branch-2-fill: var(--diagram-color-accent-2);
@@ -30,17 +30,17 @@
   --mindmap-branch-5-stroke: var(--diagram-color-accent-5);
   --mindmap-branch-6-fill: var(--diagram-color-accent-6);
   --mindmap-branch-6-stroke: var(--diagram-color-accent-6);
-  --mindmap-branch-text: var(--diagram-color-text-on-color);
-  --mindmap-branch-text-dark: #0f172a;
-  --mindmap-branch-text-light: var(--diagram-color-text-on-color);
+  --mindmap-branch-text: #ffffff;
+  --mindmap-branch-text-dark: #14161d;
+  --mindmap-branch-text-light: #ffffff;
   --mindmap-center-fill: var(--diagram-color-primary);
-  --mindmap-center-stroke: #4338ca;
-  --mindmap-center-text: var(--diagram-color-text-on-color);
+  --mindmap-center-stroke: #1f3ee6;
+  --mindmap-center-text: #ffffff;
   --mindmap-category-fill: var(--diagram-color-secondary);
   --mindmap-category-stroke: var(--diagram-color-border);
   --mindmap-category-text: var(--diagram-color-text-on-color);
   --xychart-text: var(--diagram-color-text-on-color);
-  --xychart-axis: #94a3b8;
+  --xychart-axis: #626775;
   --xychart-bar: var(--diagram-color-primary);
   --xychart-line: var(--diagram-color-accent-3);
 }
@@ -67,7 +67,8 @@
 *::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
   border-radius: 9999px;
-  border: 2px solid var(--scrollbar-track);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {

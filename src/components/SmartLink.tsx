@@ -128,7 +128,7 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
         const safe = !href || /^(https?:|mailto:|#|\/)/i.test(href);
         if (!safe) return <span>{children}</span>;
         return (
-            <a href={href} {...props} target="_blank" rel="noopener noreferrer" className="text-nv-copper-400 underline underline-offset-2 hover:text-nv-copper-300">
+            <a href={href} {...props} target="_blank" rel="noopener noreferrer" className="font-medium text-nv-copper-400 underline decoration-nv-copper-700 decoration-[1.5px] underline-offset-[3px] transition-colors hover:text-nv-copper-300 hover:decoration-nv-copper-400">
                 {children}
             </a>
         );
@@ -183,7 +183,7 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
                         window.dispatchEvent(new CustomEvent('open-file-preview', { detail: filePath }));
                     }
                 }}
-                className="inline-flex min-h-6 cursor-pointer items-center gap-1 border-none bg-transparent p-0 font-mono text-nv-small text-nv-copper-400 underline decoration-dashed underline-offset-[3px] hover:text-nv-copper-300"
+                className="inline-flex min-h-6 cursor-pointer items-center gap-1 rounded-md border border-nv-copper-700 bg-nv-copper-wash px-1.5 py-px font-nv-mono text-[0.82em] text-nv-copper-300 hover:bg-white"
                 title="Open file preview"
             >
                 {children}
@@ -192,7 +192,7 @@ export function SmartLink({ href, children, currentOwner, currentRepo, ...props 
     }
 
     return (
-        <a href={href} {...props} target="_blank" rel="noopener noreferrer" className="text-nv-copper-400 underline underline-offset-2">
+        <a href={href} {...props} target="_blank" rel="noopener noreferrer" className="font-medium text-nv-copper-400 underline decoration-nv-copper-700 decoration-[1.5px] underline-offset-[3px] hover:decoration-nv-copper-400">
             {children}
         </a>
     );

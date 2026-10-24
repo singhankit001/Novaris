@@ -45,12 +45,12 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const XLINK_NS = "http://www.w3.org/1999/xlink";
 const SUPPORTED_MERMAID_TYPES_LABEL = "flowchart, sequenceDiagram, stateDiagram-v2, classDiagram, erDiagram, mindmap, gantt, xychart";
 const MINDMAP_BRANCH_COLORS = [
-    { fillVar: "--mindmap-branch-1-fill", strokeVar: "--mindmap-branch-1-stroke", fallbackFill: "#dceee4", fallbackStroke: "#255d4c" },
-    { fillVar: "--mindmap-branch-2-fill", strokeVar: "--mindmap-branch-2-stroke", fallbackFill: "#d9ebe5", fallbackStroke: "#376b5b" },
-    { fillVar: "--mindmap-branch-3-fill", strokeVar: "--mindmap-branch-3-stroke", fallbackFill: "#dce8ef", fallbackStroke: "#466a82" },
-    { fillVar: "--mindmap-branch-4-fill", strokeVar: "--mindmap-branch-4-stroke", fallbackFill: "#e7efce", fallbackStroke: "#526d37" },
-    { fillVar: "--mindmap-branch-5-fill", strokeVar: "--mindmap-branch-5-stroke", fallbackFill: "#f3ead4", fallbackStroke: "#876920" },
-    { fillVar: "--mindmap-branch-6-fill", strokeVar: "--mindmap-branch-6-stroke", fallbackFill: "#f2ded9", fallbackStroke: "#99564c" },
+    { fillVar: "--mindmap-branch-1-fill", strokeVar: "--mindmap-branch-1-stroke", fallbackFill: "#e6ebff", fallbackStroke: "#2f54ff" },
+    { fillVar: "--mindmap-branch-2-fill", strokeVar: "--mindmap-branch-2-stroke", fallbackFill: "#ece6ff", fallbackStroke: "#7a4dff" },
+    { fillVar: "--mindmap-branch-3-fill", strokeVar: "--mindmap-branch-3-stroke", fallbackFill: "#e3f6fc", fallbackStroke: "#0a7aa3" },
+    { fillVar: "--mindmap-branch-4-fill", strokeVar: "--mindmap-branch-4-stroke", fallbackFill: "#eef1f6", fallbackStroke: "#5a5f6e" },
+    { fillVar: "--mindmap-branch-5-fill", strokeVar: "--mindmap-branch-5-stroke", fallbackFill: "#fff2dc", fallbackStroke: "#9a5a00" },
+    { fillVar: "--mindmap-branch-6-fill", strokeVar: "--mindmap-branch-6-stroke", fallbackFill: "#fdebf5", fallbackStroke: "#b0306f" },
 ] as const;
 const MINDMAP_SECTION_PATTERN = /^section-(-?\d+)$/;
 const MINDMAP_EDGE_SECTION_PATTERN = /^section-edge-(-?\d+)$/;
@@ -83,7 +83,7 @@ const NV_DIAGRAM_VARS: Record<string, string> = {
     "--xychart-text": DIAGRAM_THEME.textOnColor,
     "--xychart-axis": DIAGRAM_THEME.axis,
     "--xychart-bar": DIAGRAM_THEME.line,
-    "--xychart-line": "#466a82",
+    "--xychart-line": "#7a4dff",
     "--diagram-color-line": DIAGRAM_THEME.line,
     "--diagram-color-surface": DIAGRAM_THEME.surface,
     "--diagram-color-border": DIAGRAM_THEME.border,
@@ -278,8 +278,8 @@ function isMindmapBlackColor(color: string): boolean {
 function resolveMindmapPalette(): string[] {
     const fallbackPalette = MINDMAP_BRANCH_COLORS.map((entry) => entry.fallbackStroke);
     const resolvedPalette = MINDMAP_BRANCH_COLORS.map((entry, index) => {
-        const resolved = resolveThemeVar(entry.strokeVar, fallbackPalette[index] ?? "#376b5b");
-        return isMindmapBlackColor(resolved) ? (fallbackPalette[index] ?? "#376b5b") : resolved;
+        const resolved = resolveThemeVar(entry.strokeVar, fallbackPalette[index] ?? "#2f54ff");
+        return isMindmapBlackColor(resolved) ? (fallbackPalette[index] ?? "#2f54ff") : resolved;
     });
 
     for (let index = 1; index < resolvedPalette.length; index += 1) {
@@ -634,7 +634,7 @@ function applyMindmapThemeOverrides(svgElement: SVGSVGElement): void {
         }
         const paletteIndex = sectionOrder.get(section) ?? 0;
         const color = palette[paletteIndex % palette.length];
-        return color ?? palette[0] ?? "#376b5b";
+        return color ?? palette[0] ?? "#2f54ff";
     };
 
     elevateMindmapNodesAboveEdges(svgElement);
@@ -728,7 +728,7 @@ function applyMindmapThemeOverrides(svgElement: SVGSVGElement): void {
 function applyXyChartThemeOverrides(svgElement: SVGSVGElement): void {
     const textColor = resolveThemeVar("--xychart-text", "#e5e7eb");
     const axisColor = resolveThemeVar("--xychart-axis", "#6b7280");
-    const barColor = resolveThemeVar("--xychart-bar", "#376b5b");
+    const barColor = resolveThemeVar("--xychart-bar", "#2f54ff");
     const lineColor = resolveThemeVar("--xychart-line", "#34d399");
 
     const mainGroup = svgElement.querySelector<SVGGElement>("g.main");
@@ -1358,9 +1358,9 @@ export const Mermaid = ({ chart, isStreaming = false, rawCode }: MermaidProps) =
     );
 
     return (
-        <figure className="not-prose my-4 min-w-0 overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-900">
-            <figcaption className="flex min-h-11 items-center justify-between gap-2 border-b border-nv-graphite-700 bg-nv-graphite-850 pl-3">
-                <span className="nv-eyebrow">Diagram · {isStreaming ? "drawing" : isRawView ? "Mermaid code" : "model-generated"}</span>
+        <figure className="not-prose my-6 min-w-0 overflow-hidden rounded-nv-lg border border-nv-graphite-700 bg-nv-graphite-900 shadow-nv-card">
+            <figcaption className="flex min-h-11 items-center justify-between gap-2 border-b border-nv-graphite-700 bg-gradient-to-b from-white to-nv-graphite-850 pl-4">
+                <span className="nv-eyebrow inline-flex items-center gap-2"><span aria-hidden className="size-1.5 rounded-full bg-nv-violet-400" />Diagram · {isStreaming ? "drawing" : isRawView ? "Mermaid code" : "model-generated"}</span>
                 {ready && (
                     <span className="flex items-center">
                         {toolbar}
