@@ -1,0 +1,101 @@
+/* Workspace chrome that Tailwind utilities cannot express cleanly: caret, shimmer, holographic focus ring. */
+
+.stage {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(60% 40% at 50% -8%, rgb(47 84 255 / 0.07), transparent 70%),
+    radial-gradient(38% 30% at 92% 4%, rgb(122 77 255 / 0.07), transparent 70%),
+    var(--nv-bg);
+}
+
+/* Live caret appended to the last block of a streaming answer. */
+.streaming > :last-child::after,
+.streaming > :last-child > :last-child::after {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 1.05em;
+  margin-left: 0.2rem;
+  vertical-align: -0.16em;
+  border-radius: 2px;
+  background: var(--nv-gradient-signal);
+  animation: caret-pulse 1.1s ease-in-out infinite;
+}
+.streaming > :last-child > :last-child:is(ul, ol, table, figure, div[role="region"])::after {
+  content: none;
+}
+@keyframes caret-pulse {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.25; transform: scaleY(0.82); }
+}
+
+/* Status text with a light sweep while work is in flight. */
+.shimmer {
+  background: linear-gradient(100deg, var(--nv-ivory-200) 35%, var(--nv-copper-400) 50%, var(--nv-ivory-200) 65%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-run 2.2s linear infinite;
+}
+@keyframes shimmer-run {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+/* Orbiting status mark. */
+.orb {
+  position: relative;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, #2f54ff, #7a4dff, #19b6e6, #2f54ff);
+  animation: orb-spin 2.4s linear infinite;
+  -webkit-mask: radial-gradient(circle, transparent 5px, #000 5.5px);
+  mask: radial-gradient(circle, transparent 5px, #000 5.5px);
+}
+@keyframes orb-spin { to { transform: rotate(360deg); } }
+
+/* Composer: white slab, layered shadow, holographic ring only while focused. */
+.composer {
+  border-radius: var(--nv-radius-xl);
+  background: var(--nv-surface);
+  box-shadow:
+    0 0 0 1px var(--nv-border),
+    0 1px 2px rgb(21 23 29 / 0.05),
+    0 18px 40px -22px rgb(21 23 29 / 0.28),
+    0 2px 0 rgb(255 255 255) inset;
+  transition: box-shadow 220ms var(--nv-ease-out);
+}
+.composer.composer::before { opacity: 0; padding: 1.5px; transition: opacity 260ms var(--nv-ease-out); }
+.composer.composer:focus-within::before,
+.composer.composer[data-drop="true"]::before { opacity: 1; }
+.composer:focus-within {
+  box-shadow:
+    0 1px 2px rgb(21 23 29 / 0.05),
+    0 26px 56px -24px rgb(47 84 255 / 0.32),
+    0 2px 0 rgb(255 255 255) inset;
+}
+
+.glass {
+  background: rgb(250 250 247 / 0.82);
+  -webkit-backdrop-filter: saturate(1.4) blur(16px);
+  backdrop-filter: saturate(1.4) blur(16px);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background: var(--nv-bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Mark tile for assistant turns. */
+.mark {
+  background: linear-gradient(145deg, #ffffff, #eef1ff);
+  box-shadow: 0 0 0 1px var(--nv-copper-700), 0 4px 12px -4px rgb(47 84 255 / 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streaming > :last-child::after,
+  .streaming > :last-child > :last-child::after { animation: none; }
+  .shimmer { animation: none; background: none; color: var(--nv-ivory-200); -webkit-background-clip: border-box; }
+  .orb { animation: none; }
+}

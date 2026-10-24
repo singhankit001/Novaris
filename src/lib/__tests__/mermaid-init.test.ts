@@ -10,12 +10,12 @@ const mermaidInitSource = readFileSync(
 );
 
 describe("mermaid init theme", () => {
-    it("uses light surfaces and readable forest diagram colors", () => {
-        expect(MERMAID_THEME_VARIABLES.primaryColor).toBe("#dceee4");
+    it("uses light surfaces and readable electric blue and violet diagram colors", () => {
+        expect(MERMAID_THEME_VARIABLES.primaryColor).toBe("#e6ebff");
         expect(MERMAID_THEME_VARIABLES.mainBkg).toBe("#ffffff");
-        expect(MERMAID_THEME_VARIABLES.nodeTextColor).toBe("#182b28");
-        expect(MERMAID_THEME_VARIABLES.lineColor).toBe("#255d4c");
-        expect(MERMAID_THEME_VARIABLES.rowOdd).toBe("#edf3ee");
+        expect(MERMAID_THEME_VARIABLES.nodeTextColor).toBe("#14161d");
+        expect(MERMAID_THEME_VARIABLES.lineColor).toBe("#2f54ff");
+        expect(MERMAID_THEME_VARIABLES.rowOdd).toBe("#f4f1ff");
         expect(MERMAID_THEME_VARIABLES.rowEven).toBe("#ffffff");
         for (const surface of [MERMAID_THEME_VARIABLES.primaryColor, MERMAID_THEME_VARIABLES.mainBkg, MERMAID_THEME_VARIABLES.rowOdd]) {
             expect(getContrastRatio(MERMAID_THEME_VARIABLES.nodeTextColor, surface)).toBeGreaterThanOrEqual(4.5);
@@ -28,7 +28,7 @@ describe("mermaid init theme", () => {
 
     it("provides xychart defaults and shared edge/node style hooks", () => {
         expect(MERMAID_THEME_VARIABLES.xyChart.backgroundColor).toBe("transparent");
-        expect(MERMAID_THEME_VARIABLES.xyChart.plotColorPalette).toContain("#dceee4");
+        expect(MERMAID_THEME_VARIABLES.xyChart.plotColorPalette).toContain("#e6ebff");
         expect(MERMAID_THEME_CSS).not.toContain(".mindmap .node:nth-of-type");
         expect(MERMAID_THEME_CSS).not.toContain(".xychart .plot");
         expect(MERMAID_THEME_CSS).toContain(".edgePath path");
