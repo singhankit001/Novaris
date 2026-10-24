@@ -38,7 +38,7 @@ Tokens live in `src/styles/novaris.css`. Primitives live in `src/components/nv/*
 
 The `copper` and `graphite` names are historical; they now hold electric blue and ivory/silver neutrals. Use them as the table says.
 
-Gradients: `--nv-gradient-signal` (blue to violet to ion) for a hairline, a single highlighted word (`.nv-gradient-text`) or the journey. `--nv-gradient-holo` (pastel conic) for holographic edges via `.nv-holo-ring`. `--nv-gradient-silver` for silver surfaces. `.nv-aurora` is the soft atmospheric wash for hero and journey backdrops. `.nv-grid-paper` is the fine engineering grid.
+Gradients: `--nv-gradient-signal` (blue to violet to ion) for a hairline, a single highlighted word (`.nv-gradient-text`) or the journey. `--nv-gradient-holo` (pastel conic) for holographic edges via `.nv-holo-ring`. `--nv-gradient-silver` for silver surfaces. `--nv-gradient-dusk` (violet to magenta to orange) is the one warm gradient: use it for a single feature band or ribbon and for animated data packets, never for text, buttons or status. `.nv-aurora` is the soft atmospheric wash for hero and journey backdrops. `.nv-grid-paper` is the fine engineering grid.
 
 ## Typography
 
