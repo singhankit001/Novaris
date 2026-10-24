@@ -44,9 +44,9 @@ Gradients: `--nv-gradient-signal` (blue to violet to ion) for a hairline, a sing
 
 | Role | Family | Use |
 |---|---|---|
-| Display + UI | Geist (`font-nv-sans`, `.nv-display`) | Headlines at weight 600, tracking -0.035em |
+| Display + UI | Sora (`font-nv-sans`, `.nv-display`) | Headlines at weight 600, tracking -0.045em; body 400 |
 | Editorial accent | Instrument Serif italic (`font-nv-serif`, `<em>` inside `.nv-display`) | One or two words per headline, pull quotes |
-| Code, paths, eyebrows, numbers in tables | Geist Mono (`font-nv-mono`, `.nv-eyebrow`) | |
+| Code, paths, eyebrows | JetBrains Mono (`font-nv-mono`, `.nv-eyebrow`) | |
 
 All three are SIL OFL 1.1, self-hosted by `next/font`.
 
