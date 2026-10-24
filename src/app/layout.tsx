@@ -13,7 +13,7 @@ const nvMono = Geist_Mono({ subsets: ["latin"], variable: "--nv-font-mono-face",
 const nvSerif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--nv-font-serif-face", display: "swap" });
 
 export const viewport: Viewport = {
-  themeColor: "#faf8f3",
+  themeColor: "#fafaf7",
   width: "device-width",
   initialScale: 1,
 };

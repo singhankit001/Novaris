@@ -1,54 +1,55 @@
 /*
- * Novaris design foundation: ivory paper, ink type, cobalt signal, ember highlight.
+ * Novaris design foundation: luminous ivory-white, silver surfaces, electric blue and violet, holographic light.
  * Import AFTER `@import "tailwindcss"` (root globals.css).
  * Raw tokens are --nv-*. Tailwind utilities carry the `nv-` prefix.
  *
  * Token families (legacy names kept so every existing utility re-themes):
  *   graphite-*  neutral surfaces and lines (950 = page canvas, 900 = card, 850 = sunken well)
  *   ivory-*     ink text ramp (50 = strongest, 300 = tertiary)
- *   copper-*    the cobalt brand accent (400 = links/active, 500 = solid fills)
- *   ember-*     warm highlight for emphasis, gradients and data series B; never status
- *   violet-*    data series C and gradient midpoint only
+ *   copper-*    the electric-blue brand accent (400 = links/active, 500 = solid fills)
+ *   violet-*    secondary accent and data series B
+ *   ion-*       cyan for data series C and holographic highlights
  * Prefer role aliases (--nv-bg, --nv-text, --nv-accent, ...) in new code.
  */
 
 :root {
-  /* Neutrals: warm ivory paper */
-  --nv-graphite-950: #faf8f3; /* page canvas */
+  /* Neutrals: luminous ivory-white canvas, silver surfaces */
+  --nv-graphite-950: #fafaf7; /* page canvas */
   --nv-graphite-900: #ffffff; /* cards, panels */
-  --nv-graphite-850: #f4f1ea; /* sunken wells, inputs */
-  --nv-graphite-800: #f7f5ef; /* raised hover tint */
-  --nv-graphite-700: #ebe6db; /* hairlines */
-  --nv-graphite-600: #dcd5c6; /* borders */
-  --nv-graphite-500: #8b8474; /* control boundary, >= 3:1 on white */
-  --nv-graphite-400: #6a6658; /* muted text, 5.3:1 on canvas */
+  --nv-graphite-850: #f1f2f5; /* silver wells, inputs */
+  --nv-graphite-800: #f6f7f9; /* raised hover tint */
+  --nv-graphite-700: #e6e8ee; /* hairlines */
+  --nv-graphite-600: #d5d8e0; /* borders */
+  --nv-graphite-500: #868b99; /* control boundary, >= 3:1 on white */
+  --nv-graphite-400: #626775; /* muted text, 5.6:1 on canvas */
 
   /* Ink text */
-  --nv-ivory-50: #0b0d12;
-  --nv-ivory-100: #15171d; /* primary text */
-  --nv-ivory-200: #3c3f48; /* secondary text */
-  --nv-ivory-300: #5d6070; /* tertiary text, 5.9:1 on white */
+  --nv-ivory-50: #0b0d13;
+  --nv-ivory-100: #14161d; /* primary text */
+  --nv-ivory-200: #3a3e4a; /* secondary text */
+  --nv-ivory-300: #5a5f6e; /* tertiary text */
 
-  /* Cobalt: the brand accent */
-  --nv-copper-300: #1d2fd1; /* hover on solid */
-  --nv-copper-400: #2a3ff0; /* links, active, focus */
-  --nv-copper-500: #2a3ff0; /* solid fill (ivory text on top) */
-  --nv-copper-600: #6f7dff; /* soft accent line */
-  --nv-copper-700: #c9cfff; /* accent hairline */
-  --nv-copper-wash: #eef0ff;
+  /* Electric blue: the brand accent */
+  --nv-copper-300: #1f3ee6; /* hover on solid */
+  --nv-copper-400: #2f54ff; /* links, active, focus (5.5:1 on white) */
+  --nv-copper-500: #2f54ff; /* solid fill, white text on top */
+  --nv-copper-600: #7d93ff; /* soft accent line */
+  --nv-copper-700: #cdd6ff; /* accent hairline */
+  --nv-copper-wash: #eef1ff;
 
-  /* Ember: warm highlight */
-  --nv-ember-400: #f0542d;
-  --nv-ember-600: #b8371a; /* ember text on white, 5.2:1 */
-  --nv-ember-wash: #fff1eb;
-
-  /* Violet: gradient midpoint and data series C */
-  --nv-violet-400: #7c5cff;
+  /* Violet: secondary accent, data series B */
+  --nv-violet-400: #7a4dff; /* 4.9:1 on white */
+  --nv-violet-600: #5b2fe0;
   --nv-violet-wash: #f3efff;
 
-  /* Legacy data series B alias */
-  --nv-patina-400: var(--nv-ember-400);
-  --nv-patina-600: var(--nv-ember-600);
+  /* Ion cyan: data series C and holographic highlights; text only via 600 */
+  --nv-ion-400: #19b6e6;
+  --nv-ion-600: #0a7aa3;
+  --nv-ion-wash: #e9f8fd;
+
+  /* Legacy data series alias */
+  --nv-patina-400: var(--nv-violet-400);
+  --nv-patina-600: var(--nv-violet-600);
 
   /* Status: distinct hues, never the brand accent */
   --nv-success: #11744a;
@@ -84,12 +85,13 @@
   --nv-focus-gap: var(--nv-graphite-900);
 
   /* Gradients: atmospheric, low-saturation light. Use on hero, journey and empty states only. */
-  --nv-gradient-signal: linear-gradient(100deg, #2a3ff0 0%, #7c5cff 52%, #f0542d 100%);
+  --nv-gradient-signal: linear-gradient(105deg, #2f54ff 0%, #7a4dff 55%, #19b6e6 100%);
+  --nv-gradient-holo: conic-gradient(from 210deg at 50% 50%, #c9d4ff, #e3d4ff, #ffd9ef, #d4f3ff, #c9d4ff);
+  --nv-gradient-silver: linear-gradient(180deg, #ffffff 0%, #f3f4f7 100%);
   --nv-gradient-aurora:
-    radial-gradient(60% 50% at 18% 12%, rgb(42 63 240 / 0.13), transparent 70%),
-    radial-gradient(45% 40% at 82% 8%, rgb(240 84 45 / 0.11), transparent 70%),
-    radial-gradient(55% 45% at 60% 90%, rgb(124 92 255 / 0.1), transparent 70%);
-  --nv-gradient-paper: linear-gradient(180deg, #ffffff 0%, #faf8f3 100%);
+    radial-gradient(60% 50% at 18% 10%, rgb(47 84 255 / 0.12), transparent 70%),
+    radial-gradient(45% 40% at 84% 6%, rgb(122 77 255 / 0.12), transparent 70%),
+    radial-gradient(55% 45% at 60% 92%, rgb(25 182 230 / 0.09), transparent 70%);
 
   /* Radius */
   --nv-radius-xs: 6px;
@@ -104,7 +106,7 @@
   --nv-shadow-lift: 0 1px 0 rgb(21 23 29 / 0.03), 0 4px 10px -2px rgb(21 23 29 / 0.06), 0 24px 48px -24px rgb(21 23 29 / 0.24);
   --nv-shadow-popover: 0 0 0 1px rgb(21 23 29 / 0.06), 0 16px 40px -12px rgb(21 23 29 / 0.22);
   --nv-shadow-overlay: 0 0 0 1px rgb(21 23 29 / 0.06), 0 32px 80px -24px rgb(21 23 29 / 0.32);
-  --nv-shadow-accent: 0 1px 0 rgb(255 255 255 / 0.25) inset, 0 8px 20px -8px rgb(42 63 240 / 0.55);
+  --nv-shadow-accent: 0 1px 0 rgb(255 255 255 / 0.25) inset, 0 8px 20px -8px rgb(47 84 255 / 0.5);
 
   /* Motion */
   --nv-dur-micro: 140ms;
@@ -149,11 +151,12 @@
   --color-nv-copper-600: var(--nv-copper-600);
   --color-nv-copper-700: var(--nv-copper-700);
   --color-nv-copper-wash: var(--nv-copper-wash);
-  --color-nv-ember-400: var(--nv-ember-400);
-  --color-nv-ember-600: var(--nv-ember-600);
-  --color-nv-ember-wash: var(--nv-ember-wash);
   --color-nv-violet-400: var(--nv-violet-400);
+  --color-nv-violet-600: var(--nv-violet-600);
   --color-nv-violet-wash: var(--nv-violet-wash);
+  --color-nv-ion-400: var(--nv-ion-400);
+  --color-nv-ion-600: var(--nv-ion-600);
+  --color-nv-ion-wash: var(--nv-ion-wash);
   --color-nv-patina-400: var(--nv-patina-400);
   --color-nv-patina-600: var(--nv-patina-600);
   --color-nv-success: var(--nv-success);
@@ -219,7 +222,7 @@
   font-feature-settings: "ss01", "cv11";
   color-scheme: light;
 }
-[data-nv-root] ::selection { background: #d8dcff; color: var(--nv-ivory-50); }
+[data-nv-root] ::selection { background: #d6dcff; color: var(--nv-ivory-50); }
 [data-nv-root] * { scrollbar-color: var(--nv-graphite-600) transparent; }
 
 /* Type helpers */
@@ -254,6 +257,14 @@
   box-shadow: var(--nv-shadow-card);
 }
 .nv-aurora { background-image: var(--nv-gradient-aurora); }
+/* Holographic hairline border: wrap content; the gradient shows through a 1px padding ring */
+.nv-holo-ring { position: relative; border-radius: inherit; }
+.nv-holo-ring::before {
+  content: ""; position: absolute; inset: 0; padding: 1px; border-radius: inherit; pointer-events: none;
+  background: var(--nv-gradient-holo);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
 /* Fine engineering grid for hero and journey backdrops */
 .nv-grid-paper {
   background-image:
@@ -333,5 +344,5 @@ dialog.nv-dialog[open] { animation: nv-rise var(--nv-dur-small) var(--nv-ease-ou
 }
 
 /* Shared chrome */
-.nv-site-header { background: rgb(250 248 243 / 0.78); backdrop-filter: saturate(1.4) blur(18px); }
+.nv-site-header { background: rgb(250 250 247 / 0.78); backdrop-filter: saturate(1.4) blur(18px); }
 @media (prefers-reduced-transparency: reduce) { .nv-site-header { background: var(--nv-bg); backdrop-filter: none; } }
