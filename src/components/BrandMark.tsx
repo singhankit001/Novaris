@@ -3,11 +3,11 @@ import { cn } from "@/components/nv/cn";
 
 // Brand artwork ships on a white field; multiply blending drops that field on light surfaces.
 
-/** The Novaris "N" mark (public/brand/novaris-mark.png, 820px source). */
+/** The Novaris "N" mark, used uncropped exactly as supplied (public/brand/novaris-n.png, 1254px). */
 export function BrandMark({ size = 32, className }: { size?: number; className?: string }) {
   return (
     <Image
-      src="/brand/novaris-mark.png"
+      src="/brand/novaris-n.png"
       alt=""
       aria-hidden
       width={size}

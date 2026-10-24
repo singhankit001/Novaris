@@ -158,10 +158,10 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
           <Link
             href="/"
             aria-label="Novaris home"
-            className="group flex h-12 items-center rounded-full border border-nv-graphite-700 bg-white/85 pl-1.5 pr-5 shadow-nv-card backdrop-blur-xl transition-shadow duration-200 hover:shadow-nv-lift"
+            className="group flex h-12 items-center rounded-full border border-nv-graphite-700 bg-white/85 pl-0.5 pr-5 shadow-nv-card backdrop-blur-xl transition-shadow duration-200 hover:shadow-nv-lift"
           >
             <span className="transition-transform duration-300 ease-nv-out group-hover:scale-[1.06] motion-reduce:transform-none">
-              <BrandMark size={40} />
+              <BrandMark size={46} />
             </span>
             <BrandWordmark height={13} className="ml-2" />
           </Link>
@@ -170,7 +170,7 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
           <div className="relative hidden lg:block" onMouseLeave={scheduleClose} onMouseEnter={cancelClose}>
             <nav
               aria-label="Primary"
-              className="relative flex h-12 items-center rounded-full bg-[#0b0d13] p-1 shadow-[0_1px_0_rgb(255_255_255/0.08)_inset,0_18px_40px_-18px_rgb(11_13_19/0.7)]"
+              className="relative flex h-12 items-center rounded-full border border-nv-graphite-700 bg-[linear-gradient(180deg,rgb(255_255_255/0.92),rgb(243_244_247/0.88))] p-1 shadow-[0_1px_0_rgb(255_255_255)_inset,0_18px_40px_-20px_rgb(20_22_29/0.28)] backdrop-blur-xl"
               onBlur={(e) => {
                 if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) setActive(null);
               }}
@@ -181,13 +181,13 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
                   const current = isCurrent(entry);
                   const itemClass = cn(
                     "relative flex h-10 items-center gap-1 rounded-full px-4 text-[13.5px] font-medium outline-none transition-colors duration-200",
-                    "focus-visible:ring-2 focus-visible:ring-nv-copper-600",
-                    on ? "text-white" : current ? "text-white" : "text-white/65 hover:text-white",
+                    "focus-visible:ring-2 focus-visible:ring-nv-copper-400",
+                    on ? "text-nv-copper-400" : current ? "text-nv-ivory-50" : "text-nv-ivory-200 hover:text-nv-ivory-50",
                   );
                   const pill = on && (
                     <motion.span
                       layoutId={reduce ? undefined : "nv-island-pill"}
-                      className="absolute inset-0 rounded-full bg-white/[0.12]"
+                      className="absolute inset-0 rounded-full bg-nv-copper-wash ring-1 ring-nv-copper-700"
                       transition={ISLAND_SPRING}
                     />
                   );
@@ -210,7 +210,7 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
                         <Link href={entry.href!} aria-current={current ? "page" : undefined} className={itemClass} onFocus={() => setActive(entry.id)}>
                           {pill}
                           <span className="relative">{entry.label}</span>
-                          {current && <span aria-hidden className="relative ml-1 size-1 rounded-full bg-nv-copper-600" />}
+                          {current && <span aria-hidden className="relative ml-1 size-1 rounded-full bg-nv-copper-400" />}
                         </Link>
                       )}
                     </li>
@@ -230,10 +230,10 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
                   animate={{ opacity: 1, scaleX: 1, scaleY: 1, y: 0 }}
                   exit={reduce ? { opacity: 0 } : { opacity: 0, scaleX: 0.7, scaleY: 0.4, y: -10 }}
                   transition={reduce ? { duration: 0 } : ISLAND_SPRING}
-                  className="absolute left-1/2 top-full z-10 mt-2.5 w-[34rem] origin-top overflow-hidden rounded-[28px] bg-[#0b0d13] p-2 shadow-[0_1px_0_rgb(255_255_255/0.08)_inset,0_40px_80px_-30px_rgb(11_13_19/0.75)]"
+                  className="absolute left-1/2 top-full z-10 mt-2.5 w-[34rem] origin-top overflow-hidden rounded-[28px] border border-nv-graphite-700 bg-white/95 p-2 shadow-nv-overlay backdrop-blur-xl"
                   style={{ x: "-50%" }}
                 >
-                  <div aria-hidden className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,#7d93ff,#a98bff,transparent)]" />
+                  <div aria-hidden className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,#2f54ff,#7a4dff,#19b6e6,transparent)]" />
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.ul
                       key={activeEntry.id}
@@ -249,15 +249,15 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
                             href={item.href}
                             onClick={() => setActive(null)}
                             aria-current={routeOf(item.href) === pathname ? "page" : undefined}
-                            className="group/item flex h-full items-start justify-between gap-3 rounded-[20px] px-4 py-3.5 outline-none transition-colors duration-150 hover:bg-white/[0.07] focus-visible:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-nv-copper-600"
+                            className="group/item flex h-full items-start justify-between gap-3 rounded-[20px] px-4 py-3.5 outline-none transition-colors duration-150 hover:bg-nv-graphite-850 focus-visible:bg-nv-graphite-850 focus-visible:ring-2 focus-visible:ring-nv-copper-400"
                           >
                             <span className="min-w-0">
-                              <span className="block text-[14px] font-medium text-white">{item.label}</span>
-                              <span className="mt-1 block text-[12.5px] leading-snug text-white/55">{item.note}</span>
+                              <span className="block text-[14px] font-medium text-nv-ivory-50 group-hover/item:text-nv-copper-400">{item.label}</span>
+                              <span className="mt-1 block text-[12.5px] leading-snug text-nv-ivory-300">{item.note}</span>
                             </span>
                             <ArrowUpRight
                               aria-hidden
-                              className="mt-0.5 size-4 shrink-0 text-[#9fb0ff] opacity-0 transition-[opacity,transform] duration-200 group-hover/item:-translate-y-0.5 group-hover/item:translate-x-0.5 group-hover/item:opacity-100 group-focus-visible/item:opacity-100"
+                              className="mt-0.5 size-4 shrink-0 text-nv-copper-400 opacity-0 transition-[opacity,transform] duration-200 group-hover/item:-translate-y-0.5 group-hover/item:translate-x-0.5 group-hover/item:opacity-100 group-focus-visible/item:opacity-100"
                             />
                           </Link>
                         </li>
@@ -285,7 +285,7 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
             </div>
             <button
               type="button"
-              className="grid size-12 place-items-center rounded-full bg-[#0b0d13] text-white shadow-nv-card lg:hidden"
+              className="grid size-12 place-items-center rounded-full border border-nv-graphite-700 bg-white/90 text-nv-ivory-50 shadow-nv-card backdrop-blur-xl lg:hidden"
               aria-label="Open menu"
               aria-haspopup="dialog"
               onClick={() => setMobileOpen(true)}
@@ -305,39 +305,39 @@ export default function SiteHeader({ cta, account }: { links?: HeaderLink[]; cta
           if (e.target === dialogRef.current) setMobileOpen(false);
         }}
       >
-        <div className="flex max-h-full flex-col overflow-hidden rounded-[28px] bg-[#0b0d13] text-white shadow-nv-overlay">
+        <div className="flex max-h-full flex-col overflow-hidden rounded-[28px] border border-nv-graphite-700 bg-white text-nv-ivory-100 shadow-nv-overlay">
           <div className="flex items-center justify-between p-3 pl-5">
-            <span id={titleId} className="font-nv-mono text-[11px] uppercase tracking-[0.18em] text-white/50">
+            <span id={titleId} className="font-nv-mono text-[11px] uppercase tracking-[0.18em] text-nv-ivory-300">
               Menu
             </span>
-            <button type="button" className="grid size-11 place-items-center rounded-full bg-white/10" aria-label="Close menu" onClick={() => setMobileOpen(false)}>
+            <button type="button" className="grid size-11 place-items-center rounded-full bg-nv-graphite-850" aria-label="Close menu" onClick={() => setMobileOpen(false)}>
               <X aria-hidden className="size-5" />
             </button>
           </div>
           <nav aria-label="Primary mobile" className="overflow-y-auto px-3 pb-3">
             {NAV.map((entry) =>
               entry.items ? (
-                <section key={entry.id} className="border-t border-white/10 py-3">
-                  <h2 className="px-2 pb-1 font-nv-mono text-[11px] uppercase tracking-[0.18em] text-white/45">{entry.label}</h2>
+                <section key={entry.id} className="border-t border-nv-graphite-700 py-3">
+                  <h2 className="px-2 pb-1 font-nv-mono text-[11px] uppercase tracking-[0.18em] text-nv-ivory-300">{entry.label}</h2>
                   <ul>
                     {entry.items.map((item) => (
                       <li key={item.href}>
-                        <Link href={item.href} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center justify-between rounded-2xl px-2 text-[15px] text-white/90 hover:bg-white/[0.06]">
+                        <Link href={item.href} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center justify-between rounded-2xl px-2 text-[15px] text-nv-ivory-100 hover:bg-nv-graphite-850">
                           {item.label}
-                          <ArrowUpRight aria-hidden className="size-4 text-white/40" />
+                          <ArrowUpRight aria-hidden className="size-4 text-nv-copper-400" />
                         </Link>
                       </li>
                     ))}
                   </ul>
                 </section>
               ) : (
-                <Link key={entry.id} href={entry.href!} onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center border-t border-white/10 px-2 text-[15px] text-white/90">
+                <Link key={entry.id} href={entry.href!} onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center border-t border-nv-graphite-700 px-2 text-[15px] text-nv-ivory-100">
                   {entry.label}
                 </Link>
               ),
             )}
-            <div className="flex flex-col gap-2 border-t border-white/10 pt-3">
-              {account && <div className="[&_*]:!text-white">{account}</div>}
+            <div className="flex flex-col gap-2 border-t border-nv-graphite-700 pt-3">
+              {account && <div>{account}</div>}
               <Link href={cta.href} onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-nv-copper-500 text-[15px] font-medium text-white">
                 {cta.label}
                 <ArrowRight aria-hidden className="size-4" />
