@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import JsonLdScript from "@/components/JsonLdScript";
 import SeoVisual from "@/components/seo/SeoVisual";
+import s from "@/components/seo/seo.module.css";
+import { cn } from "@/components/nv/cn";
 import SiteChrome from "@/components/seo/SiteChrome";
-import { ActionLink, FaqList, H2, LinkRow, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { ActionLink, CtaBand, FaqList, H2, LinkRow, Page, PageHeader, Prose } from "@/components/seo/blocks";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -137,16 +139,17 @@ export default function SolutionsPage() {
           </Prose>
         </PageHeader>
 
-        <section aria-label="Workflow illustration" className="mb-16 max-w-4xl">
+        <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
           <SeoVisual variant="hero-flow" ariaLabel="Novaris solutions workflow from repository input to analysis and action, illustrative" />
         </section>
 
-        <section aria-labelledby="sol-start-h" className="mb-16 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-4">
+        <div className={s.stack}>
+        <section aria-labelledby="sol-start-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
             <H2 id="sol-start-h">Pick a starting point</H2>
           </div>
-          <div className="lg:col-span-7 lg:col-start-6">
-            <div className="border-t border-nv-graphite-700">
+          <div className={s.right}>
+            <div className={s.rows}>
               {solutionCards.map((card) => (
                 <LinkRow key={card.href} href={card.href} title={card.title} summary={card.description} meta="Open" />
               ))}
@@ -154,11 +157,11 @@ export default function SolutionsPage() {
           </div>
         </section>
 
-        <section aria-labelledby="sol-choose-h" className="mb-16 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-4">
+        <section aria-labelledby="sol-choose-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
             <H2 id="sol-choose-h">How to choose the right workflow</H2>
           </div>
-          <div className="lg:col-span-7 lg:col-start-6">
+          <div className={s.right}>
             <Prose>
               <p>
                 Start with <strong>GitHub Repository Analysis</strong> when the primary challenge is understanding
@@ -167,8 +170,8 @@ export default function SolutionsPage() {
               </p>
             </Prose>
             <div className="mt-6 space-y-6">
-              <div className="border-t border-nv-graphite-700 pt-4">
-                <h3 className="mb-2 text-nv-title font-medium text-nv-ivory-50">Use AI Code Review Tool when review quality is the bottleneck</h3>
+              <div className={s.sub}>
+                <h3 className={s.subTitle}>Use AI Code Review Tool when review quality is the bottleneck</h3>
                 <Prose>
                   <p>
                     If pull requests are slow or recurring issues slip through, move into the AI Code Review workflow to
@@ -176,8 +179,8 @@ export default function SolutionsPage() {
                   </p>
                 </Prose>
               </div>
-              <div className="border-t border-nv-graphite-700 pt-4">
-                <h3 className="mb-2 text-nv-title font-medium text-nv-ivory-50">Use Security Scanner when triage speed matters most</h3>
+              <div className={s.sub}>
+                <h3 className={s.subTitle}>Use Security Scanner when triage speed matters most</h3>
                 <Prose>
                   <p>
                     When security findings outpace remediation capacity, Security Scanner helps teams focus on likely
@@ -189,15 +192,15 @@ export default function SolutionsPage() {
           </div>
         </section>
 
-        <section aria-labelledby="sol-compare-h" className="mb-16 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-4">
+        <section aria-labelledby="sol-compare-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
             <H2 id="sol-compare-h">Comparison guides for tool selection</H2>
-            <p className="mt-3 text-nv-body text-nv-ivory-200">
+            <p className="mt-4 leading-relaxed text-nv-ivory-200">
               Written guides that compare approaches by context depth, triage quality, and remediation clarity.
             </p>
           </div>
-          <div className="lg:col-span-7 lg:col-start-6">
-            <div className="border-t border-nv-graphite-700">
+          <div className={s.right}>
+            <div className={s.rows}>
               {compareLinks.map((item) => (
                 <LinkRow key={item.href} href={item.href} title={item.name} />
               ))}
@@ -205,26 +208,21 @@ export default function SolutionsPage() {
           </div>
         </section>
 
-        <section aria-labelledby="sol-faq-h" className="mb-16 grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-4">
+        <section aria-labelledby="sol-faq-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
             <H2 id="sol-faq-h">Frequently asked questions</H2>
           </div>
-          <div className="lg:col-span-7 lg:col-start-6">
+          <div className={s.right}>
             <FaqList items={faqItems} />
           </div>
         </section>
 
-        <section aria-labelledby="sol-next-h" className="border-t border-nv-copper-600 pt-8">
-          <H2 id="sol-next-h">Next step</H2>
-          <p className="mt-3 max-w-[var(--nv-measure)] text-nv-body text-nv-ivory-200">
-            Start with one repository, then keep the workflow that answers your questions best.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <ActionLink href="/chat" variant="primary">Start analysis</ActionLink>
-            <ActionLink href="/explore">Explore guides</ActionLink>
-            <ActionLink href="/compare">Compare workflows</ActionLink>
-          </div>
-        </section>
+        <CtaBand id="sol-next-h" title={<>Next <em>step</em></>} text="Start with one repository, then keep the workflow that answers your questions best.">
+          <ActionLink href="/chat" variant="primary" large>Start analysis</ActionLink>
+          <ActionLink href="/explore" large>Explore guides</ActionLink>
+          <ActionLink href="/compare" large>Compare workflows</ActionLink>
+        </CtaBand>
+        </div>
       </Page>
     </SiteChrome>
   );

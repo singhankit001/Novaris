@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Star } from 'lucide-react';
+import { cn } from '@/components/nv/cn';
+import s from '@/components/seo/seo.module.css';
 import SiteChrome from '@/components/seo/SiteChrome';
 import { Page, PageHeader, LinkRow } from '@/components/seo/blocks';
 import { getIndexableTopics, getReposForTopic, isIndexableTopic } from '@/lib/repo-catalog';
@@ -76,7 +78,7 @@ export default async function TopicPage({ params }: Props) {
                     title={`Open source repositories tagged ${displayTopic}`}
                     lead={`Repositories in the Novaris catalog tagged ${displayTopic}, ordered by stars at the last catalog refresh. Open one to see its public GitHub data.`}
                 />
-                <ol className="m-0 list-none border-t border-nv-graphite-700 p-0">
+                <ol className={cn(s.rows, "m-0 list-none p-0")}>
                     {repos.map((repo, index) => (
                         <li key={`${repo.owner}/${repo.repo}`}>
                             <LinkRow
@@ -88,7 +90,7 @@ export default async function TopicPage({ params }: Props) {
                         </li>
                     ))}
                 </ol>
-                <p className="mt-4 flex items-center gap-1.5 text-nv-micro text-nv-ivory-300">
+                <p className="mt-6 flex items-center gap-1.5 text-nv-micro text-nv-ivory-300">
                     <Star aria-hidden className="size-3" /> Star counts are from the catalog, not live GitHub.
                 </p>
             </Page>

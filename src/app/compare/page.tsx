@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import JsonLdScript from "@/components/JsonLdScript";
+import s from "@/components/seo/seo.module.css";
 import SiteChrome from "@/components/seo/SiteChrome";
 import { ActionLink, H2, LinkRow, Page, PageHeader } from "@/components/seo/blocks";
 import { Notice } from "@/components/nv/notice";
@@ -58,10 +59,10 @@ export default function ComparePage() {
           lead="Three written guides that compare repository analysis approaches by context depth, signal quality, and what you can do with the output."
         />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-7">
+        <div className={s.grid12}>
+          <div className="lg:col-span-7 min-w-0">
             <h2 className="sr-only">Comparison guides</h2>
-            <div className="border-t border-nv-graphite-700">
+            <div className={s.rows}>
               {comparisonPages.map((track) => (
                 <LinkRow key={track.title} href={track.href} title={track.title} summary={track.summary} meta="Guide" />
               ))}

@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, Star, ArrowUpRight } from "lucide-react";
 import { CatalogRepoEntry } from "@/lib/repo-catalog";
-import { buttonClasses } from "@/components/nv/button-styles";
+import { Page, PageHeader, btnClass } from "@/components/seo/blocks";
+import s from "./TrendingClient.module.css";
 import { Button } from "@/components/nv/button";
 import { EmptyState } from "@/components/nv/states";
 import { cn } from "@/components/nv/cn";
@@ -47,35 +48,32 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
     const tierLabel = TIERS.find((t) => t.id === currentTier)?.label ?? "Weekly";
 
     return (
-        <div className="mx-auto w-full max-w-[var(--nv-page-max)] px-[var(--nv-gutter)] py-10 md:py-20">
-            <header className="mb-12">
-                <p className="nv-eyebrow mb-4">Catalog · {tierLabel}</p>
-                <h1 className="nv-display text-nv-display-lg text-balance text-nv-ivory-50">Trending repositories</h1>
-                <p className="mt-5 max-w-[var(--nv-measure)] text-pretty text-nv-title leading-snug text-nv-ivory-200">
-                    Find your next deep dive. Explore the repositories gaining momentum, then uncover how they work.
-                </p>
-                <nav aria-label="Time window" className="mt-6 flex flex-wrap gap-2">
+        <Page wide>
+            <PageHeader
+                eyebrow={`Catalog · ${tierLabel}`}
+                title="Trending repositories"
+                lead="Find your next deep dive. Explore the repositories gaining momentum, then uncover how they work."
+            >
+                <nav aria-label="Time window" className={cn(s.seg, "mt-10")}>
                     {TIERS.map((tier) => (
                         <Link
                             key={tier.id}
                             href={`/trending?tier=${tier.id}`}
                             aria-current={currentTier === tier.id ? "page" : undefined}
-                            className={cn(
-                                buttonClasses(currentTier === tier.id ? "primary" : "secondary"),
-                            )}
+                            className={cn(s.segItem, currentTier === tier.id && s.segOn)}
                         >
                             {tier.label}
                         </Link>
                     ))}
                 </nav>
-            </header>
+            </PageHeader>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
-                <aside aria-label="Filters" className="rounded-nv-lg border border-nv-graphite-600 bg-nv-graphite-800 p-5 lg:sticky lg:top-24 lg:col-span-3 lg:self-start">
-                    <label htmlFor="trending-find" className="nv-eyebrow mb-2 block">
+            <div className={s.tools}>
+                <div role="search">
+                    <label htmlFor="trending-find" className="sr-only">
                         Find a repository
                     </label>
-                    <div className="flex min-h-11 items-center gap-2 rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-850 px-3 focus-within:border-nv-copper-400">
+                    <div className={s.find}>
                         <Search aria-hidden className="size-4 shrink-0 text-nv-ivory-300" />
                         <input
                             id="trending-find"
@@ -86,110 +84,104 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                                 setSearchQuery(e.target.value);
                                 setVisibleCount(PAGE_SIZE);
                             }}
-                            className="min-h-11 w-full border-0 bg-transparent text-nv-body text-nv-ivory-50 outline-none placeholder:text-nv-graphite-400 focus-visible:!shadow-none focus-visible:!outline-none"
                         />
                     </div>
-                    {languages.length > 0 && (
-                        <fieldset className="mt-6 min-w-0 border-0 p-0">
-                            <legend className="nv-eyebrow mb-2">Language</legend>
-                            <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
-                                {[null, ...languages.slice(0, 12)].map((lang) => {
-                                    const active = selectedLanguage === lang;
-                                    return (
-                                        <button
-                                            key={lang ?? "all"}
-                                            type="button"
-                                            aria-pressed={active}
-                                            onClick={() => {
-                                                setSelectedLanguage(lang);
-                                                setVisibleCount(PAGE_SIZE);
-                                            }}
-                                            className={cn(
-                                                "min-h-11 shrink-0 touch-manipulation rounded-nv-sm border px-3 text-nv-small transition-colors duration-150",
-                                                active
-                                                    ? "border-nv-copper-400 bg-nv-copper-wash text-nv-copper-300"
-                                                    : "border-nv-graphite-600 text-nv-ivory-200 hover:border-nv-graphite-500 hover:text-nv-ivory-50",
-                                            )}
-                                        >
-                                            {lang ?? "All"}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </fieldset>
-                    )}
-                </aside>
-
-                <section aria-label="Results" className="min-w-0 lg:col-span-9">
-                    <p role="status" className="nv-num mb-3 text-nv-small text-nv-ivory-300">
-                        Showing {visibleRepos.length} of {filteredRepos.length} repositories. Star counts are from the last catalog refresh.
-                    </p>
-                    {filteredRepos.length === 0 ? (
-                        <EmptyState
-                            title={initialRepos.length === 0 ? "The catalog has no repositories for this window" : "No repositories match"}
-                            action={
-                                initialRepos.length === 0 ? (
-                                    <Link href="/trending?tier=weekly" className={buttonClasses("secondary")}>
-                                        Try the weekly list
-                                    </Link>
-                                ) : (
-                                    <Button
-                                        onClick={() => {
-                                            setSearchQuery("");
-                                            setSelectedLanguage(null);
-                                        }}
-                                    >
-                                        Reset filters
-                                    </Button>
-                                )
-                            }
-                        >
-                            <p>{initialRepos.length === 0 ? "The catalog may be refreshing. Search for any repository from the home page instead." : "Change the search text or language."}</p>
-                        </EmptyState>
-                    ) : (
-                        <ul className="m-0 list-none overflow-hidden rounded-nv-lg border border-nv-graphite-600 bg-nv-graphite-800 p-0">
-                            {visibleRepos.map((repo) => (
-                                <li key={`${repo.owner}/${repo.repo}`} className="group flex flex-wrap items-center gap-4 border-b border-nv-graphite-600 px-5 py-5 transition-colors last:border-b-0 hover:bg-nv-graphite-850 sm:flex-nowrap">
-                                    <Image
-                                        src={`https://github.com/${repo.owner}.png`}
-                                        alt=""
-                                        width={44}
-                                        height={44}
-                                        className="hidden size-11 shrink-0 rounded-nv-sm bg-nv-graphite-800 sm:block"
-                                    />
-                                    <div className="min-w-0 flex-1 basis-1/2">
-                                        <p className="truncate text-nv-body font-semibold text-nv-ivory-50">
-                                            <span className="text-nv-ivory-300">{repo.owner}/</span>
-                                            {repo.repo}
-                                        </p>
-                                        <p className="mt-1 line-clamp-2 text-nv-small text-nv-ivory-300">{repo.description || "No description in the catalog."}</p>
-                                        <p className="nv-num mt-1 flex flex-wrap items-center gap-x-4 text-nv-micro text-nv-ivory-300">
-                                            {repo.language && <span>{repo.language}</span>}
-                                            <span className="inline-flex items-center gap-1">
-                                                <Star aria-hidden className="size-3" />
-                                                {repo.stars.toLocaleString()}
-                                                <span className="sr-only"> stars</span>
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <Link
-                                        href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
-                                        aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
-                                        className={buttonClasses("secondary")}
-                                    >
-                                        Analyze <ArrowUpRight aria-hidden className="size-4 transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5" />
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    {hasMore && (
-                        <div className="mt-8">
-                            <Button onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}>Load {PAGE_SIZE} more</Button>
-                        </div>
-                    )}
-                </section>
+                </div>
+                {languages.length > 0 && (
+                    <fieldset className={s.chips}>
+                        <legend className="sr-only">Language</legend>
+                        {[null, ...languages.slice(0, 12)].map((lang) => {
+                            const active = selectedLanguage === lang;
+                            return (
+                                <button
+                                    key={lang ?? "all"}
+                                    type="button"
+                                    aria-pressed={active}
+                                    onClick={() => {
+                                        setSelectedLanguage(lang);
+                                        setVisibleCount(PAGE_SIZE);
+                                    }}
+                                    className={cn(s.chip, active && s.chipOn)}
+                                >
+                                    {lang ?? "All"}
+                                </button>
+                            );
+                        })}
+                    </fieldset>
+                )}
             </div>
-        </div>
+
+            <section aria-label="Results" className="min-w-0">
+                <p role="status" className={cn(s.status, "nv-num")}>
+                    Showing {visibleRepos.length} of {filteredRepos.length} repositories. Star counts are from the last catalog refresh.
+                </p>
+                {filteredRepos.length === 0 ? (
+                    <EmptyState
+                        title={initialRepos.length === 0 ? "The catalog has no repositories for this window" : "No repositories match"}
+                        action={
+                            initialRepos.length === 0 ? (
+                                <Link href="/trending?tier=weekly" className={btnClass("secondary")}>
+                                    Try the weekly list
+                                </Link>
+                            ) : (
+                                <Button
+                                    onClick={() => {
+                                        setSearchQuery("");
+                                        setSelectedLanguage(null);
+                                    }}
+                                >
+                                    Reset filters
+                                </Button>
+                            )
+                        }
+                    >
+                        <p>{initialRepos.length === 0 ? "The catalog may be refreshing. Search for any repository from the home page instead." : "Change the search text or language."}</p>
+                    </EmptyState>
+                ) : (
+                    <ol className={s.table}>
+                        {visibleRepos.map((repo, i) => (
+                            <li key={`${repo.owner}/${repo.repo}`} className={s.rowItem}>
+                                <span aria-hidden className={cn(s.rank, "nv-num")}>
+                                    {String(i + 1).padStart(2, "0")}
+                                </span>
+                                <Image src={`https://github.com/${repo.owner}.png`} alt="" width={44} height={44} className={s.avatar} />
+                                <div className={s.main}>
+                                    <p className={s.name}>
+                                        <span className={s.owner}>{repo.owner}/</span>
+                                        {repo.repo}
+                                    </p>
+                                    <p className={s.descr}>{repo.description || "No description in the catalog."}</p>
+                                </div>
+                                <span className={s.lang}>{repo.language ?? ""}</span>
+                                <span className={cn(s.stars, "nv-num")}>
+                                    <Star aria-hidden className="size-3.5" />
+                                    {repo.stars.toLocaleString()}
+                                    <span className="sr-only"> stars</span>
+                                </span>
+                                <Link
+                                    href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
+                                    aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
+                                    className={s.go}
+                                >
+                                    <ArrowUpRight aria-hidden className="size-4" />
+                                </Link>
+                                <p className={cn(s.starsM, "nv-num m-0")}>
+                                    {repo.language && <span>{repo.language}</span>}
+                                    <span>
+                                        {repo.stars.toLocaleString()} <span className="sr-only">stars</span>
+                                        <span aria-hidden>★</span>
+                                    </span>
+                                </p>
+                            </li>
+                        ))}
+                    </ol>
+                )}
+                {hasMore && (
+                    <div className={s.more}>
+                        <Button onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}>Load {PAGE_SIZE} more</Button>
+                    </div>
+                )}
+            </section>
+        </Page>
     );
 }

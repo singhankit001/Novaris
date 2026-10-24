@@ -1,21 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import { ArrowUpRight } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { getRecentSearches } from "./actions";
 import RepoSearch from "@/components/RepoSearch";
-import PublicStats from "@/components/PublicStats";
+import { type PublicStatsData } from "@/components/PublicStats";
 import { WhatsNewBadge } from "@/components/WhatsNewBadge";
 import SiteChrome from "@/components/seo/SiteChrome";
 import { Notice } from "@/components/nv/notice";
 import { BasisTag } from "@/components/nv/badge";
 import { Citation } from "@/components/nv/evidence";
-import { FaqList } from "@/components/seo/blocks";
+import { cn } from "@/components/nv/cn";
+import { FaqList, LinkRow, Rows, btnClass } from "@/components/seo/blocks";
 import JsonLdScript from "@/components/JsonLdScript";
+import Constellation from "@/components/landing/Constellation";
+import StatStrip, { type ProductLimits } from "@/components/landing/StatStrip";
+import SignalBurst from "@/components/landing/SignalBurst";
+import PathChooser from "@/components/landing/PathChooser";
+import DuskBand from "@/components/landing/DuskBand";
+import ConnectGraph from "@/components/landing/ConnectGraph";
+import Reveal from "@/components/landing/Reveal";
+import s from "@/components/landing/landing.module.css";
+import { SECURITY_SCAN_FILE_LIMITS } from "@/lib/security-scan-config";
 import type { SearchHistoryItem } from "@/lib/services/history-service";
 import { INVALID_SESSION_ERROR_PARAM } from "@/lib/session-guard";
 import { BlogPost } from "@prisma/client";
@@ -26,61 +37,10 @@ import { buildFaqStructuredData, buildSoftwareApplicationStructuredData } from "
 
 const InstallPWA = dynamic(() => import("@/components/InstallPWA").then((mod) => mod.InstallPWA), { ssr: false });
 
-type PublicStatsData = {
-    totalVisitors: number;
-    totalQueries: number;
-    totalScans: number;
-};
-
-/**
- * Static, clearly illustrative poster for the Phase 4 repository atlas. The 3D component replaces
- * the contents of the slot. Strata are module layers; copper lines are example evidence edges.
- */
-function AtlasPoster() {
-    const layers = [
-        { y: 28, label: "app/", files: [34, 22, 46, 18] },
-        { y: 92, label: "components/", files: [26, 40, 20, 32, 16] },
-        { y: 156, label: "lib/", files: [44, 24, 30] },
-        { y: 220, label: "prisma/", files: [38, 28] },
-    ];
-    return (
-        <figure className="m-0">
-            <div data-atlas-slot="landing" aria-hidden="true" className="relative">
-                <svg viewBox="0 0 440 300" className="h-auto w-full" role="presentation" focusable="false">
-                    {layers.map((l) => (
-                        <g key={l.label}>
-                            <rect x="8" y={l.y} width="424" height="52" fill="var(--nv-graphite-900)" stroke="var(--nv-graphite-700)" />
-                            <text x="18" y={l.y + 16} fill="var(--nv-ivory-300)" fontFamily="var(--nv-font-mono)" fontSize="10">
-                                {l.label}
-                            </text>
-                            {l.files.map((w, i) => {
-                                const x = 120 + l.files.slice(0, i).reduce((a, b) => a + b + 14, 0);
-                                return <rect key={i} x={x} y={l.y + 12} width={w * 3} height="28" fill="var(--nv-graphite-800)" stroke="var(--nv-graphite-600)" />;
-                            })}
-                        </g>
-                    ))}
-                    <g fill="none" stroke="var(--nv-copper-400)" strokeWidth="1.5">
-                        <path d="M170 54 C 170 86, 150 90, 150 104" />
-                        <path d="M260 118 C 260 140, 200 140, 200 168" />
-                        <path d="M200 182 C 200 210, 160 210, 160 234" />
-                        <path d="M330 54 C 330 90, 300 100, 300 104" />
-                    </g>
-                    <g fill="var(--nv-copper-400)">
-                        <circle cx="170" cy="54" r="3" />
-                        <circle cx="150" cy="104" r="3" />
-                        <circle cx="260" cy="118" r="3" />
-                        <circle cx="200" cy="168" r="3" />
-                        <circle cx="160" cy="234" r="3" />
-                    </g>
-                </svg>
-            </div>
-            <figcaption className="mt-3 text-nv-micro text-nv-ivory-300">
-                <span className="nv-eyebrow mr-2">Illustrative</span>
-                Layers are modules, copper lines are imports. In a real result each line links to a file and line range.
-            </figcaption>
-        </figure>
-    );
-}
+const PORTAL_MS = 480;
+// page.tsx passes the real values; this mirrors MAX_TOKENS (lib/tokens) for callers that render the client alone.
+const FALLBACK_LIMITS: ProductLimits = { contextTokens: 200_000, deepScanFiles: SECURITY_SCAN_FILE_LIMITS.deep, quickScanFiles: SECURITY_SCAN_FILE_LIMITS.quick };
+const FAQ_TEASER = FAQ_PAGE_ITEMS.slice(0, 5);
 
 const FACTS: { term: string; detail: string }[] = [
     { term: "What it reads", detail: "Public GitHub data through the GitHub API: the file tree, the files chosen for your question, commit and language metadata." },
@@ -89,22 +49,62 @@ const FACTS: { term: string; detail: string }[] = [
     { term: "What it does not do", detail: "No cloning or running code, no developer rankings or scores. Private repositories only with the access you grant." },
 ];
 
+/** Small architecture diagram built from the same nodes the product draws. */
+function MiniDiagram({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 320 200" className={className} role="presentation" focusable="false" aria-hidden="true">
+            <defs>
+                <linearGradient id="miniG" x1="0" x2="1">
+                    <stop offset="0" stopColor="#2f54ff" />
+                    <stop offset="1" stopColor="#7a4dff" />
+                </linearGradient>
+            </defs>
+            <g fill="none" stroke="url(#miniG)" strokeWidth="1.4" opacity="0.7">
+                <path d="M160 40 C160 70 70 70 70 104" />
+                <path d="M160 40 C160 70 160 80 160 104" />
+                <path d="M160 40 C160 70 250 70 250 104" />
+                <path d="M70 134 C70 160 130 160 160 164" />
+                <path d="M250 134 C250 160 190 160 160 164" />
+            </g>
+            {[
+                [160, 26, "app/", true],
+                [70, 118, "lib/", false],
+                [160, 118, "components/", false],
+                [250, 118, "api/", false],
+                [160, 176, "prisma/", false],
+            ].map(([x, y, label, on]) => (
+                <g key={String(label)}>
+                    <rect x={Number(x) - 36} y={Number(y) - 14} width="72" height="28" rx="9" fill="#fff" stroke={on ? "#2f54ff" : "#d5d8e0"} />
+                    <text x={Number(x)} y={Number(y) + 4} textAnchor="middle" fontFamily="var(--nv-font-mono)" fontSize="10" fill={on ? "#1f3ee6" : "#3a3e4a"}>
+                        {String(label)}
+                    </text>
+                </g>
+            ))}
+        </svg>
+    );
+}
+
 export default function HomeClient({
     initialPosts = [],
     weeklyTrending = [],
     monthlyTrending = [],
     publicStats,
+    limits = FALLBACK_LIMITS,
 }: {
     initialPosts?: BlogPost[];
     weeklyTrending?: CatalogRepoEntry[];
     monthlyTrending?: CatalogRepoEntry[];
     publicStats: PublicStatsData;
+    limits?: ProductLimits;
 }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [portal, setPortal] = useState<{ x: number; y: number } | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session } = useSession();
+    const reduce = useReducedMotion();
+    const searchRef = useRef<HTMLDivElement>(null);
     const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
     const hasInvalidSessionError = searchParams.get("error") === INVALID_SESSION_ERROR_PARAM;
 
@@ -123,13 +123,25 @@ export default function HomeClient({
             "Repository security scanning",
         ],
     });
-    const faqSchema = buildFaqStructuredData(FAQ_PAGE_ITEMS);
+    const faqSchema = buildFaqStructuredData(FAQ_TEASER);
 
     useEffect(() => {
         if (session) {
             getRecentSearches().then(setRecentSearches);
         }
     }, [session]);
+
+    // Coming back via the browser cache must not leave the exit overlay on screen.
+    useEffect(() => {
+        const onShow = (e: PageTransitionEvent) => {
+            if (e.persisted) {
+                setPortal(null);
+                setLoading(false);
+            }
+        };
+        window.addEventListener("pageshow", onShow);
+        return () => window.removeEventListener("pageshow", onShow);
+    }, []);
 
     const handleSearch = async (query: string) => {
         const normalizedInput = normalizeGitHubInput(query);
@@ -139,182 +151,423 @@ export default function HomeClient({
         setError("");
 
         try {
+            const rect = searchRef.current?.getBoundingClientRect();
+            setPortal({ x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2, y: rect ? rect.top + rect.height / 2 : window.innerHeight / 3 });
+            await new Promise((resolve) => setTimeout(resolve, reduce ? 120 : PORTAL_MS));
             router.push(`/chat?q=${encodeURIComponent(normalizedInput)}`);
         } catch {
+            setPortal(null);
             setError("Something went wrong. Please try again.");
         } finally {
             setLoading(false);
         }
     };
+
+    const focusSearch = () => {
+        window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+        window.setTimeout(() => document.getElementById("hero-search")?.focus(), reduce ? 0 : 450);
+    };
+
     return (
         <SiteChrome>
-            <div className="mx-auto w-full max-w-[var(--nv-page-max)] px-[var(--nv-gutter)]">
-                <section aria-labelledby="home-h" className="grid grid-cols-1 gap-10 py-12 md:py-20 lg:grid-cols-12 lg:gap-12">
-                    <div className="lg:col-span-7">
-                        <p className="nv-eyebrow mb-5 flex flex-wrap items-center gap-x-3">
-                            Public repositories and profiles
+            <motion.div animate={portal ? { scale: reduce ? 1 : 0.985, opacity: 0 } : { scale: 1, opacity: 1 }} transition={{ duration: PORTAL_MS / 1000, ease: [0.23, 1, 0.32, 1] }}>
+                {/* ---------- Hero ---------- */}
+                <section aria-labelledby="home-h" className={s.hero}>
+                    <div aria-hidden className={cn(s.heroBg, "nv-aurora")}>
+                        <div className={cn(s.heroGrid, "nv-grid-paper")} />
+                    </div>
+                    <div className={s.wrap}>
+                        <div className={s.pillTop}>
+                            <span>Public repositories and profiles</span>
                             <WhatsNewBadge />
-                        </p>
-                        <h1 id="home-h" className="nv-display text-nv-display-xl text-balance text-nv-ivory-50">
-                            Read a repository. See which files back each answer.
+                        </div>
+                        <h1 id="home-h" className={cn(s.heroTitle, "nv-display")}>
+                            Read a repository. See the <em>files</em> behind every answer.
                         </h1>
-                        <p className="mt-6 max-w-[var(--nv-measure)] text-pretty text-nv-title leading-snug text-nv-ivory-200">
+                        <p className={s.heroLead}>
                             Paste a GitHub URL, a username, or owner/repo. Novaris loads the relevant files and answers questions about architecture, code, and security, with the sources shown.
                         </p>
 
                         {hasInvalidSessionError && (
-                            <Notice tone="warning" title="Your session could not be validated" className="mt-6 max-w-xl">
+                            <Notice tone="warning" title="Your session could not be validated" className="mx-auto mt-6 max-w-xl text-left">
                                 Sign in again to continue.
                             </Notice>
                         )}
 
-                        <div className="mt-8 max-w-2xl">
+                        <div ref={searchRef} className={s.searchWrap}>
                             <RepoSearch
                                 onSearchSubmit={handleSearch}
                                 loading={loading}
                                 trendingRepos={weeklyTrending}
                                 recentSearches={recentSearches}
                                 isSessionActive={!!session}
+                                activating={portal !== null}
+                                inputId="hero-search"
                             />
                             {error && (
-                                <p role="alert" className="mt-3 text-nv-small text-nv-danger">
+                                <p role="alert" className="mt-3 text-center text-nv-small text-nv-danger">
                                     {error}
                                 </p>
                             )}
                         </div>
                     </div>
-
-                    <div className="lg:col-span-5 lg:mt-24">
-                        <AtlasPoster />
+                    <div className={s.stage}>
+                        <Constellation />
+                        <div aria-hidden className={s.stageFade} />
                     </div>
+                    <p className={s.cCaption}>
+                        <span className="nv-eyebrow mr-2">Illustrative</span>
+                        Modules and files converge on one answer. In a real result each line links to a file and line range.
+                    </p>
                 </section>
 
-                <section aria-labelledby="facts-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
-                    <h2 id="facts-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50 lg:col-span-4">
-                        What happens to your request
-                    </h2>
-                    <dl className="m-0 lg:col-span-8">
-                        {FACTS.map((f) => (
-                            <div key={f.term} className="grid gap-1 border-b border-nv-graphite-700 py-4 first:pt-0 md:grid-cols-[12rem_1fr] md:gap-8">
-                                <dt className="nv-eyebrow pt-1">{f.term}</dt>
-                                <dd className="m-0 max-w-[var(--nv-measure)] text-pretty text-nv-body text-nv-ivory-200">{f.detail}</dd>
-                            </div>
-                        ))}
-                    </dl>
-                </section>
-
-                <section aria-labelledby="sourced-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
-                    <div className="lg:col-span-4">
-                        <h2 id="sourced-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50">
-                            How a claim is sourced
-                        </h2>
-                        <p className="mt-3 text-nv-small text-nv-ivory-300">Sample layout with made-up values, not a real result.</p>
-                    </div>
-                    <ol className="m-0 list-none divide-y divide-nv-graphite-700 border-y border-nv-graphite-700 p-0 lg:col-span-8">
-                        {[
-                            { claim: "Requests pass through a single auth middleware.", basis: "measured" as const, cite: "src/middleware.ts", lines: "12-40" },
-                            { claim: "The retry policy probably protects against rate limits.", basis: "inferred" as const, cite: "src/lib/http.ts", lines: "55-71" },
-                            { claim: "Test coverage for this module.", basis: "unknown" as const },
-                        ].map((row) => (
-                            <li key={row.claim} className="grid items-center gap-2 py-4 md:grid-cols-[1fr_auto_auto] md:gap-6">
-                                <span className="text-pretty text-nv-body text-nv-ivory-100">{row.claim}</span>
-                                <BasisTag basis={row.basis} />
-                                {row.cite ? <Citation kind="file" target={row.cite} lines={row.lines} /> : <span className="text-nv-small text-nv-ivory-300">No source</span>}
-                            </li>
-                        ))}
-                    </ol>
-                </section>
-
-                <div className="border-t border-nv-graphite-700 py-12">
-                    <PublicStats stats={publicStats} />
+                <div className={s.wrap}>
+                    <StatStrip stats={publicStats} limits={limits} />
                 </div>
 
-                {trendingRepos.length > 0 && (
-                    <section id="trending-section" aria-labelledby="trend-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
-                        <div className="lg:col-span-4">
-                            <h2 id="trend-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50">
-                                Trending in the catalog
+                {/* ---------- Signal burst ---------- */}
+                <section aria-labelledby="burst-h" className={s.burst}>
+                    <div aria-hidden className={s.burstGlow} />
+                    <div className={cn(s.wrap, s.burstHead, s.center)}>
+                        <Reveal>
+                            <p className={s.kicker}>Many files in, one answer out</p>
+                            <h2 id="burst-h" className={cn(s.h2, "nv-display")}>
+                                Hundreds of files, one <em>cited</em> answer.
                             </h2>
-                            <div role="group" aria-label="Time window" className="mt-4 flex gap-2">
-                                {(["weekly", "monthly"] as const).map((tier) => (
-                                    <button
-                                        key={tier}
-                                        type="button"
-                                        aria-pressed={trendingTier === tier}
-                                        onClick={() => setTrendingTier(tier)}
-                                        className={`min-h-11 rounded-nv-sm border px-4 text-nv-small capitalize transition-colors duration-150 ${
-                                            trendingTier === tier ? "border-nv-copper-400 bg-nv-copper-wash text-nv-copper-300" : "border-nv-graphite-600 text-nv-ivory-200 hover:border-nv-graphite-500"
-                                        }`}
-                                    >
-                                        {tier}
-                                    </button>
-                                ))}
+                            <p className={s.sub}>
+                                A repository is a lot of files. Novaris narrows them to the ones your question needs and brings them together in a single answer that points back at each source.
+                            </p>
+                        </Reveal>
+                    </div>
+                    <SignalBurst />
+                </section>
+
+                {/* ---------- How it works ---------- */}
+                <section aria-labelledby="how-h" className={s.section}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <p className={s.kicker}>How it works</p>
+                            <h2 id="how-h" className={cn(s.h2, "nv-display")}>
+                                From a URL to a <em>sourced</em> answer in three steps.
+                            </h2>
+                        </Reveal>
+                        <ol className={s.steps}>
+                            <li className={s.step}>
+                                <span aria-hidden className={s.stepNum}>01</span>
+                                <div>
+                                    <h3 className={s.stepTitle}>Point it at a repository or a person.</h3>
+                                    <p className={s.stepText}>A GitHub URL, owner/repo, or a username. Public data only, unless you grant access.</p>
+                                </div>
+                                <div className={s.frag} aria-hidden>
+                                    <div className={cn(s.fragRow, s.fragOn)}>vercel/next.js</div>
+                                    <div className={cn(s.fragLine, "w-[70%]")} />
+                                    <div className={cn(s.fragLine, "w-[46%]")} />
+                                </div>
+                            </li>
+                            <li className={s.step}>
+                                <span aria-hidden className={s.stepNum}>02</span>
+                                <div>
+                                    <h3 className={s.stepTitle}>It reads the files that matter.</h3>
+                                    <p className={s.stepText}>Novaris reads the file tree, then loads complete files chosen for your question instead of fragments.</p>
+                                </div>
+                                <div className={s.frag} aria-hidden>
+                                    <div className={cn(s.fragRow, s.fragDim)}>README.md</div>
+                                    <div className={cn(s.fragRow, s.fragOn)}>src/lib/auth.ts</div>
+                                    <div className={cn(s.fragRow, s.fragOn)}>src/middleware.ts</div>
+                                    <div className={cn(s.fragRow, s.fragDim)}>package.json</div>
+                                </div>
+                            </li>
+                            <li className={s.step}>
+                                <span aria-hidden className={s.stepNum}>03</span>
+                                <div>
+                                    <h3 className={s.stepTitle}>You get an answer with its sources.</h3>
+                                    <p className={s.stepText}>Claims link a file or are labelled inferred. Anything the data does not show is stated as unknown.</p>
+                                </div>
+                                <div className={s.frag}>
+                                    <p className="m-0 font-sans text-nv-body text-nv-ivory-100">Requests pass through a single auth middleware.</p>
+                                    <div className={s.fragBadgeRow}>
+                                        <BasisTag basis="measured" />
+                                        <Citation kind="file" target="src/middleware.ts" lines="12-40" />
+                                    </div>
+                                </div>
+                            </li>
+                        </ol>
+                    </div>
+                </section>
+
+                {/* ---------- Product window ---------- */}
+                <section aria-labelledby="window-h" className={cn(s.section, "!pt-0")}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <div className={s.center}>
+                                <p className={s.kicker}>Inside the workspace</p>
+                                <h2 id="window-h" className={cn(s.h2, "nv-display")}>
+                                    Ask. Read. <em>Verify.</em>
+                                </h2>
+                                <p className={s.sub}>A sample layout of the workspace, with made-up values rather than a real result.</p>
                             </div>
-                        </div>
-                        <div className="lg:col-span-8">
-                            <ul className="m-0 list-none border-t border-nv-graphite-700 p-0">
-                                {visibleRepos.map((repo) => (
-                                    <li key={`${repo.owner}/${repo.repo}`}>
-                                        <Link
-                                            href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
-                                            aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
-                                            className="group flex min-h-14 items-center justify-between gap-4 border-b border-nv-graphite-700 px-1 py-3 hover:bg-nv-graphite-900"
-                                        >
-                                            <span className="min-w-0">
-                                                <span className="block truncate font-mono text-nv-body text-nv-ivory-50 group-hover:text-nv-copper-300">
-                                                    {repo.owner}/{repo.repo}
-                                                </span>
-                                                <span className="block truncate text-nv-small text-nv-ivory-300">{repo.description || "No description in the catalog."}</span>
-                                            </span>
-                                            <span className="nv-num shrink-0 text-nv-small text-nv-ivory-300">
-                                                {repo.stars.toLocaleString()} <span className="sr-only">stars</span>
-                                                <span aria-hidden>★</span>
-                                            </span>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link href="/trending" className="mt-4 inline-flex min-h-11 items-center gap-1 text-nv-small text-nv-copper-400 hover:text-nv-copper-300">
-                                All trending repositories <ArrowUpRight aria-hidden className="size-4" />
+                        </Reveal>
+                        <Reveal delay={0.08}>
+                            <div className={cn(s.window, "mt-14")} role="group" aria-label="Sample analysis workspace">
+                                <div className={s.winBar} aria-hidden>
+                                    <span className={s.winDot} />
+                                    <span className={s.winDot} />
+                                    <span className={s.winDot} />
+                                    <span className={s.winTitle}>novaris / owner-repo</span>
+                                </div>
+                                <div className={s.winBody}>
+                                    <div className={s.winCol}>
+                                        <p className={s.winCap}>Files in context</p>
+                                        <ul className={s.mini}>
+                                            <li className={s.miniItem}>src/</li>
+                                            <li className={cn(s.miniItem, s.indent1)}>middleware.ts</li>
+                                            <li className={cn(s.miniItem, s.miniOn, s.indent1)}>lib/auth.ts</li>
+                                            <li className={cn(s.miniItem, s.indent1)}>lib/http.ts</li>
+                                            <li className={s.miniItem}>prisma/</li>
+                                            <li className={cn(s.miniItem, s.indent1)}>schema.prisma</li>
+                                        </ul>
+                                    </div>
+                                    <div className={s.winCol}>
+                                        <p className={s.winCap}>Conversation</p>
+                                        <p className={s.bubbleQ}>How is authentication enforced?</p>
+                                        <div className={s.answer}>
+                                            <div className={s.claim}>
+                                                <p className={s.claimText}>Requests pass through a single auth middleware before reaching route handlers.</p>
+                                                <div className={s.claimMeta}>
+                                                    <BasisTag basis="measured" />
+                                                    <Citation kind="file" target="src/middleware.ts" lines="12-40" />
+                                                </div>
+                                            </div>
+                                            <div className={s.claim}>
+                                                <p className={s.claimText}>The retry policy probably protects against rate limits.</p>
+                                                <div className={s.claimMeta}>
+                                                    <BasisTag basis="inferred" />
+                                                    <Citation kind="file" target="src/lib/http.ts" lines="55-71" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className={s.winCol}>
+                                        <p className={s.winCap}>Architecture</p>
+                                        <MiniDiagram className={s.diagram} />
+                                    </div>
+                                </div>
+                            </div>
+                        </Reveal>
+                    </div>
+                </section>
+
+                {/* ---------- Capabilities ---------- */}
+                <section aria-labelledby="caps-h" className={cn(s.section, "!pt-0")}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <p className={s.kicker}>Capabilities</p>
+                            <h2 id="caps-h" className={cn(s.h2, "nv-display")}>
+                                One workspace for <em>three</em> kinds of questions.
+                            </h2>
+                        </Reveal>
+                        <div className={cn(s.caps, "mt-14")}>
+                            <Link href="/github-repository-analysis" className={cn(s.cap, s.capBig)}>
+                                <div aria-hidden className={cn(s.capGlow, "nv-aurora")} />
+                                <div>
+                                    <span className={s.capTag}>Architecture</span>
+                                    <h3 className={s.capTitle}>Understand a codebase before you touch it.</h3>
+                                    <p className={s.capText}>Module boundaries, dependencies and entry points, drawn from whole files and linked to the code.</p>
+                                </div>
+                                <MiniDiagram className="mx-auto w-full max-w-sm" />
+                                <span className={s.capLink}>
+                                    Repository analysis <ArrowUpRight aria-hidden className="size-4" />
+                                </span>
                             </Link>
+                            <Link href="/ai-code-review-tool" className={s.cap}>
+                                <div>
+                                    <span className={s.capTag}>Review</span>
+                                    <h3 className={s.capTitle}>Code review with the context around the diff.</h3>
+                                    <p className={s.capText}>Imports and callers sit next to the code, so review notes point at real file paths.</p>
+                                </div>
+                                <span className={s.capLink}>
+                                    AI code review <ArrowUpRight aria-hidden className="size-4" />
+                                </span>
+                            </Link>
+                            <Link href="/security-scanner" className={s.cap}>
+                                <div>
+                                    <span className={s.capTag}>Security</span>
+                                    <h3 className={s.capTitle}>Findings with a file, a line and a reason.</h3>
+                                    <p className={s.capText}>Quick scans for everyone, deep scans when signed in. Every finding is something to verify.</p>
+                                </div>
+                                <span className={s.capLink}>
+                                    Security scanner <ArrowUpRight aria-hidden className="size-4" />
+                                </span>
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ---------- Choose a path ---------- */}
+                <section aria-labelledby="path-h" className={cn(s.section, "!pt-0")}>
+                    <div className={s.wrap}>
+                        <Reveal className={s.gapBelow}>
+                            <p className={s.kicker}>Get started</p>
+                            <h2 id="path-h" className={cn(s.h2, "nv-display")}>
+                                Choose an analysis <em>path.</em>
+                            </h2>
+                        </Reveal>
+                        <PathChooser />
+                    </div>
+                </section>
+
+                <div className={s.wrap}>
+                    <DuskBand limits={limits} />
+                </div>
+
+                {/* ---------- Connect ---------- */}
+                <section aria-labelledby="connect-h" className={s.section}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <div className={s.center}>
+                                <p className={s.kicker}>What it connects to</p>
+                                <h2 id="connect-h" className={cn(s.h2, "nv-display")}>
+                                    Built on the data <em>GitHub</em> already holds.
+                                </h2>
+                                <p className={s.sub}>Novaris reads repositories, files and commits through the GitHub API, then brings them into chat and the security scanner.</p>
+                            </div>
+                        </Reveal>
+                        <div className="mt-14">
+                            <ConnectGraph />
+                        </div>
+                    </div>
+                </section>
+
+                {/* ---------- Facts ---------- */}
+                <section aria-labelledby="facts-h" className={cn(s.sectionTight, "!pt-0")}>
+                    <div className={cn(s.wrap, s.split)}>
+                        <Reveal>
+                            <p className={s.kicker}>Privacy and limits</p>
+                            <h2 id="facts-h" className={cn(s.h2, "nv-display")}>
+                                What happens to your <em>request.</em>
+                            </h2>
+                        </Reveal>
+                        <dl className={s.facts}>
+                            {FACTS.map((f) => (
+                                <div key={f.term} className={s.fact}>
+                                    <dt>{f.term}</dt>
+                                    <dd>{f.detail}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+                </section>
+
+                {trendingRepos.length > 0 && (
+                    <section id="trending-section" aria-labelledby="trend-h" className={s.sectionTight}>
+                        <div className={cn(s.wrap, s.split)}>
+                            <div>
+                                <p className={s.kicker}>Catalog</p>
+                                <h2 id="trend-h" className={cn(s.h2, "nv-display")}>
+                                    Trending in the <em>catalog</em>
+                                </h2>
+                                <div role="group" aria-label="Time window" className={s.seg}>
+                                    {(["weekly", "monthly"] as const).map((tier) => (
+                                        <button key={tier} type="button" aria-pressed={trendingTier === tier} onClick={() => setTrendingTier(tier)} className={s.segBtn}>
+                                            {tier}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <Rows>
+                                    {visibleRepos.map((repo) => (
+                                        <LinkRow
+                                            key={`${repo.owner}/${repo.repo}`}
+                                            href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
+                                            title={`${repo.owner}/${repo.repo}`}
+                                            summary={repo.description || "No description in the catalog."}
+                                            meta={`${repo.stars.toLocaleString()} stars`}
+                                        />
+                                    ))}
+                                </Rows>
+                                <Link href="/trending" className="mt-5 inline-flex min-h-11 items-center gap-1 font-medium text-nv-copper-400 hover:text-nv-copper-300">
+                                    All trending repositories <ArrowUpRight aria-hidden className="size-4" />
+                                </Link>
+                            </div>
                         </div>
                     </section>
                 )}
 
                 {initialPosts.length > 0 && (
-                    <section aria-labelledby="posts-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
-                        <h2 id="posts-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50 lg:col-span-4">
-                            Latest insights
-                        </h2>
-                        <div className="lg:col-span-8">
-                            <ul className="m-0 list-none border-t border-nv-graphite-700 p-0">
-                                {initialPosts.map((post) => (
-                                    <li key={post.slug}>
-                                        <Link href={`/blog/${post.slug}`} className="group block border-b border-nv-graphite-700 px-1 py-4 hover:bg-nv-graphite-900">
-                                            <span className="nv-eyebrow nv-num block">
-                                                {post.date} · {post.category}
-                                            </span>
-                                            <span className="mt-1 block text-nv-title font-medium text-nv-ivory-50 group-hover:text-nv-copper-300">{post.title}</span>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link href="/blog" className="mt-4 inline-flex min-h-11 items-center gap-1 text-nv-small text-nv-copper-400 hover:text-nv-copper-300">
-                                All insights <ArrowUpRight aria-hidden className="size-4" />
-                            </Link>
+                    <section aria-labelledby="posts-h" className={s.sectionTight}>
+                        <div className={cn(s.wrap, s.split)}>
+                            <div>
+                                <p className={s.kicker}>Insights</p>
+                                <h2 id="posts-h" className={cn(s.h2, "nv-display")}>
+                                    Latest <em>insights</em>
+                                </h2>
+                            </div>
+                            <div>
+                                <Rows>
+                                    {initialPosts.map((post) => (
+                                        <LinkRow key={post.slug} href={`/blog/${post.slug}`} title={post.title} meta={`${post.date} · ${post.category}`} />
+                                    ))}
+                                </Rows>
+                                <Link href="/blog" className="mt-5 inline-flex min-h-11 items-center gap-1 font-medium text-nv-copper-400 hover:text-nv-copper-300">
+                                    All insights <ArrowUpRight aria-hidden className="size-4" />
+                                </Link>
+                            </div>
                         </div>
                     </section>
                 )}
 
-                <section aria-labelledby="faq-h" className="grid grid-cols-1 gap-6 border-t border-nv-graphite-700 py-12 lg:grid-cols-12 lg:gap-12">
-                    <h2 id="faq-h" className="nv-display text-nv-display-md text-balance text-nv-ivory-50 lg:col-span-4">
-                        Frequently asked questions
-                    </h2>
-                    <div className="lg:col-span-8">
-                        <FaqList items={FAQ_PAGE_ITEMS} />
+                {/* ---------- FAQ teaser ---------- */}
+                <section aria-labelledby="faq-h" className={s.sectionTight}>
+                    <div className={cn(s.wrap, s.split)}>
+                        <div>
+                            <p className={s.kicker}>FAQ</p>
+                            <h2 id="faq-h" className={cn(s.h2, "nv-display")}>
+                                Questions, <em>answered.</em>
+                            </h2>
+                            <Link href="/faq" className="mt-6 inline-flex min-h-11 items-center gap-1 font-medium text-nv-copper-400 hover:text-nv-copper-300">
+                                Read every answer <ArrowUpRight aria-hidden className="size-4" />
+                            </Link>
+                        </div>
+                        <FaqList items={FAQ_TEASER} />
                     </div>
                 </section>
-            </div>
+
+                {/* ---------- Closing CTA ---------- */}
+                <section aria-labelledby="close-h" className={cn(s.sectionTight, "!pb-24")}>
+                    <div className={s.wrap}>
+                        <div className={s.closer}>
+                            <div aria-hidden className={cn(s.closerGlow, "nv-aurora")} />
+                            <h2 id="close-h" className={cn(s.closerH, "nv-display")}>
+                                Open a repository. <em>Read it.</em>
+                            </h2>
+                            <p className={s.closerText}>No install and no clone. Paste a link and see which files back each answer.</p>
+                            <div className={s.closerActions}>
+                                <button type="button" onClick={focusSearch} className={btnClass("primary", true)}>
+                                    Start analyzing <ArrowRight aria-hidden className="size-4" />
+                                </button>
+                                <Link href="/trending" className={btnClass("secondary", true)}>
+                                    Browse trending
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </motion.div>
+
+            <AnimatePresence>
+                {portal && (
+                    <div
+                        key="portal"
+                        aria-hidden
+                        className={s.portal}
+                        style={{ "--px": `${portal.x}px`, "--py": `${portal.y}px` } as React.CSSProperties}
+                    >
+                        <motion.div className={s.portalWash} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: PORTAL_MS / 1000, ease: [0.23, 1, 0.32, 1] }} />
+                        <motion.div className={s.portalRing} initial={{ scale: 0.02, opacity: 1 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: PORTAL_MS / 1000, ease: [0.23, 1, 0.32, 1] }} />
+                    </div>
+                )}
+            </AnimatePresence>
             <JsonLdScript data={softwareSchema} />
             <JsonLdScript data={faqSchema} />
             <InstallPWA />

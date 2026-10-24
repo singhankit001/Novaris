@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { ErrorState } from "@/components/nv/states";
-import { Button } from "@/components/nv/button";
-import { buttonClasses } from "@/components/nv/button-styles";
+import StateScreen from "@/components/seo/StateScreen";
+import { ActionLink, btnClass } from "@/components/seo/blocks";
 
 export default function RouteError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -12,21 +10,23 @@ export default function RouteError({ error, reset }: { error: Error & { digest?:
   }, [error]);
 
   return (
-    <ErrorState
+    <StateScreen
+      alert
+      code="500"
       title="This page could not load"
-      detail={error.digest ? `Reference ${error.digest}` : undefined}
-      action={
+      reference={error.digest ? `Reference ${error.digest}` : undefined}
+      actions={
         <>
-          <Button variant="primary" onClick={reset}>
+          <button type="button" onClick={reset} className={btnClass("primary", true)}>
             Try again
-          </Button>
-          <Link href="/" className={buttonClasses("secondary")}>
+          </button>
+          <ActionLink href="/" large>
             Back to search
-          </Link>
+          </ActionLink>
         </>
       }
     >
       <p>Something failed while preparing this page. Trying again often works. If it keeps failing, quote the reference when you contact us.</p>
-    </ErrorState>
+    </StateScreen>
   );
 }

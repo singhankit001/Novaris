@@ -38,8 +38,8 @@ export default function FAQPage() {
                     lead="Answers about analyzing, visualizing, and asking questions about GitHub repositories with Novaris."
                 />
                 <FaqList items={FAQ_PAGE_ITEMS} />
-                <div className="mt-12">
-                    <ActionLink href="/" variant="primary">Analyze a repository</ActionLink>
+                <div className="mt-14">
+                    <ActionLink href="/" variant="primary" large>Analyze a repository</ActionLink>
                 </div>
             </Page>
         </SiteChrome>

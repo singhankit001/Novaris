@@ -1,17 +1,19 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowUpRight, ChevronDown } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Breadcrumbs } from "@/components/nv/nav";
-import { buttonClasses, type ButtonVariant } from "@/components/nv/button-styles";
 import { cn } from "@/components/nv/cn";
+import s from "./seo.module.css";
 
-/** Standard page column. `wide` is the 1360px page; default is the 68ch reading column plus gutters. */
+export type ActionVariant = "primary" | "secondary" | "ghost" | "danger";
+
+export function btnClass(variant: ActionVariant = "secondary", large?: boolean) {
+  return cn(s.btn, large && s.btnLg, variant === "primary" ? s.primary : variant === "ghost" ? s.ghost : s.secondary);
+}
+
+/** Standard page column. `wide` is the 1280px page; default is a narrower reading column. */
 export function Page({ children, wide, className }: { children: ReactNode; wide?: boolean; className?: string }) {
-  return (
-    <div className={cn("mx-auto w-full px-[var(--nv-gutter)] py-10 md:py-16 lg:py-20", wide ? "max-w-[var(--nv-page-max)]" : "max-w-[calc(var(--nv-measure)+2*var(--nv-gutter))]", className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn(s.page, wide ? s.pageWide : s.pageNarrow, className)}>{children}</div>;
 }
 
 export interface Crumb {
@@ -19,7 +21,19 @@ export interface Crumb {
   href?: string;
 }
 
-/** Eyebrow, the page's one h1, a lead paragraph. Asymmetric: headline spans 8 of 12 columns from lg. */
+/** Wraps the last word of a title in the serif-italic gradient accent. */
+function AccentTitle({ text }: { text: string }) {
+  const trimmed = text.trim();
+  const idx = trimmed.lastIndexOf(" ");
+  if (idx < 0) return <em>{trimmed}</em>;
+  return (
+    <>
+      {trimmed.slice(0, idx)} <em>{trimmed.slice(idx + 1)}</em>
+    </>
+  );
+}
+
+/** Eyebrow, the page's one h1 with a serif accent word, a lead paragraph, over a luminous backdrop. */
 export function PageHeader({
   crumbs,
   eyebrow,
@@ -34,42 +48,43 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="mb-12 border-b border-nv-graphite-700/80 pb-10 md:mb-16 md:pb-12">
+    <header className={s.hero}>
+      <div aria-hidden className={cn(s.heroGlow, "nv-aurora")}>
+        <div className={cn(s.heroGrid, "nv-grid-paper")} />
+      </div>
       {crumbs && (
-        <div className="mb-8">
+        <div className={s.crumbs}>
           <Breadcrumbs items={crumbs} />
         </div>
       )}
-      {eyebrow && <p className="mb-4 inline-flex rounded-full border border-nv-graphite-700 bg-nv-graphite-900 px-3 py-1.5 text-nv-small font-medium text-nv-copper-400">{eyebrow}</p>}
-      <h1 className="nv-display text-nv-display-lg text-balance text-nv-ivory-50 max-w-[23ch] tracking-[-0.045em] leading-[1.08]">{title}</h1>
-      {lead && <div className="mt-6 max-w-[var(--nv-measure)] text-pretty text-[clamp(1rem,0.9rem+0.4vw,1.2rem)] leading-relaxed text-nv-ivory-200">{lead}</div>}
+      {eyebrow && <p className={s.eyebrow}>{eyebrow}</p>}
+      <h1 className={cn(s.title, "nv-display", title.length > 40 && s.titleWide)}>
+        <AccentTitle text={title} />
+      </h1>
+      {lead && <div className={s.lead}>{lead}</div>}
       {children}
+      <span aria-hidden className={s.heroRule} />
     </header>
   );
 }
 
 export function H2({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <h2 id={id} className="nv-display text-nv-display-md text-balance text-nv-ivory-50">
+    <h2 id={id} className={cn(s.h2, "nv-display")}>
       {children}
     </h2>
   );
 }
 
 export function Prose({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn("max-w-[var(--nv-measure)] space-y-4 text-pretty text-nv-body leading-relaxed text-nv-ivory-200 [&_a]:text-nv-copper-400 [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-nv-copper-300 [&_strong]:font-medium [&_strong]:text-nv-ivory-50", className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn(s.prose, className)}>{children}</div>;
 }
 
 export function BulletList({ items }: { items: string[] }) {
   return (
-    <ul className="m-0 list-none space-y-2 p-0 text-nv-body text-nv-ivory-200">
+    <ul className={s.bullets}>
       {items.map((item) => (
-        <li key={item} className="flex gap-3">
-          <span aria-hidden className="mt-2.5 h-px w-3 shrink-0 bg-nv-copper-400" />
+        <li key={item}>
           <span className="text-pretty">{item}</span>
         </li>
       ))}
@@ -77,20 +92,24 @@ export function BulletList({ items }: { items: string[] }) {
   );
 }
 
-/** Whole-row internal link: title, one-line summary, arrow. A single 56px+ tab stop. */
+/** A list container for LinkRow items. */
+export function Rows({ children }: { children: ReactNode }) {
+  return <div className={s.rows}>{children}</div>;
+}
+
+/** Whole-row internal link: title, one-line summary, arrow. A single 72px+ tab stop. */
 export function LinkRow({ href, title, summary, meta }: { href: string; title: string; summary?: string; meta?: string }) {
   return (
-    <Link
-      href={href}
-      className="group flex min-h-14 items-center justify-between gap-4 rounded-nv-sm border-b border-nv-graphite-700 px-3 py-4 transition-colors duration-200 hover:bg-nv-graphite-900"
-    >
+    <Link href={href} className={s.row}>
       <span className="min-w-0">
-        <span className="block text-nv-body font-medium text-nv-ivory-50 group-hover:text-nv-copper-300">{title}</span>
-        {summary && <span className="mt-0.5 block text-nv-small text-nv-ivory-300">{summary}</span>}
+        <span className={s.rowTitle}>{title}</span>
+        {summary && <span className={s.rowSummary}>{summary}</span>}
       </span>
-      <span className="flex shrink-0 items-center gap-3">
-        {meta && <span className="nv-eyebrow hidden sm:inline">{meta}</span>}
-        <ArrowUpRight aria-hidden className="size-4 text-nv-ivory-300 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-nv-copper-400" />
+      <span className={s.rowEnd}>
+        {meta && <span className={cn(s.rowMeta, "nv-num hidden sm:inline")}>{meta}</span>}
+        <span aria-hidden className={s.rowArrow}>
+          <ArrowUpRight className="size-4" />
+        </span>
       </span>
     </Link>
   );
@@ -99,29 +118,55 @@ export function LinkRow({ href, title, summary, meta }: { href: string; title: s
 /** Native <details> disclosure list: keyboard and no-JS friendly, content stays in the DOM for crawlers. */
 export function FaqList({ items }: { items: { question: string; answer: string }[] }) {
   return (
-    <div className="overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-900 px-5 md:px-7">
+    <div className={s.faq}>
       {items.map((item) => (
-        <details key={item.question} className="group border-b border-nv-graphite-700 last:border-b-0">
-          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-5 text-nv-body font-medium text-nv-ivory-50 [&::-webkit-details-marker]:hidden">
+        <details key={item.question} className={s.faqItem}>
+          <summary className={s.faqSummary}>
             <span className="text-pretty">{item.question}</span>
-            <ChevronDown aria-hidden className="size-4 shrink-0 text-nv-ivory-300 transition-transform duration-200 group-open:rotate-180" />
+            <span aria-hidden className={s.faqIcon} />
           </summary>
-          <p className="max-w-[var(--nv-measure)] pb-5 text-pretty text-nv-body leading-relaxed text-nv-ivory-200">{item.answer}</p>
+          <p className={s.faqAnswer}>{item.answer}</p>
         </details>
       ))}
     </div>
   );
 }
 
-export function ActionLink({ href, children, variant = "secondary", external }: { href: string; children: ReactNode; variant?: ButtonVariant; external?: boolean }) {
+export function ActionLink({
+  href,
+  children,
+  variant = "secondary",
+  external,
+  large,
+}: {
+  href: string;
+  children: ReactNode;
+  variant?: ActionVariant;
+  external?: boolean;
+  large?: boolean;
+}) {
   return external ? (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={buttonClasses(variant)}>
+    <a href={href} target="_blank" rel="noopener noreferrer" className={btnClass(variant, large)}>
       {children}
       <span className="sr-only"> (opens in a new tab)</span>
     </a>
   ) : (
-    <Link href={href} className={buttonClasses(variant)}>
+    <Link href={href} className={btnClass(variant, large)}>
       {children}
     </Link>
+  );
+}
+
+/** Closing band used at the foot of marketing pages. */
+export function CtaBand({ id, title, text, children }: { id?: string; title: ReactNode; text?: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={id} className={cn(s.panel, s.ctaBand)}>
+      <div aria-hidden className={cn(s.panelGlow, "nv-aurora")} />
+      <h2 id={id} className={cn(s.ctaTitle, "nv-display")}>
+        {title}
+      </h2>
+      {text && <p className={s.ctaText}>{text}</p>}
+      <div className={s.ctaActions}>{children}</div>
+    </section>
   );
 }

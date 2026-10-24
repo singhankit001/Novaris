@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import SiteChrome from "@/components/seo/SiteChrome";
 import { ActionLink, H2, LinkRow, Page } from "@/components/seo/blocks";
 import { Breadcrumbs } from "@/components/nv/nav";
-import { Badge } from "@/components/nv/badge";
+import { cn } from "@/components/nv/cn";
+import s from "@/components/seo/seo.module.css";
 import { EnhancedMarkdown } from "@/components/EnhancedMarkdown";
 import JsonLdScript from "@/components/JsonLdScript";
 import { BlogPost } from "@prisma/client";
@@ -114,44 +115,47 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <JsonLdScript data={blogPostingSchema} />
       <JsonLdScript data={breadcrumbSchema} />
 
-      <Page className="max-w-[calc(60rem+2*var(--nv-gutter))]">
+      <Page wide>
         <article>
-          <header className="mb-10">
-            <div className="mb-8">
+          <header className={s.hero}>
+            <div aria-hidden className={cn(s.heroGlow, "nv-aurora")}>
+              <div className={cn(s.heroGrid, "nv-grid-paper")} />
+            </div>
+            <div className={s.crumbs}>
               <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Insights", href: "/blog" }, { label: post.title }]} />
             </div>
-            <p className="nv-eyebrow nv-num mb-4 flex flex-wrap items-center gap-3">
-              <Badge>{post.category}</Badge>
-              <span>{post.date}</span>
-              <span>{readingMinutes} min read</span>
+            <p className={s.articleMeta}>
+              <span className={s.chip}>{post.category}</span>
+              <span className="nv-num">{post.date}</span>
+              <span className="nv-num">{readingMinutes} min read</span>
             </p>
-            <h1 className="nv-display text-nv-display-lg text-balance text-nv-ivory-50 lg:max-w-[25ch] leading-[1.1] tracking-[-0.04em]">{post.title}</h1>
-            <p className="mt-6 max-w-[var(--nv-measure)] text-pretty text-nv-title leading-snug text-nv-ivory-200">{post.excerpt}</p>
-            <p className="mt-6 border-t border-nv-graphite-700 pt-4 text-nv-small text-nv-ivory-300">By {post.author}</p>
+            <h1 className={cn(s.articleTitle, "nv-display")}>{post.title}</h1>
+            <p className={s.lead}>{post.excerpt}</p>
+            <p className={s.byline}>By {post.author}</p>
           </header>
 
-          <div className="relative mb-12 aspect-video overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-900">
+          <div className={s.cover}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={post.image} alt="" className="size-full object-cover" />
+            <img src={post.image} alt="" width={1600} height={800} />
           </div>
 
-          <div className="prose max-w-[var(--nv-measure)] [--tw-prose-body:var(--nv-ivory-200)] [--tw-prose-headings:var(--nv-ivory-50)] [--tw-prose-lead:var(--nv-ivory-200)] [--tw-prose-links:var(--nv-copper-400)] [--tw-prose-bold:var(--nv-ivory-50)] [--tw-prose-counters:var(--nv-ivory-300)] [--tw-prose-bullets:var(--nv-graphite-500)] [--tw-prose-hr:var(--nv-graphite-700)] [--tw-prose-quotes:var(--nv-ivory-100)] [--tw-prose-quote-borders:var(--nv-copper-600)] [--tw-prose-captions:var(--nv-ivory-300)] [--tw-prose-code:var(--nv-ivory-100)] [--tw-prose-th-borders:var(--nv-graphite-600)] [--tw-prose-td-borders:var(--nv-graphite-700)] prose-headings:font-nv-display prose-headings:font-semibold prose-headings:tracking-tight">
+          <div className={cn(s.article, "prose [--tw-prose-body:var(--nv-ivory-200)] [--tw-prose-headings:var(--nv-ivory-50)] [--tw-prose-lead:var(--nv-ivory-200)] [--tw-prose-links:var(--nv-copper-400)] [--tw-prose-bold:var(--nv-ivory-50)] [--tw-prose-counters:var(--nv-ivory-300)] [--tw-prose-bullets:var(--nv-copper-600)] [--tw-prose-hr:var(--nv-graphite-700)] [--tw-prose-quotes:var(--nv-ivory-100)] [--tw-prose-quote-borders:var(--nv-violet-400)] [--tw-prose-captions:var(--nv-ivory-300)] [--tw-prose-code:var(--nv-ivory-100)] [--tw-prose-th-borders:var(--nv-graphite-600)] [--tw-prose-td-borders:var(--nv-graphite-700)] prose-headings:font-nv-display prose-headings:font-semibold prose-headings:tracking-tight")}>
             <EnhancedMarkdown content={post.content} />
           </div>
         </article>
 
-        <section aria-labelledby="post-related-h" className="mt-16 grid grid-cols-1 gap-6 border-t border-nv-graphite-700 pt-8 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-4">
+        <section aria-labelledby="post-related-h" className={cn(s.grid12, "mt-24")}>
+          <div className={cn(s.left, s.stickyLeft)}>
             <H2 id="post-related-h">Related workflows</H2>
           </div>
-          <div className="lg:col-span-7 lg:col-start-6">
-            <div className="border-t border-nv-graphite-700">
+          <div className={s.right}>
+            <div className={s.rows}>
               <LinkRow href="/github-repository-analysis" title="GitHub Repository Analysis" />
               <LinkRow href="/ai-code-review-tool" title="AI Code Review Tool" />
               <LinkRow href="/security-scanner" title="Security Scanner" />
             </div>
             <div className="mt-8">
-              <ActionLink href="/" variant="primary">Analyze a repository</ActionLink>
+              <ActionLink href="/" variant="primary" large>Analyze a repository</ActionLink>
             </div>
           </div>
         </section>

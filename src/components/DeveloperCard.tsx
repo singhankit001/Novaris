@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { buttonClasses } from "@/components/nv/button-styles";
+import { btnClass } from "@/components/seo/blocks";
 import { fetchProfile } from "@/app/actions";
 
 interface DeveloperCardProps {
@@ -55,14 +55,14 @@ export function DeveloperCard({ username, name, avatar, bio, location, blog }: D
 
     const blogHref = profile.blog ? safeBlogHref(profile.blog) : null;
     return (
-        <aside aria-label={`Developer ${username}`} aria-busy={loading} className="not-prose my-4 flex flex-col gap-4 sm:flex-row rounded-nv-lg border border-nv-graphite-600 bg-nv-graphite-800 p-5 shadow-[0_8px_26px_-22px_rgba(37,93,76,0.35)]">
+        <aside aria-label={`Developer ${username}`} aria-busy={loading} className="not-prose my-4 flex flex-col gap-4 rounded-nv-lg border border-nv-graphite-700 bg-white p-5 shadow-nv-card sm:flex-row">
             <Image
                 src={profile.avatar || `https://github.com/${encodeURIComponent(username)}.png`}
                 alt=""
                 width={56}
                 height={56}
                 unoptimized
-                className="size-14 shrink-0 rounded-nv-sm border border-nv-graphite-600 bg-nv-graphite-800 object-cover"
+                className="size-14 shrink-0 rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-850 object-cover"
             />
             <div className="min-w-0 flex-1">
                 <h3 className="truncate text-nv-body font-medium text-nv-ivory-50">{profile.name || username}</h3>
@@ -79,8 +79,8 @@ export function DeveloperCard({ username, name, avatar, bio, location, blog }: D
                     </p>
                 )}
                 <div className="mt-3 flex flex-wrap gap-2">
-                    <Link href={`/chat?q=${encodeURIComponent(username)}`} className={buttonClasses("primary")}>Analyze profile</Link>
-                    <a href={`https://github.com/${encodeURIComponent(username)}`} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary")}>
+                    <Link href={`/chat?q=${encodeURIComponent(username)}`} className={btnClass("primary")}>Analyze profile</Link>
+                    <a href={`https://github.com/${encodeURIComponent(username)}`} target="_blank" rel="noopener noreferrer" className={btnClass("secondary")}>
                         GitHub <ExternalLink aria-hidden className="size-4" />
                     </a>
                 </div>

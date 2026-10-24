@@ -1,5 +1,5 @@
-import { Badge } from "@/components/nv/badge";
-import { ArrowRight, FileCode2, ScanLine, Sparkles } from "lucide-react";
+import { cn } from "@/components/nv/cn";
+import s from "./seo.module.css";
 
 export type SeoVisualVariant =
   | "hero-flow"
@@ -65,29 +65,64 @@ const FLOWS: Record<SeoVisualVariant, { caption: string; steps: [Step, Step, Ste
   },
 };
 
+function Fragment({ index }: { index: number }) {
+  if (index === 0) {
+    return (
+      <div className={s.fragment} aria-hidden>
+        <div className={cn(s.fragRow, s.fragRowOn)}>owner/repo</div>
+        <div className={cn(s.fragBar, "w-[72%]")} />
+        <div className={cn(s.fragBar, "w-[48%]")} />
+      </div>
+    );
+  }
+  if (index === 1) {
+    return (
+      <div className={s.fragment} aria-hidden>
+        <div className={s.fragRow}>src/app/page.tsx</div>
+        <div className={cn(s.fragRow, s.fragRowOn)}>src/lib/auth.ts</div>
+        <div className={s.fragRow}>prisma/schema.prisma</div>
+      </div>
+    );
+  }
+  return (
+    <div className={s.fragment} aria-hidden>
+      <div className={cn(s.fragBar, "w-[92%]")} />
+      <div className={cn(s.fragBar, "w-[64%]")} />
+      <div className={cn(s.fragRow, s.fragRowOn)}>src/lib/auth.ts#L12-40</div>
+    </div>
+  );
+}
+
 /** A labeled, static illustration. It describes the workflow in text and carries an Illustrative tag. */
 export default function SeoVisual({ variant, ariaLabel }: { variant: SeoVisualVariant; ariaLabel: string; sizeMode?: "compact" | "wide"; animate?: boolean; priority?: "low" | "high" }) {
   const flow = FLOWS[variant];
-  const icons = [FileCode2, ScanLine, Sparkles];
   return (
-    <figure aria-label={ariaLabel} className="m-0 rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-900 p-6 shadow-[0_12px_40px_-24px_rgba(24,43,40,0.2)] md:p-8">
-      <ol className="m-0 grid list-none gap-8 p-0 md:grid-cols-3 md:gap-10">
-        {flow.steps.map((step, i) => {
-          const Icon = icons[i];
-          return (
-            <li key={step.label} className="relative">
-              <div className="mb-5 flex items-center justify-between">
-                <span className="flex size-11 items-center justify-center rounded-xl bg-nv-copper-wash text-nv-copper-400"><Icon aria-hidden className="size-5" strokeWidth={1.6} /></span>
-                {i < flow.steps.length - 1 && <ArrowRight aria-hidden className="hidden size-5 text-nv-graphite-500 md:block" />}
-              </div>
-              <p className="text-nv-body font-semibold text-nv-ivory-50">{step.label}</p>
-              <p className="mt-2 text-pretty text-nv-small leading-relaxed text-nv-ivory-200">{step.detail}</p>
-            </li>
-          );
-        })}
+    <figure aria-label={ariaLabel} className={s.vis}>
+      <div aria-hidden className={cn(s.visBg, "nv-aurora")} />
+      <svg aria-hidden className={s.visLine} viewBox="0 0 100 2" preserveAspectRatio="none" focusable="false">
+        <defs>
+          <linearGradient id="visGrad" x1="0" x2="1">
+            <stop offset="0" stopColor="#2f54ff" />
+            <stop offset="0.55" stopColor="#7a4dff" />
+            <stop offset="1" stopColor="#19b6e6" />
+          </linearGradient>
+        </defs>
+        <path d="M0 1H100" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <ol className={s.visSteps}>
+        {flow.steps.map((step, i) => (
+          <li key={step.label} className={s.station}>
+            <div className={s.stationNode}>
+              <span className={cn(s.stationNum, "nv-num")}>{String(i + 1).padStart(2, "0")}</span>
+              <span className={s.stationLabel}>{step.label}</span>
+            </div>
+            <Fragment index={i} />
+            <p className={s.stationText}>{step.detail}</p>
+          </li>
+        ))}
       </ol>
-      <figcaption className="mt-4 flex flex-wrap items-center gap-3 border-t border-nv-graphite-700 pt-3 text-nv-micro text-nv-ivory-300">
-        <Badge status="neutral">Illustrative</Badge>
+      <figcaption className={s.visCaption}>
+        <span className={s.tag}>Illustrative</span>
         {flow.caption}
       </figcaption>
     </figure>

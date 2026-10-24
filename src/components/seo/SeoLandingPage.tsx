@@ -2,7 +2,9 @@ import Link from "next/link";
 import JsonLdScript from "@/components/JsonLdScript";
 import SeoVisual from "@/components/seo/SeoVisual";
 import SiteChrome from "@/components/seo/SiteChrome";
-import { ActionLink, BulletList, FaqList, H2, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { ActionLink, BulletList, CtaBand, FaqList, H2, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { cn } from "@/components/nv/cn";
+import s from "./seo.module.css";
 import { Notice } from "@/components/nv/notice";
 import { DataTable } from "@/components/nv/data";
 import type { SeoComparisonTableRow, SeoInternalLink, SeoPageDefinition } from "@/lib/seo-pages";
@@ -20,12 +22,12 @@ function InternalLinks({ links }: { links: SeoInternalLink[] }) {
   if (links.length === 0) return null;
 
   return (
-    <ul className="m-0 mt-5 grid list-none gap-3 p-0">
+    <ul className={s.internal}>
       {links.map((link) => (
         <li key={`${link.href}-${link.label}`}>
-          <Link href={link.href} className="group block min-h-14 rounded-nv-sm border border-nv-graphite-700 bg-nv-graphite-900 px-5 py-4 transition-colors hover:border-nv-copper-400/40 hover:bg-nv-copper-wash">
-            <span className="block text-nv-body font-medium text-nv-copper-400 group-hover:text-nv-copper-300">{link.label}</span>
-            <span className="mt-0.5 block text-nv-small text-nv-ivory-300">{link.description}</span>
+          <Link href={link.href} className={s.internalLink}>
+            <strong>{link.label}</strong>
+            <span>{link.description}</span>
           </Link>
         </li>
       ))}
@@ -67,17 +69,17 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
           lead={page.lead}
         />
 
-        <section aria-label="Workflow illustration" className="mb-16 max-w-5xl">
+        <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
           <SeoVisual variant={page.visualVariant} ariaLabel={`${page.title} workflow, illustrative`} />
         </section>
 
-        <div className="space-y-14 md:space-y-20">
+        <div className={s.stack}>
           {page.sections.map((section) => (
-            <section key={section.title} className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-              <div className="lg:col-span-4">
+            <section key={section.title} className={s.grid12}>
+              <div className={cn(s.left, s.stickyLeft)}>
                 <H2>{section.title}</H2>
               </div>
-              <div className="lg:col-span-7 lg:col-start-6">
+              <div className={s.right}>
                 <Prose>
                   {section.paragraphs.map((paragraph) => (
                     <p key={paragraph}>{paragraph}</p>
@@ -89,10 +91,10 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
                   </div>
                 )}
                 {section.subsections && section.subsections.length > 0 && (
-                  <div className="mt-8 space-y-8">
+                  <div className="mt-10 space-y-8">
                     {section.subsections.map((subsection) => (
-                      <section key={`${section.title}-${subsection.title}`} className="border-t border-nv-graphite-700 pt-5">
-                        <h3 className="mb-3 text-nv-title font-medium text-nv-ivory-50">{subsection.title}</h3>
+                      <section key={`${section.title}-${subsection.title}`} className={s.sub}>
+                        <h3 className={s.subTitle}>{subsection.title}</h3>
                         <Prose>
                           {subsection.paragraphs.map((paragraph) => (
                             <p key={paragraph}>{paragraph}</p>
@@ -114,11 +116,11 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
           ))}
 
           {table && (
-            <section aria-labelledby="seo-compare-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-              <div className="lg:col-span-4">
+            <section aria-labelledby="seo-compare-h" className={s.grid12}>
+              <div className={cn(s.left, s.stickyLeft)}>
                 <H2 id="seo-compare-h">{table.title}</H2>
               </div>
-              <div className="min-w-0 space-y-5 lg:col-span-8 lg:col-start-5">
+              <div className={cn(s.rightFrom5, "min-w-0 space-y-5")}>
                 <Prose>
                   <p>{table.caption}</p>
                 </Prose>
@@ -136,7 +138,7 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
                   ]}
                 />
                 <div>
-                  <h3 className="mb-3 text-nv-title font-medium text-nv-ivory-50">Key differences</h3>
+                  <h3 className={s.subTitle}>Key differences</h3>
                   <div className="max-w-[var(--nv-measure)]">
                     <BulletList items={table.differentiators} />
                   </div>
@@ -145,26 +147,22 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
             </section>
           )}
 
-          <section aria-labelledby="seo-faq-h" className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10">
-            <div className="lg:col-span-4">
+          <section aria-labelledby="seo-faq-h" className={s.grid12}>
+            <div className={cn(s.left, s.stickyLeft)}>
               <H2 id="seo-faq-h">Frequently asked questions</H2>
             </div>
-            <div className="lg:col-span-8 lg:col-start-5">
+            <div className={s.rightFrom5}>
               <FaqList items={page.faq} />
             </div>
           </section>
 
-          <section aria-labelledby="seo-next-h" className="rounded-nv-lg border border-nv-graphite-700 bg-nv-copper-wash p-7 md:p-10">
-            <H2 id="seo-next-h">Next step</H2>
-            <p className="mt-3 max-w-[var(--nv-measure)] text-nv-body text-nv-ivory-200">Continue with the workflow that matches your question.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              {page.ctaTargets.map((cta) => (
-                <ActionLink key={`${page.slug}-${cta.href}-${cta.label}`} href={cta.href} variant={cta.style === "primary" ? "primary" : "secondary"}>
-                  {cta.label}
-                </ActionLink>
-              ))}
-            </div>
-          </section>
+          <CtaBand id="seo-next-h" title={<>Next <em>step</em></>} text="Continue with the workflow that matches your question.">
+            {page.ctaTargets.map((cta) => (
+              <ActionLink key={`${page.slug}-${cta.href}-${cta.label}`} href={cta.href} variant={cta.style === "primary" ? "primary" : "secondary"} large>
+                {cta.label}
+              </ActionLink>
+            ))}
+          </CtaBand>
         </div>
       </Page>
     </SiteChrome>
