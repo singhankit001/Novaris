@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, KeyRound, RefreshCw, Home, ShieldAlert } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { buttonClasses } from "@/components/nv/button-styles";
 
 export default function ChatError({
     error,
@@ -13,7 +14,6 @@ export default function ChatError({
     reset: () => void;
 }) {
     useEffect(() => {
-        // Log the error to an error reporting service
         console.error("Chat Error Boundary caught:", error);
     }, [error]);
 
@@ -21,80 +21,44 @@ export default function ChatError({
     const isRateLimit = error.message.includes("rate limit");
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
-            <div className="relative w-full max-w-xl">
-                {/* Decorative background glows */}
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/30 to-blue-500/30 rounded-3xl blur opacity-50" />
-                
-                {/* Main glassmorphic card */}
-                <div className="relative p-8 md:p-12 bg-zinc-950/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
-                    {/* Top Right decorative dots */}
-                    <div className="absolute top-4 right-4 flex gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-red-500/80" />
-                        <div className="w-2 h-2 rounded-full bg-yellow-500/80" />
-                        <div className="w-2 h-2 rounded-full bg-green-500/80" />
+        <div className="nv-aurora flex min-h-[70vh] flex-col items-center justify-center px-4 py-16">
+            <div className="nv-holo-ring relative w-full max-w-xl rounded-nv-xl bg-nv-graphite-900 p-8 shadow-nv-overlay md:p-12">
+                <div className="flex flex-col items-start space-y-6">
+                    <span aria-hidden className="grid size-12 place-items-center rounded-nv-sm border border-nv-danger-edge bg-nv-danger-wash text-nv-danger">
+                        {isAuthError ? <KeyRound className="size-5" /> : isRateLimit ? <RefreshCw className="size-5" /> : <AlertTriangle className="size-5" />}
+                    </span>
+
+                    <div className="space-y-2" role="alert">
+                        <h2 className="nv-display text-nv-display-md text-balance">
+                            {isAuthError ? "GitHub authentication failed" : isRateLimit ? "GitHub rate limit reached" : "Failed to load the analysis"}
+                        </h2>
+                        <p className="max-w-md text-nv-body text-nv-ivory-200 text-pretty">
+                            {isAuthError
+                                ? "Your GitHub token is invalid or expired. Sign in with GitHub to analyze repositories."
+                                : isRateLimit
+                                  ? "The GitHub API rate limit was reached. Sign in to raise your limits, or try again later."
+                                  : "Something went wrong while fetching the data. Nothing was lost; try again."}
+                        </p>
                     </div>
 
-                    <div className="flex flex-col items-center text-center space-y-6">
-                        <div className="p-4 bg-red-500/10 rounded-full border border-red-500/20 mb-2">
-                            {isAuthError ? (
-                                <KeyRound className="w-10 h-10 text-red-400" />
-                            ) : isRateLimit ? (
-                                <RefreshCw className="w-10 h-10 text-orange-400" />
-                            ) : (
-                                <AlertTriangle className="w-10 h-10 text-red-400" />
-                            )}
-                        </div>
+                    <p className="flex w-full items-start gap-2 break-all rounded-nv-xs bg-nv-graphite-850 px-3 py-2 font-mono text-nv-micro text-nv-ivory-300">
+                        <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+                        {error.message || "Unknown error occurred"}
+                    </p>
 
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-bold tracking-tight text-white">
-                                {isAuthError ? "GitHub Authentication Failed" : 
-                                 isRateLimit ? "API Rate Limit Exceeded" : 
-                                 "Failed to Load Repository"}
-                            </h2>
-                            <p className="text-zinc-200 max-w-md mx-auto leading-relaxed">
-                                {isAuthError 
-                                    ? "Your GitHub token is invalid or expired. To analyze repositories, please sign in with GitHub."
-                                    : isRateLimit
-                                    ? "You have exceeded the GitHub API rate limits. Please sign in to increase your limits, or try again later."
-                                    : "We encountered an unexpected error while trying to fetch the repository data. Please try again."}
-                            </p>
-                        </div>
-
-                        <div className="p-4 bg-white/5 border border-white/5 rounded-xl w-full text-left">
-                            <div className="flex items-center gap-2 text-red-400 font-mono text-xs break-all">
-                                <ShieldAlert className="w-4 h-4 shrink-0" />
-                                {error.message || "Unknown error occurred"}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-3 pt-4 w-full">
-                            {(isAuthError || isRateLimit) ? (
-                                <button
-                                    onClick={() => signIn("github")}
-                                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all shadow-lg shadow-purple-500/20 font-medium"
-                                >
-                                    <KeyRound className="w-4 h-4" />
-                                    Sign In with GitHub
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => reset()}
-                                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all border border-white/10 font-medium"
-                                >
-                                    <RefreshCw className="w-4 h-4" />
-                                    Try Again
-                                </button>
-                            )}
-                            
-                            <Link
-                                href="/"
-                                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-transparent hover:bg-white/5 text-zinc-300 rounded-xl transition-all border border-white/10 font-medium"
-                            >
-                                <Home className="w-4 h-4" />
-                                Go Home
-                            </Link>
-                        </div>
+                    <div className="flex w-full flex-col gap-3 pt-2 sm:flex-row">
+                        {isAuthError || isRateLimit ? (
+                            <button type="button" onClick={() => signIn("github")} className={buttonClasses("primary", "md", "flex-1")}>
+                                <KeyRound className="size-4" aria-hidden /> Sign in with GitHub
+                            </button>
+                        ) : (
+                            <button type="button" onClick={() => reset()} className={buttonClasses("primary", "md", "flex-1")}>
+                                <RefreshCw className="size-4" aria-hidden /> Try again
+                            </button>
+                        )}
+                        <Link href="/" className={buttonClasses("secondary", "md", "flex-1")}>
+                            <Home className="size-4" aria-hidden /> Go home
+                        </Link>
                     </div>
                 </div>
             </div>
