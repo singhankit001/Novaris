@@ -6,7 +6,9 @@ import { ArrowLeft, Clock, FolderTree, GitFork, MessageSquareText, Network, Pane
 import { RepoSidebar } from "./RepoSidebar";
 import { ChatInterface } from "./ChatInterface";
 import { FilePreview } from "./FilePreview";
-import { RepoStructure } from "./RepoStructure";
+import dynamic from "next/dynamic";
+
+const CodebaseMap = dynamic(() => import("@/features/codemap").then((m) => m.CodebaseMap), { ssr: false });
 import { cn } from "@/lib/utils";
 import type { FileNode, GitHubRepo } from "@/lib/github";
 import s from "./chat/chat.module.css";
@@ -181,8 +183,8 @@ export function RepoLayout({ fileTree, repoName, owner, repo, hiddenFiles = [], 
                         </div>
                         <div id="repo-panel-structure" role="tabpanel" aria-labelledby="repo-tab-structure" hidden={view !== "structure"} className="min-h-0 flex-1">
                             {/* Mount point for the interactive codebase map: openFile and askAboutFile are its callbacks. */}
-                            <div data-slot="codemap" className="h-full min-h-0 overflow-auto bg-nv-graphite-950 p-4 md:p-6">
-                                <RepoStructure files={fileTree} hiddenCount={hiddenFiles.length} />
+                            <div data-slot="codemap" className="h-full min-h-0 bg-nv-graphite-950">
+                                <CodebaseMap owner={owner} repo={repo} tree={fileTree} onOpenFile={(p) => openFile(p)} onAskAboutFile={askAboutFile} className="h-full" />
                             </div>
                         </div>
                     </main>
