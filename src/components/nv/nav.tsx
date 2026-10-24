@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { ChevronRight, Menu as MenuIcon, GitBranch } from "lucide-react";
+import { ChevronRight, Menu as MenuIcon } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { cn } from "./cn";
 import { IconButton } from "./button";
 import { buttonClasses } from "./button-styles";
@@ -15,19 +16,11 @@ export interface NavLink {
   current?: boolean;
 }
 
-/** A branching mark on a lit blue tile: identity tied to repository intelligence. */
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <span
-        aria-hidden
-        className="grid size-8 place-items-center rounded-[10px] bg-[linear-gradient(145deg,#5d7bff_0%,#2f54ff_55%,#7a4dff_100%)] text-white shadow-[0_1px_0_rgb(255_255_255/0.35)_inset,0_6px_14px_-6px_rgb(47_84_255/0.7)]"
-      >
-        <GitBranch className="size-[18px]" strokeWidth={2} />
-      </span>
-      <span className="font-nv-sans text-[1.3rem] font-semibold tracking-[-0.06em] text-nv-ivory-50">
-        novaris<span className="text-nv-copper-400">.</span>
-      </span>
+      <BrandMark />
+      <span className="font-nv-sans text-[15px] font-medium tracking-[0.24em] text-nv-ivory-50">NOVARIS</span>
     </span>
   );
 }

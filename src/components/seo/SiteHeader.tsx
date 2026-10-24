@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { BrandMark } from "@/components/BrandMark";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/components/nv/cn";
 import { btnClass } from "./blocks";
@@ -13,34 +14,13 @@ export interface HeaderLink {
   current?: boolean;
 }
 
-/** Branching mark: a root node fanning into two cited leaves. */
-export function BrandMark({ size = 30 }: { size?: number }) {
-  const uid = useId();
-  return (
-    <svg aria-hidden width={size} height={size} viewBox="0 0 32 32" className={s.brandMark} focusable="false">
-      <defs>
-        <linearGradient id={`${uid}-g`} x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#4d6dff" />
-          <stop offset="0.6" stopColor="#7a4dff" />
-          <stop offset="1" stopColor="#19b6e6" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="10" fill={`url(#${uid}-g)`} />
-      <path d="M11 22V10m0 6c0-3 2-4 5-4h3" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity="0.95" />
-      <circle cx="11" cy="9" r="2.4" fill="#fff" />
-      <circle cx="11" cy="23" r="2.4" fill="#fff" />
-      <circle cx="21.5" cy="12" r="2.4" fill="#fff" opacity="0.95" />
-    </svg>
-  );
-}
+export { BrandMark };
 
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn(s.brand, className)}>
       <BrandMark />
-      <span className={cn(s.brandName, "font-nv-sans")}>
-        novaris<span className={s.brandDot}>.</span>
-      </span>
+      <span className="font-nv-sans text-[15px] font-medium tracking-[0.24em] text-nv-ivory-50">NOVARIS</span>
     </span>
   );
 }
