@@ -25,6 +25,7 @@ import PathChooser from "@/components/landing/PathChooser";
 import DuskBand from "@/components/landing/DuskBand";
 import ConnectGraph from "@/components/landing/ConnectGraph";
 import Reveal from "@/components/landing/Reveal";
+import DemoVideo from "@/components/media/DemoVideo";
 import s from "@/components/landing/landing.module.css";
 import { SECURITY_SCAN_FILE_LIMITS } from "@/lib/security-scan-config";
 import type { SearchHistoryItem } from "@/lib/services/history-service";
@@ -259,9 +260,14 @@ export default function HomeClient({
                                     <p className={s.stepText}>A GitHub URL, owner/repo, or a username. Public data only, unless you grant access.</p>
                                 </div>
                                 <div className={s.frag} aria-hidden>
-                                    <div className={cn(s.fragRow, s.fragOn)}>vercel/next.js</div>
-                                    <div className={cn(s.fragLine, "w-[70%]")} />
-                                    <div className={cn(s.fragLine, "w-[46%]")} />
+                                    <div className="relative">
+                                        <div className="invisible">
+                                            <div className={cn(s.fragRow, s.fragOn)}>vercel/next.js</div>
+                                            <div className={cn(s.fragLine, "w-[70%]")} />
+                                            <div className={cn(s.fragLine, "w-[46%]")} />
+                                        </div>
+                                        <DemoVideo name="select" fill className="-inset-[18px] rounded-[19px] bg-white" />
+                                    </div>
                                 </div>
                             </li>
                             <li className={s.step}>
@@ -271,10 +277,15 @@ export default function HomeClient({
                                     <p className={s.stepText}>Novaris reads the file tree, then loads complete files chosen for your question instead of fragments.</p>
                                 </div>
                                 <div className={s.frag} aria-hidden>
-                                    <div className={cn(s.fragRow, s.fragDim)}>README.md</div>
-                                    <div className={cn(s.fragRow, s.fragOn)}>src/lib/auth.ts</div>
-                                    <div className={cn(s.fragRow, s.fragOn)}>src/middleware.ts</div>
-                                    <div className={cn(s.fragRow, s.fragDim)}>package.json</div>
+                                    <div className="relative">
+                                        <div className="invisible">
+                                            <div className={cn(s.fragRow, s.fragDim)}>README.md</div>
+                                            <div className={cn(s.fragRow, s.fragOn)}>src/lib/auth.ts</div>
+                                            <div className={cn(s.fragRow, s.fragOn)}>src/middleware.ts</div>
+                                            <div className={cn(s.fragRow, s.fragDim)}>package.json</div>
+                                        </div>
+                                        <DemoVideo name="repo-analysis" fill className="-inset-[18px] rounded-[19px] bg-white" />
+                                    </div>
                                 </div>
                             </li>
                             <li className={s.step}>
@@ -329,27 +340,32 @@ export default function HomeClient({
                                     </div>
                                     <div className={s.winCol}>
                                         <p className={s.winCap}>Conversation</p>
-                                        <p className={s.bubbleQ}>How is authentication enforced?</p>
-                                        <div className={s.answer}>
-                                            <div className={s.claim}>
-                                                <p className={s.claimText}>Requests pass through a single auth middleware before reaching route handlers.</p>
-                                                <div className={s.claimMeta}>
-                                                    <BasisTag basis="measured" />
-                                                    <Citation kind="file" target="src/middleware.ts" lines="12-40" />
+                                        <div className="relative">
+                                            <div className="invisible">
+                                                <p className={s.bubbleQ}>How is authentication enforced?</p>
+                                                <div className={s.answer}>
+                                                    <div className={s.claim}>
+                                                        <p className={s.claimText}>Requests pass through a single auth middleware before reaching route handlers.</p>
+                                                        <div className={s.claimMeta}>
+                                                            <BasisTag basis="measured" />
+                                                            <Citation kind="file" target="src/middleware.ts" lines="12-40" />
+                                                        </div>
+                                                    </div>
+                                                    <div className={s.claim}>
+                                                        <p className={s.claimText}>The retry policy probably protects against rate limits.</p>
+                                                        <div className={s.claimMeta}>
+                                                            <BasisTag basis="inferred" />
+                                                            <Citation kind="file" target="src/lib/http.ts" lines="55-71" />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className={s.claim}>
-                                                <p className={s.claimText}>The retry policy probably protects against rate limits.</p>
-                                                <div className={s.claimMeta}>
-                                                    <BasisTag basis="inferred" />
-                                                    <Citation kind="file" target="src/lib/http.ts" lines="55-71" />
-                                                </div>
-                                            </div>
+                                            <DemoVideo name="ai-chat" fill label="Illustrative chat: a question, files read, and an answer with cited sources" className="rounded-2xl border border-nv-graphite-700 bg-white" />
                                         </div>
                                     </div>
                                     <div className={s.winCol}>
                                         <p className={s.winCap}>Architecture</p>
-                                        <MiniDiagram className={s.diagram} />
+                                        <DemoVideo name="architecture" label="Illustrative architecture map: modules appear and connect" className="rounded-xl border border-nv-graphite-700 bg-white" />
                                     </div>
                                 </div>
                             </div>
