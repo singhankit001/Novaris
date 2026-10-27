@@ -1,6 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef } from "react";
+import { BasisTag } from "@/components/nv/badge";
+import { Citation } from "@/components/nv/evidence";
 import s from "./landing.module.css";
 
 type RGB = readonly [number, number, number];
@@ -26,6 +29,14 @@ const PALETTE: readonly RGB[] = [
   [20, 184, 166],
 ];
 const ANSWER: RGB = [79, 70, 229];
+// Sample files on the incoming streams, one per family in PALETTE order. Positions follow the lane spread.
+const FLOW_FILES = [
+  { path: "src/app/page.tsx", c: 0, x: "4%", y: "15%" },
+  { path: "components/Nav.tsx", c: 1, x: "12%", y: "33%" },
+  { path: "styles/globals.css", c: 2, x: "3%", y: "52%" },
+  { path: "next.config.ts", c: 3, x: "13%", y: "70%" },
+  { path: "README.md", c: 4, x: "5%", y: "86%" },
+] as const;
 
 /** Deterministic pseudo-random so the first frame is stable across renders. */
 function rng(seed: number) {
@@ -149,15 +160,16 @@ export default function FileStreams() {
             const dy = ys[k]! - p.y;
             const f = Math.exp(-((Math.hypot(dx, dy) / (r * 1.6)) ** 2)) * influence;
             if (f > lit) lit = f;
-            // offset at the centerline: the circle's rim inside it, eased in ahead of it so the
-            // streams round onto the circle instead of hitting a flat edge
+            // offset at the centerline is exactly the circle's rim, so the opening is a true circle
+            // (as wide as it is tall); the band outside it tapers to zero so streams ease back smoothly
             const rim = adx < r ? Math.sqrt(r * r - dx * dx) : 0;
-            const shift = rim + r * 0.35 * smooth(1 - adx / (r * 1.8));
-            const band = shift + r * 0.9;
+            const shift = rim;
+            const band = rim + r * 0.9 * smooth(Math.min(1, (r * 1.8 - adx) / (r * 0.8)));
             // map the stream's distance on its side from [0, band] onto [shift, band]: streams wrap
             // the rim and bunch just outside it; anything past the band is untouched
             // a stream that dips past the centerline near the circle's flanks is eased back over
             // continuously from -band, so there is no step
+            if (band < 0.5) continue;
             const sd = side * dy;
             if (sd >= 0 && sd < band) ys[k] = p.y + side * (shift + (sd * (band - shift)) / band);
             else if (sd < 0 && sd > -band) ys[k] = p.y + side * (-band + ((sd + band) * (shift + band)) / band);
@@ -256,6 +268,27 @@ export default function FileStreams() {
   return (
     <div ref={wrapRef} className={s.burstCanvasWrap} aria-hidden="true">
       <canvas ref={canvasRef} className={s.burstCanvas} />
+      {/* The story the streams tell: files of every kind in, Novaris at the braid, one cited answer out. */}
+      <div className={s.flowLayer}>
+        {FLOW_FILES.map((f, i) => (
+          <span key={f.path} className={s.flowFile} style={{ left: f.x, top: f.y, animationDelay: `${i * -1.3}s` }}>
+            <span className={s.flowDot} style={{ background: rgba(PALETTE[f.c]!, 1) }} />
+            {f.path}
+          </span>
+        ))}
+        <span className={s.flowLens}>
+          <Image src="/brand/novaris-n-mark.png" alt="" width={40} height={40} className={s.flowLensMark} />
+        </span>
+        <span className={s.flowLensLabel}>Reads the files that matter</span>
+        <span className={s.flowAnswer}>
+          <span className={s.flowAnswerEyebrow}>One cited answer</span>
+          <span className={s.flowAnswerText}>Requests pass through a single auth middleware before reaching route handlers.</span>
+          <span className={s.flowAnswerMeta}>
+            <BasisTag basis="measured" />
+            <Citation kind="file" target="src/middleware.ts" lines="12-40" />
+          </span>
+        </span>
+      </div>
     </div>
   );
 }
