@@ -20,7 +20,7 @@ import { FaqList, LinkRow, Rows, btnClass } from "@/components/seo/blocks";
 import JsonLdScript from "@/components/JsonLdScript";
 import Constellation from "@/components/landing/Constellation";
 import StatStrip, { type ProductLimits } from "@/components/landing/StatStrip";
-import SignalBurst from "@/components/landing/SignalBurst";
+import FileStreams from "@/components/landing/FileStreams";
 import PathChooser from "@/components/landing/PathChooser";
 import DuskBand from "@/components/landing/DuskBand";
 import ConnectGraph from "@/components/landing/ConnectGraph";
@@ -240,7 +240,7 @@ export default function HomeClient({
                             </p>
                         </Reveal>
                     </div>
-                    <SignalBurst />
+                    <FileStreams />
                 </section>
 
                 {/* ---------- How it works ---------- */}
