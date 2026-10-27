@@ -5,6 +5,7 @@ import { Button } from "@/components/nv/button";
 import { MetricStrip } from "@/components/nv/data";
 import { Notice } from "@/components/nv/notice";
 import { LoadingRegion, Skeleton } from "@/components/nv/skeleton";
+import { CountUp } from "@/components/app-fx/CountUp";
 import { useApi, type ApiState } from "./use-api";
 
 interface Stats {
@@ -55,9 +56,9 @@ export function OverviewStatsView({ state, retry }: { state: ApiState<{ stats?: 
         <MetricStrip
             label="Account totals"
             items={[
-                { label: "Repositories scanned", value: reposScanned, note },
-                { label: "Findings in saved reports", value: issuesFound, note },
-                { label: "Deep scans", value: deepScans, note },
+                { label: "Repositories scanned", value: <CountUp value={reposScanned} />, note },
+                { label: "Findings in saved reports", value: <CountUp value={issuesFound} />, note },
+                { label: "Deep scans", value: <CountUp value={deepScans} />, note },
             ]}
         />
     );

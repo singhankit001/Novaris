@@ -32,7 +32,7 @@ export function MetricGroup({ children, className }: { children: ReactNode; clas
 
 export interface MetricStripItem {
   label: string;
-  value: string | number;
+  value: ReactNode;
   /** One line under the value: where the figure comes from. */
   note?: string;
   /** Optional trailing visual, e.g. a Sparkline. */

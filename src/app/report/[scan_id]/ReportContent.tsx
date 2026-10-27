@@ -21,6 +21,7 @@ import { EvidencePanel, type EvidenceScope } from "@/components/nv/evidence";
 import { Input, Textarea } from "@/components/nv/field";
 import { Notice, type NoticeTone } from "@/components/nv/notice";
 import { EmptyState } from "@/components/nv/states";
+import { SeverityFilter, type SeverityChoice } from "@/components/app-fx/SeverityFilter";
 import FindingCard from "./FindingCard";
 import ShareControls from "./ShareControls";
 import { SEVERITIES, falsePositiveReasonOptions, severityLabel, severityStatus, type Severity } from "./finding-meta";
@@ -87,6 +88,7 @@ export function ReportContent({
     const baseUrl = getCanonicalSiteUrl();
     const defaultReportUrl = `${baseUrl}/report/${scan.id}`;
     const [now, setNow] = useState(() => Date.now());
+    const [sevFilter, setSevFilter] = useState<SeverityChoice>("all");
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [showFixPrompt, setShowFixPrompt] = useState(false);
     const [showDeepScan, setShowDeepScan] = useState(false);
@@ -117,6 +119,8 @@ export function ReportContent({
     const counts = SEVERITIES.map((s) => ({ severity: s, count: scan.summary[s] || 0 }));
     const segments: StackedSegment[] = counts.filter((c) => c.count > 0).map((c) => ({ label: severityLabel[c.severity], value: c.count, tone: segmentTone[c.severity] }));
     const grouped = SEVERITIES.map((s) => ({ severity: s, views: findingViews.filter((v) => v.finding.severity === s) })).filter((g) => g.views.length > 0);
+    const shownCounts = Object.fromEntries(SEVERITIES.map((s) => [s, findingViews.filter((v) => v.finding.severity === s).length])) as Record<Severity, number>;
+    const visibleGroups = sevFilter === "all" ? grouped : grouped.filter((g) => g.severity === sevFilter);
     const shownTotal = findingViews.length;
     const recordedTotal = scan.summary.total;
     const hiddenCount = Math.max(0, recordedTotal - shownTotal);
@@ -336,12 +340,13 @@ export function ReportContent({
                         <h2 id="findings-h" className="nv-display text-nv-title text-nv-ivory-50">
                             Findings <span className="nv-num text-nv-ivory-300">({shownTotal})</span>
                         </h2>
+                        {shownTotal > 1 && <SeverityFilter counts={shownCounts} value={sevFilter} onChange={setSevFilter} />}
                         {shownTotal === 0 ? (
                             <EmptyState title="No verified findings">
                                 <p>The scanner reported nothing it could verify. That is not proof the code is safe; see the limits above.</p>
                             </EmptyState>
                         ) : (
-                            grouped.map((g) => (
+                            visibleGroups.map((g) => (
                                 <div key={g.severity} className="space-y-3">
                                     <h3 className="flex items-center gap-2 text-nv-body font-medium text-nv-ivory-100">
                                         <StatusPill status={severityStatus[g.severity]}>{severityLabel[g.severity]}</StatusPill>
