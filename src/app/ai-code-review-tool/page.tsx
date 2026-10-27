@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ReviewExperience } from "@/components/experiences/code-review/ReviewExperience";
 import SolutionPage from "@/components/seo/SolutionPage";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
@@ -84,6 +85,7 @@ export default function AICodeReviewToolPage() {
     <SolutionPage
       crumbTitle="AI Code Review Tool"
       heroAlign="center"
+      experience={<ReviewExperience />}
       h1="AI Code Review Tool with Full-File Context"
       lead={["Novaris helps engineering teams review code with repository-level context, making it easier to catch high-impact issues before merge and reduce slow, repetitive review cycles.", "Instead of local-only diff reading, this workflow highlights architecture side effects, dependency impact, and probable risk areas so reviewers can focus on what matters first."]}
       visual={{ variant: "review-workflow", ariaLabel: "AI code review workflow from review intent to actionable feedback, illustrative" }}
