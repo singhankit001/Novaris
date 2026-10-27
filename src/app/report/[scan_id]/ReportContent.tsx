@@ -123,7 +123,10 @@ export function ReportContent({
     const shownCounts = Object.fromEntries(SEVERITIES.map((s) => [s, findingViews.filter((v) => v.finding.severity === s).length])) as Record<Severity, number>;
     const visibleGroups = sevFilter === "all" ? grouped : grouped.filter((g) => g.severity === sevFilter);
     const filteredViews = sevFilter === "all" ? findingViews : findingViews.filter((v) => v.finding.severity === sevFilter);
-    const fileGroups = [...Map.groupBy(filteredViews, (v) => v.finding.file)].map(([file, views]) => ({ file, views })).sort((x, y) => y.views.length - x.views.length || x.file.localeCompare(y.file));
+    // Plain grouping: Map.groupBy is missing on Node 20 and Safari before 17.4.
+    const byFile = new Map<string, typeof filteredViews>();
+    for (const v of filteredViews) byFile.set(v.finding.file, [...(byFile.get(v.finding.file) ?? []), v]);
+    const fileGroups = [...byFile].map(([file, views]) => ({ file, views })).sort((x, y) => y.views.length - x.views.length || x.file.localeCompare(y.file));
     const shownTotal = findingViews.length;
     const recordedTotal = scan.summary.total;
     const hiddenCount = Math.max(0, recordedTotal - shownTotal);
