@@ -18,7 +18,7 @@
 .heroBg { position: absolute; inset: -140px 0 0; z-index: -1; pointer-events: none; -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent); mask-image: linear-gradient(to bottom, #000 60%, transparent); }
 .heroGrid { position: absolute; inset: 0; }
 .pillTop { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; margin-bottom: 24px; padding: 4px 6px 4px 18px; border-radius: 999px; background: rgb(255 255 255 / 0.85); border: 1px solid var(--nv-hairline); box-shadow: var(--nv-shadow-xs); font-family: var(--nv-font-mono); font-size: 0.6875rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--nv-text-2); }
-.heroTitle { margin: 0 auto; max-width: 17ch; font-size: clamp(2.75rem, 1.2rem + 5.4vw, 6rem); line-height: 0.96; letter-spacing: -0.045em; text-wrap: balance; color: var(--nv-ivory-50); }
+.heroTitle { margin: 0 auto; max-width: 17ch; padding-bottom: 0.08em; font-size: clamp(2.375rem, 1.1rem + 4.2vw, 4.75rem); line-height: 1.08; letter-spacing: -0.045em; text-wrap: balance; color: var(--nv-ivory-50); }
 .heroTitle em { font-size: 1.06em; padding-right: 0.08em; background: var(--nv-gradient-signal); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .heroLead { margin: 28px auto 0; max-width: 54ch; font-size: var(--text-nv-lead); line-height: 1.55; color: var(--nv-text-2); text-wrap: pretty; }
 .searchWrap { position: relative; z-index: 2; max-width: 44rem; margin: clamp(32px, 4vw, 52px) auto 0; text-align: left; }
