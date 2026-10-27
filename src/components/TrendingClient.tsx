@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Search, Star, ArrowUpRight } from "lucide-react";
+import { Search } from "lucide-react";
 import { CatalogRepoEntry } from "@/lib/repo-catalog";
 import { Page, PageHeader, btnClass } from "@/components/seo/blocks";
 import s from "./TrendingClient.module.css";
+import { RepoCard, TrendingStats } from "@/components/experiences/trending/TrendingParts";
 import { Button } from "@/components/nv/button";
 import { EmptyState } from "@/components/nv/states";
 import { cn } from "@/components/nv/cn";
@@ -45,6 +45,8 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
     });
     const visibleRepos = filteredRepos.slice(0, visibleCount);
     const hasMore = visibleCount < filteredRepos.length;
+    const totalStars = filteredRepos.reduce((sum, repo) => sum + repo.stars, 0);
+    const languageCount = new Set(filteredRepos.map((r) => r.language).filter(Boolean)).size;
     const tierLabel = TIERS.find((t) => t.id === currentTier)?.label ?? "Weekly";
 
     return (
@@ -67,6 +69,8 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                     ))}
                 </nav>
             </PageHeader>
+
+            <TrendingStats repos={filteredRepos.length} stars={totalStars} languages={languageCount} />
 
             <div className={s.tools}>
                 <div role="search">
@@ -138,41 +142,9 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                         <p>{initialRepos.length === 0 ? "The catalog may be refreshing. Search for any repository from the home page instead." : "Change the search text or language."}</p>
                     </EmptyState>
                 ) : (
-                    <ol className={s.table}>
+                    <ol className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
                         {visibleRepos.map((repo, i) => (
-                            <li key={`${repo.owner}/${repo.repo}`} className={s.rowItem}>
-                                <span aria-hidden className={cn(s.rank, "nv-num")}>
-                                    {String(i + 1).padStart(2, "0")}
-                                </span>
-                                <Image src={`https://github.com/${repo.owner}.png`} alt="" width={44} height={44} className={s.avatar} />
-                                <div className={s.main}>
-                                    <p className={s.name}>
-                                        <span className={s.owner}>{repo.owner}/</span>
-                                        {repo.repo}
-                                    </p>
-                                    <p className={s.descr}>{repo.description || "No description in the catalog."}</p>
-                                </div>
-                                <span className={s.lang}>{repo.language ?? ""}</span>
-                                <span className={cn(s.stars, "nv-num")}>
-                                    <Star aria-hidden className="size-3.5" />
-                                    {repo.stars.toLocaleString()}
-                                    <span className="sr-only"> stars</span>
-                                </span>
-                                <Link
-                                    href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
-                                    aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
-                                    className={s.go}
-                                >
-                                    <ArrowUpRight aria-hidden className="size-4" />
-                                </Link>
-                                <p className={cn(s.starsM, "nv-num m-0")}>
-                                    {repo.language && <span>{repo.language}</span>}
-                                    <span>
-                                        {repo.stars.toLocaleString()} <span className="sr-only">stars</span>
-                                        <span aria-hidden>★</span>
-                                    </span>
-                                </p>
-                            </li>
+                            <RepoCard key={`${repo.owner}/${repo.repo}`} repo={repo} rank={i + 1} featured={i === 0} />
                         ))}
                     </ol>
                 )}

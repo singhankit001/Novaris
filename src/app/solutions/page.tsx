@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import JsonLdScript from "@/components/JsonLdScript";
-import SeoVisual from "@/components/seo/SeoVisual";
+import { ChooseTimeline, ConvergeSection, JourneySection } from "@/components/experiences/solutions/Journey";
+import { OutputsFlow } from "@/components/experiences/solutions/OutputsFlow";
 import s from "@/components/seo/seo.module.css";
 import { cn } from "@/components/nv/cn";
 import SiteChrome from "@/components/seo/SiteChrome";
@@ -139,11 +140,10 @@ export default function SolutionsPage() {
           </Prose>
         </PageHeader>
 
-        <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
-          <SeoVisual variant="hero-flow" ariaLabel="Novaris solutions workflow from repository input to analysis and action, illustrative" />
-        </section>
-
         <div className={s.stack}>
+        <JourneySection />
+        <ConvergeSection />
+        <OutputsFlow />
         <section aria-labelledby="sol-start-h" className={s.grid12}>
           <div className={cn(s.left, s.stickyLeft)}>
             <H2 id="sol-start-h">Pick a starting point</H2>
@@ -162,33 +162,7 @@ export default function SolutionsPage() {
             <H2 id="sol-choose-h">How to choose the right workflow</H2>
           </div>
           <div className={s.right}>
-            <Prose>
-              <p>
-                Start with <strong>GitHub Repository Analysis</strong> when the primary challenge is understanding
-                architecture and module relationships. This is the best first move for onboarding, due diligence, or
-                migration planning.
-              </p>
-            </Prose>
-            <div className="mt-6 space-y-6">
-              <div className={s.sub}>
-                <h3 className={s.subTitle}>Use AI Code Review Tool when review quality is the bottleneck</h3>
-                <Prose>
-                  <p>
-                    If pull requests are slow or recurring issues slip through, move into the AI Code Review workflow to
-                    prioritize high-impact review topics with richer repository context.
-                  </p>
-                </Prose>
-              </div>
-              <div className={s.sub}>
-                <h3 className={s.subTitle}>Use Security Scanner when triage speed matters most</h3>
-                <Prose>
-                  <p>
-                    When security findings outpace remediation capacity, Security Scanner helps teams focus on likely
-                    high-impact risks and convert findings into sprint-ready engineering actions.
-                  </p>
-                </Prose>
-              </div>
-            </div>
+            <ChooseTimeline />
           </div>
         </section>
 

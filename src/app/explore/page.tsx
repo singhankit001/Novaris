@@ -3,7 +3,8 @@ import JsonLdScript from "@/components/JsonLdScript";
 import s from "@/components/seo/seo.module.css";
 import { cn } from "@/components/nv/cn";
 import SiteChrome from "@/components/seo/SiteChrome";
-import { ActionLink, CtaBand, FaqList, H2, LinkRow, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { ActionLink, CtaBand, FaqList, H2, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { AnalysisSection, CategoryBento, ComparisonSection, SecuritySection, type ExploreGroup } from "@/components/experiences/explore/ExploreHub";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -106,11 +107,12 @@ export const livePages: TopicEntry[] = [
   },
 ];
 
-const grouped = {
-  Analysis: livePages.filter((page) => page.category === "Analysis"),
-  Security: livePages.filter((page) => page.category === "Security"),
-  Comparison: livePages.filter((page) => page.category === "Comparison"),
-};
+const groups: ExploreGroup[] = [
+  { id: "analysis", title: "Code analysis", guidance: "Understand a codebase: architecture, boundaries and review quality.", entries: livePages.filter((page) => page.category === "Analysis") },
+  { id: "security", title: "Security", guidance: "Triage risk with implementation and architecture context.", entries: livePages.filter((page) => page.category === "Security") },
+  { id: "comparison", title: "Comparison guides", guidance: "Choose tools by comparing approaches.", entries: livePages.filter((page) => page.category === "Comparison") },
+];
+const [analysis, security, comparison] = groups as [ExploreGroup, ExploreGroup, ExploreGroup];
 
 const faqItems = [
   {
@@ -157,21 +159,6 @@ const itemListSchema = buildItemListStructuredData({
 
 const faqSchema = buildFaqStructuredData(faqItems);
 
-function TopicSection({ title, items }: { title: string; items: TopicEntry[] }) {
-  return (
-    <section aria-label={title} className={s.grid12}>
-      <div className={cn(s.left, s.stickyLeft)}>
-        <H2>{title}</H2>
-      </div>
-      <div className={cn(s.right, s.rows)}>
-        {items.map((item) => (
-          <LinkRow key={item.slug} href={item.slug} title={item.title} summary={item.summary} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function ExplorePage() {
   return (
     <SiteChrome>
@@ -192,9 +179,10 @@ export default function ExplorePage() {
         </PageHeader>
 
         <div className={s.stack}>
-          <TopicSection title="Code analysis" items={grouped.Analysis} />
-          <TopicSection title="Security" items={grouped.Security} />
-          <TopicSection title="Comparison guides" items={grouped.Comparison} />
+          <CategoryBento groups={groups} />
+          <AnalysisSection group={analysis} />
+          <SecuritySection group={security} />
+          <ComparisonSection group={comparison} />
 
           <section aria-labelledby="ex-faq-h" className={s.grid12}>
             <div className={cn(s.left, s.stickyLeft)}>
