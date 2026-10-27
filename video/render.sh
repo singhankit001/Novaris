@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 OUT=../public/media/demos
 mkdir -p .render "$OUT"
 # name:poster-second
-ALL=(repo-analysis:4.9 developer-analysis:5.6 ai-chat:5.6 security-scan:6.2 code-review:5.6 architecture:4.4 select:2.4)
+ALL=(repo-analysis:4.9 developer-analysis:5.6 ai-chat:5.6 ai-chat-narrow:5.6 security-scan:6.2 code-review:5.6 architecture:4.4 select:2.4)
 for entry in "${ALL[@]}"; do
   name="${entry%%:*}"; poster="${entry##*:}"
   if [ "$#" -gt 0 ] && [[ ! " $* " == *" $name "* ]]; then continue; fi

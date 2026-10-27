@@ -1,42 +1,27 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=960, height=640" />
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=1250, height=574" />
 <title>ai-chat</title>
 <script src="shared/gsap.min.js"></script>
 <link rel="stylesheet" href="shared/ui.css" />
 <style>
-  .stage { padding: 28px 32px; gap: 16px; }
-  .main { display: grid; grid-template-columns: 250px 1fr; gap: 16px; flex: 1; min-height: 0; }
-  .card { padding: 16px 16px; border-radius: 18px; }
-  .tree { font-size: 17px; } .node { padding: 7px 10px; gap: 9px; } .node svg { width: 17px; height: 17px; } .i1 { margin-left: 18px; }
-  .q { align-self: flex-end; max-width: 78%; padding: 12px 18px; border-radius: 18px 18px 6px 18px; background: var(--blue); color: #fff; font-size: 20px; }
-  .read { display: flex; align-items: center; gap: 10px; font-size: 17px; color: var(--ink3); flex-wrap: wrap; }
-  .claim { padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid var(--hair); box-shadow: var(--shadow); font-size: 20px; line-height: 1.4; }
-  .claim .row { margin-top: 10px; gap: 10px; }
-  .badge { font-size: 15px; padding: 3px 12px; } .cite { font-size: 15px; padding: 4px 12px 4px 9px; } .cite svg { width: 16px; height: 16px; }
-  .cap { font-size: 14px; }
-  .input { height: 56px; font-size: 19px; border-radius: 18px; padding: 0 20px; color: var(--ink3); font-family: var(--sans); }
+  body { font-size: 24px; }
+  .stage { padding: 30px; gap: 18px; justify-content: flex-start; }
+  .q { align-self: flex-end; max-width: 60%; padding: 14px 24px; border-radius: 22px 22px 6px 22px; background: var(--blue); color: #fff; font-size: 26px; }
+  .read { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .read .chip { font-size: 22px; padding: 8px 18px; }
+  .claim { padding: 16px 22px; border-radius: 20px; background: #fff; border: 1px solid var(--hair); box-shadow: var(--shadow); font-size: 26px; line-height: 1.4; }
+  .claim .row { margin-top: 12px; gap: 12px; flex-wrap: wrap; }
+  .badge { font-size: 21px; padding: 4px 16px; } .cite { font-size: 21px; padding: 6px 16px 6px 12px; } .cite svg { width: 22px; height: 22px; }
+  .composer { margin-top: auto; height: 68px; display: flex; align-items: center; gap: 14px; padding: 0 24px; border-radius: 22px; background: #fff; border: 1.5px solid var(--border); box-shadow: var(--shadow); font-size: 23px; color: var(--ink3); }
 </style></head>
 <body>
-<div id="root" data-composition-id="ai-chat" data-start="0" data-width="960" data-height="640" data-duration="7.6">
+<div id="root" data-composition-id="ai-chat" data-start="0" data-width="1250" data-height="574" data-duration="7.6">
   <div class="stage">
-    <div class="main">
-      <div class="card"><div class="cap" style="margin-bottom:8px">Files in context</div>
-        <div class="tree">
-          <div class="node"><svg><use href="#i-folder"/></svg>src/</div>
-          <div class="node i1" id="f-mw"><svg><use href="#i-code"/></svg>middleware.ts</div>
-          <div class="node i1" id="f-auth"><svg><use href="#i-code"/></svg>lib/auth.ts</div>
-          <div class="node i1" id="f-http"><svg><use href="#i-code"/></svg>lib/http.ts</div>
-          <div class="node"><svg><use href="#i-folder"/></svg>prisma/</div>
-        </div>
-      </div>
-      <div class="col" style="gap:14px;justify-content:flex-start">
-        <div class="q d" id="q">How is authentication enforced?</div>
-        <div class="read d" id="rd"><span class="chip on">Reading</span><span class="chip">middleware.ts</span><span class="chip">lib/auth.ts</span><span class="chip">lib/http.ts</span></div>
-        <div class="claim d" id="c1">Requests pass through a single auth middleware before they reach route handlers.<div class="row"><span class="badge ok">Measured</span><span class="cite"><svg><use href="#i-code"/></svg>src/middleware.ts#L12-40</span></div></div>
-        <div class="claim d" id="c2">The retry policy probably protects against rate limits.<div class="row"><span class="badge warn">Inferred</span><span class="cite"><svg><use href="#i-code"/></svg>src/lib/http.ts#L55-71</span></div></div>
-      </div>
-    </div>
-    <div class="input"><span class="grow">Ask about this repository</span><svg width="24" height="24" style="color:var(--blue)"><use href="#i-send"/></svg></div>
+    <div class="q d" id="q">How is authentication enforced?</div>
+    <div class="read d" id="rd"><span class="chip on">Reading</span><span class="chip">middleware.ts</span><span class="chip">lib/auth.ts</span><span class="chip">lib/http.ts</span></div>
+    <div class="claim d" id="c1">Requests pass through a single auth middleware before they reach route handlers.<div class="row"><span class="badge ok">Measured</span><span class="cite"><svg><use href="#i-code"/></svg>src/middleware.ts#L12-40</span></div></div>
+    <div class="claim d" id="c2">The retry policy probably protects against rate limits.<div class="row"><span class="badge warn">Inferred</span><span class="cite"><svg><use href="#i-code"/></svg>src/lib/http.ts#L55-71</span></div></div>
+    <div class="composer"><span class="grow">Ask about this repository</span><svg width="28" height="28" style="color:var(--blue)"><use href="#i-send"/></svg></div>
   </div>
 </div>
 <script src="shared/lib.js"></script>
@@ -44,17 +29,12 @@
   window.__timelines = window.__timelines || {};
   const T = 7.6, tl = gsap.timeline({ paused: true });
   gsap.set(".d", { opacity: 0 }); gsap.set(".read .chip:not(.on)", { opacity: 0.35 });
-  gsap.set("#f-mw, #f-auth, #f-http", { backgroundColor: "rgba(238,241,255,0)" });
   tl.fromTo("#q", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", immediateRender: false }, 0.5);
   tl.to("#rd", { opacity: 1, duration: 0.4 }, 1.4);
-  [["#f-mw", 1.7], ["#f-auth", 2.2], ["#f-http", 2.7]].forEach(([id, at], i) => {
-    tl.to(id, { backgroundColor: "rgba(238,241,255,1)", color: "#1f3ee6", duration: 0.3 }, at);
-    tl.to(`.read .chip:nth-child(${i + 2})`, { opacity: 1, duration: 0.3 }, at);
-  });
+  [1.7, 2.2, 2.7].forEach((at, i) => tl.to(`.read .chip:nth-child(${i + 2})`, { opacity: 1, duration: 0.3 }, at));
   tl.fromTo("#c1", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", immediateRender: false }, 3.5);
   tl.fromTo("#c2", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", immediateRender: false }, 4.6);
   tl.to(".d", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
-  tl.to("#f-mw, #f-auth, #f-http", { backgroundColor: "rgba(238,241,255,0)", color: "#3a3e4a", duration: 0.5 }, T - 0.6);
   tl.to({}, { duration: 0.01 }, T);
   window.__timelines["ai-chat"] = tl;
 </script>

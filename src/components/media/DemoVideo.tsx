@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/components/nv/cn";
 
-export type DemoName = "repo-analysis" | "developer-analysis" | "ai-chat" | "security-scan" | "code-review" | "architecture" | "select";
+export type DemoName = "repo-analysis" | "developer-analysis" | "ai-chat" | "ai-chat-narrow" | "security-scan" | "code-review" | "architecture" | "select";
 
 /** Pixel size each demo was rendered at. Used for the poster's intrinsic size and aspect ratio. */
 const SIZES: Record<DemoName, [number, number]> = {
     "repo-analysis": [880, 400],
     "developer-analysis": [1020, 600],
-    "ai-chat": [960, 640],
+    "ai-chat": [1250, 574],
+    "ai-chat-narrow": [624, 784],
     "security-scan": [1020, 600],
     "code-review": [1020, 600],
     architecture: [640, 400],
