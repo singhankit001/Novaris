@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import JsonLdScript from "@/components/JsonLdScript";
 import SeoVisual from "@/components/seo/SeoVisual";
 import SiteChrome from "@/components/seo/SiteChrome";
@@ -16,6 +17,9 @@ import {
 
 type SeoLandingPageProps = {
   page: SeoPageDefinition;
+  heroAlign?: "start" | "center";
+  /** Route-specific interactive demonstration; replaces the static workflow illustration when present. */
+  experience?: ReactNode;
 };
 
 function InternalLinks({ links }: { links: SeoInternalLink[] }) {
@@ -35,7 +39,7 @@ function InternalLinks({ links }: { links: SeoInternalLink[] }) {
   );
 }
 
-export default function SeoLandingPage({ page }: SeoLandingPageProps) {
+export default function SeoLandingPage({ page, heroAlign, experience }: SeoLandingPageProps) {
   const breadcrumbItems = [
     { name: "Home", path: "/" },
     { name: "Explore", path: "/explore" },
@@ -67,11 +71,18 @@ export default function SeoLandingPage({ page }: SeoLandingPageProps) {
           eyebrow={page.primaryIntent}
           title={page.h1}
           lead={page.lead}
+          align={heroAlign}
         />
 
-        <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
-          <SeoVisual variant={page.visualVariant} ariaLabel={`${page.title} workflow, illustrative`} />
-        </section>
+        {experience ? (
+          <section aria-label="Interactive demonstration" className="mb-24">
+            {experience}
+          </section>
+        ) : (
+          <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
+            <SeoVisual variant={page.visualVariant} ariaLabel={`${page.title} workflow, illustrative`} />
+          </section>
+        )}
 
         <div className={s.stack}>
           {page.sections.map((section) => (

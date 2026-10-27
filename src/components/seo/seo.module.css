@@ -78,6 +78,16 @@
 
 }
 
+/* Centred hero: the title block sits on the page axis instead of hugging the left edge. */
+.heroCenter { text-align: center; }
+.heroCenter .crumbs { text-align: start; }
+.heroCenter .title { margin-inline: auto; max-width: 18ch; }
+.heroCenter .lead,
+.heroCenter .prose { margin-inline: auto; max-width: 62ch; }
+.heroCenter .heroRule {
+  background: linear-gradient(90deg, transparent 0, var(--nv-hairline) 22%, var(--nv-copper-400) 46%, var(--nv-violet-400) 54%, var(--nv-hairline) 78%, transparent 100%);
+}
+
 /* ---------- Section headings ---------- */
 .h2 {
   margin: 0;

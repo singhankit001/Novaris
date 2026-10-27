@@ -21,6 +21,19 @@ export interface Crumb {
   href?: string;
 }
 
+/** Keeps hyphenated words ("Full-File") from breaking at the hyphen on narrow screens. */
+function NoBreakHyphens({ text }: { text: string }) {
+  return text.split(/(\S*-\S*)/).map((part, i) =>
+    part.includes("-") ? (
+      <span key={i} className="whitespace-nowrap">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
 /** Wraps the last word of a title in the serif-italic gradient accent. */
 function AccentTitle({ text }: { text: string }) {
   const trimmed = text.trim();
@@ -28,27 +41,33 @@ function AccentTitle({ text }: { text: string }) {
   if (idx < 0) return <em>{trimmed}</em>;
   return (
     <>
-      {trimmed.slice(0, idx)} <em>{trimmed.slice(idx + 1)}</em>
+      <NoBreakHyphens text={trimmed.slice(0, idx)} /> <em>{trimmed.slice(idx + 1)}</em>
     </>
   );
 }
 
-/** Eyebrow, the page's one h1 with a serif accent word, a lead paragraph, over a luminous backdrop. */
+/**
+ * Eyebrow, the page's one h1 with a serif accent word, a lead paragraph, over a luminous backdrop.
+ * `align="center"` centres the title block in the page column (breadcrumbs stay at the start edge);
+ * use it when no side column sits beside the hero.
+ */
 export function PageHeader({
   crumbs,
   eyebrow,
   title,
   lead,
   children,
+  align = "start",
 }: {
   crumbs?: Crumb[];
   eyebrow?: string;
   title: string;
   lead?: ReactNode;
   children?: ReactNode;
+  align?: "start" | "center";
 }) {
   return (
-    <header className={s.hero}>
+    <header className={cn(s.hero, align === "center" && s.heroCenter)}>
       <div aria-hidden className={cn(s.heroGlow, "nv-aurora")}>
         <div className={cn(s.heroGrid, "nv-grid-paper")} />
       </div>

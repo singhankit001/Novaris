@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import JsonLdScript from "@/components/JsonLdScript";
 import SeoVisual, { type SeoVisualVariant } from "@/components/seo/SeoVisual";
 import SiteChrome from "@/components/seo/SiteChrome";
@@ -21,6 +22,9 @@ export interface SolutionPageProps {
   ctas: { href: string; label: string; primary?: boolean }[];
   /** Pre-built JSON-LD documents (breadcrumb, FAQ, software application). */
   schemas: unknown[];
+  heroAlign?: "start" | "center";
+  /** Route-specific interactive demonstration; replaces the static workflow illustration when present. */
+  experience?: ReactNode;
 }
 
 /** Shared layout for the three solution landing pages: copy and metadata stay in each route file. */
@@ -36,15 +40,22 @@ export default function SolutionPage(p: SolutionPageProps) {
           eyebrow="Solution"
           title={p.h1}
           lead={p.lead[0]}
+          align={p.heroAlign}
         >
           <Prose className="mt-4">
             <p>{p.lead[1]}</p>
           </Prose>
         </PageHeader>
 
-        <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
-          <SeoVisual variant={p.visual.variant} ariaLabel={p.visual.ariaLabel} />
-        </section>
+        {p.experience ? (
+          <section aria-label="Interactive demonstration" className="mb-24">
+            {p.experience}
+          </section>
+        ) : (
+          <section aria-label="Workflow illustration" className="mb-24 max-w-5xl">
+            <SeoVisual variant={p.visual.variant} ariaLabel={p.visual.ariaLabel} />
+          </section>
+        )}
 
         <div className={s.stack}>
           <section aria-labelledby="sol-main-h" className={s.grid12}>
