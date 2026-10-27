@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=1020, height=600" />
+<title>security-scan</title>
+<script src="shared/gsap.min.js"></script>
+<link rel="stylesheet" href="shared/ui.css" />
+<style>
+  .stage { padding: 32px 36px; gap: 18px; }
+  .card { padding: 18px 22px; border-radius: 18px; }
+  .seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--well); border: 1px solid var(--hair); font-size: 18px; }
+  .seg span { padding: 8px 20px; border-radius: 999px; color: var(--ink2); }
+  .seg .on { background: #fff; box-shadow: 0 1px 2px rgb(21 23 29 / .1); color: var(--ink); font-weight: 500; }
+  .btn { height: 48px; font-size: 20px; }
+  .main { display: grid; grid-template-columns: 380px 1fr; gap: 18px; flex: 1; min-height: 0; }
+  .st { display: flex; align-items: center; gap: 14px; padding: 12px 0; font-size: 20px; border-bottom: 1px solid var(--hair); }
+  .st:last-child { border-bottom: 0; }
+  .dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; flex: none; color: #fff; }
+  .dot svg { width: 16px; height: 16px; stroke-width: 3; }
+  .sev { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .sev > div { padding: 10px 14px; border-radius: 14px; border: 1px solid; }
+  .sev b { display: block; font-size: 34px; font-weight: 300; letter-spacing: -.04em; line-height: 1; }
+  .sev span { font-size: 16px; }
+  .fi { display: flex; flex-direction: column; gap: 6px; padding: 9px 14px; border-radius: 14px; border: 1px solid var(--hair); background: #fff; font-size: 18px; }
+  .badge { font-size: 15px; padding: 3px 12px; } .cite { font-size: 15px; } .cap { font-size: 14px; }
+</style></head>
+<body>
+<div id="root" data-composition-id="security-scan" data-start="0" data-width="1020" data-height="600" data-duration="7.4">
+  <div class="stage">
+    <div class="row"><div class="mono" style="font-size:24px;font-weight:500">acme/payments-api</div><div class="grow"></div><div class="seg"><span class="on">Quick · 20 files</span><span>Deep · 60 files</span></div><div class="btn">Start scan</div></div>
+    <div class="main">
+      <div class="card"><div class="cap">Scan stages</div>
+        <div class="st"><span class="dot" data-i="0"><svg><use href="#i-check"/></svg></span><span class="grow s0">Selecting files</span><span class="mono muted" style="font-size:15px">20 of 412</span></div>
+        <div class="st"><span class="dot" data-i="1"><svg><use href="#i-check"/></svg></span><span class="grow s1">Reading file contents</span></div>
+        <div class="st"><span class="dot" data-i="2"><svg><use href="#i-check"/></svg></span><span class="grow s2">Checking for risky patterns</span></div>
+        <div class="st"><span class="dot" data-i="3"><svg><use href="#i-check"/></svg></span><span class="grow s3">Writing the report</span></div>
+        <div class="bar" style="margin-top:14px"><i id="prog"></i></div>
+      </div>
+      <div class="card"><div class="cap">Report overview</div>
+        <div class="sev d">
+          <div style="background:var(--bad-w);border-color:var(--bad-e);color:var(--bad)"><b>1</b><span>High</span></div>
+          <div style="background:var(--warn-w);border-color:var(--warn-e);color:var(--warn)"><b>3</b><span>Medium</span></div>
+          <div style="background:#ecf5fd;border-color:#b2d2ee;color:#1d6aae"><b>4</b><span>Low</span></div>
+        </div>
+        <div class="col" style="margin-top:12px;gap:8px">
+          <div class="fi d"><div class="row" style="gap:10px"><span class="badge bad">High</span><span style="font-weight:500">Secret value written to logs</span></div><div class="row" style="gap:10px"><span class="cite"><svg><use href="#i-code"/></svg>src/lib/log.ts#L22-30</span><span class="badge warn">Verify before acting</span></div></div>
+          <div class="fi d"><div class="row" style="gap:10px"><span class="badge warn">Medium</span><span style="font-weight:500">Query built from request input</span></div><div class="row" style="gap:10px"><span class="cite"><svg><use href="#i-code"/></svg>src/api/search.ts#L31-48</span><span class="badge warn">Inferred</span></div></div>
+          <div class="fi d"><div class="row" style="gap:10px"><span class="badge info">Low</span><span style="font-weight:500">No rate limit on the login route</span></div><div class="row" style="gap:10px"><span class="cite"><svg><use href="#i-code"/></svg>src/api/login.ts#L5-19</span><span class="badge warn">Inferred</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="dyn" class="abs" style="inset:0;pointer-events:none"><svg id="cursor" class="d" viewBox="0 0 24 24" fill="#14161d" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><path d="M4 3l7 17 2.5-7L20.5 10.5z"/></svg><div class="ripple"></div></div>
+</div>
+<script src="shared/lib.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const T = 7.4, tl = gsap.timeline({ paused: true });
+  gsap.set(".d", { opacity: 0 }); gsap.set("#prog", { scaleX: 0 }); gsap.set(".ripple", { opacity: 0 }); gsap.set("#cursor", { x: 600, y: 260 });
+  const cols = ["#2f54ff", "#2f54ff", "#2f54ff", "#2f54ff"];
+  document.querySelectorAll(".dot").forEach((d) => { d.style.color = "#fff"; });
+  gsap.set(".dot svg", { opacity: 0, scale: 0.5 });
+  tl.to("#cursor", { opacity: 1, duration: 0.3 }, 0.3);
+  NV.cursor(tl, [915, 52], 0.3, 0.8);
+  NV.click(tl, 920, 46, 1.15);
+  tl.to(".btn", { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1 }, 1.15);
+  [0, 1, 2, 3].forEach((i) => {
+    const at = 1.4 + i * 0.75;
+    tl.to(`.dot[data-i="${i}"]`, { backgroundColor: "#2f54ff", borderColor: "#2f54ff", duration: 0.25 }, at + 0.45);
+    tl.to(`.dot[data-i="${i}"] svg`, { opacity: 1, scale: 1, duration: 0.25, ease: "back.out(2)" }, at + 0.45);
+  });
+  tl.to("#prog", { scaleX: 1, duration: 3.0, ease: "power1.inOut" }, 1.4);
+  tl.to(".sev", { opacity: 1, duration: 0.4 }, 4.5);
+  tl.to(".fi", { opacity: 1, duration: 0.4, stagger: 0.3 }, 4.9);
+  tl.to(".d", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
+  tl.to(".dot", { backgroundColor: "rgba(47,84,255,0)", borderColor: "#d5d8e0", duration: 0.5 }, T - 0.6);
+  tl.to("#prog, .dot svg", { opacity: 0, duration: 0.5 }, T - 0.6);
+  tl.to({}, { duration: 0.01 }, T);
+  window.__timelines["security-scan"] = tl;
+</script>
+</body></html>

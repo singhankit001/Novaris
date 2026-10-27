@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=640, height=400" />
+<title>architecture</title>
+<script src="shared/gsap.min.js"></script>
+<link rel="stylesheet" href="shared/ui.css" />
+<style>
+  .nd { position: absolute; width: 148px; height: 52px; margin: -26px 0 0 -74px; border-radius: 17px; background: #fff; border: 1.5px solid var(--border); display: grid; place-items: center; font-family: var(--mono); font-size: 21px; color: var(--ink2); box-shadow: var(--shadow); }
+  .nd.on { border-color: var(--blue); color: var(--blue-d); }
+  svg.ed { position: absolute; inset: 0; }
+</style></head>
+<body>
+<div id="root" data-composition-id="architecture" data-start="0" data-width="640" data-height="400" data-duration="6">
+  <svg class="ed" viewBox="0 0 640 400" fill="none"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#2f54ff"/><stop offset="1" stop-color="#7a4dff"/></linearGradient></defs>
+    <g stroke="url(#g)" stroke-width="2.6" stroke-linecap="round" opacity=".75">
+      <path class="e" pathLength="1" d="M320 82 C320 140 140 140 140 196"/>
+      <path class="e" pathLength="1" d="M320 82 L320 196"/>
+      <path class="e" pathLength="1" d="M320 82 C320 140 500 140 500 196"/>
+      <path class="e" pathLength="1" d="M140 248 C140 300 280 296 320 322"/>
+      <path class="e" pathLength="1" d="M500 248 C500 300 360 296 320 322"/>
+    </g></svg>
+  <div class="nd on d" style="left:320px;top:56px" id="a">app/</div>
+  <div class="nd d" style="left:140px;top:222px">lib/</div>
+  <div class="nd d" style="left:320px;top:222px" id="b">components/</div>
+  <div class="nd d" style="left:500px;top:222px">api/</div>
+  <div class="nd d" style="left:320px;top:348px">prisma/</div>
+</div>
+<script src="shared/lib.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const T = 5.2, tl = gsap.timeline({ paused: true });
+  gsap.set(".d", { opacity: 0, scale: 0.94 }); gsap.set(".e", { strokeDasharray: 1, strokeDashoffset: 1 });
+  gsap.set("#b", { borderColor: "#d5d8e0", color: "#3a3e4a" });
+  tl.to("#a", { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 0.3);
+  tl.to(".e", { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut", stagger: 0.18 }, 0.8);
+  tl.to(".nd.d:not(#a)", { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out", stagger: 0.18 }, 1.2);
+  tl.to("#b", { borderColor: "#2f54ff", color: "#1f3ee6", duration: 0.35 }, 3.0);
+  tl.to(".d", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
+  tl.to(".e", { opacity: 0, duration: 0.5 }, T - 0.6);
+  tl.to("#b", { borderColor: "#d5d8e0", color: "#3a3e4a", duration: 0.5 }, T - 0.6);
+  tl.to({}, { duration: 0.01 }, T);
+  window.__timelines["architecture"] = tl;
+</script>
+</body></html>

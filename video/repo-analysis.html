@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=880, height=400" />
+<title>repo-analysis</title>
+<script src="shared/gsap.min.js"></script>
+<link rel="stylesheet" href="shared/ui.css" />
+<style>
+  body { font-size: 20px; }
+  .stage { padding: 26px 30px; gap: 14px; }
+  .input { height: 58px; font-size: 22px; padding: 0 20px; border-radius: 18px; }
+  .input svg { width: 24px; height: 24px; color: var(--ink3); }
+  .btn { height: 44px; font-size: 18px; padding: 0 22px; }
+  .main { display: grid; grid-template-columns: 330px 1fr; gap: 16px; flex: 1; min-height: 0; }
+  .card { padding: 14px 16px; border-radius: 16px; }
+  .tree { font-size: 17px; gap: 2px; }
+  .node { padding: 5px 9px; border-radius: 9px; gap: 9px; }
+  .node svg { width: 17px; height: 17px; }
+  .i1 { margin-left: 22px; } .i2 { margin-left: 44px; }
+  .sum p { margin: 0; font-size: 19px; line-height: 1.4; color: var(--ink); }
+  .sum .li { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .badge { font-size: 14px; padding: 2px 11px; } .cite { font-size: 14px; padding: 4px 12px 4px 9px; } .cite svg { width: 15px; height: 15px; }
+  .cap { font-size: 13px; }
+</style></head>
+<body>
+<div id="root" data-composition-id="repo-analysis" data-start="0" data-width="880" data-height="400" data-duration="6.4">
+  <div class="stage">
+    <div class="row">
+      <div class="input on grow"><svg><use href="#i-search"/></svg><span><span id="typed"></span><span class="caret" id="caret"></span></span></div>
+      <div class="btn" id="go">Analyze</div>
+    </div>
+    <div class="main">
+      <div class="card"><div class="cap" style="margin-bottom:8px">Files</div>
+        <div class="tree" id="tree">
+          <div class="node t"><svg><use href="#i-folder"/></svg>src/</div>
+          <div class="node i1 t"><svg><use href="#i-folder"/></svg>api/</div>
+          <div class="node i2 t hit" id="n-mw"><svg><use href="#i-code"/></svg>middleware.ts</div>
+          <div class="node i1 t"><svg><use href="#i-folder"/></svg>lib/</div>
+          <div class="node i2 t hit" id="n-auth"><svg><use href="#i-code"/></svg>auth.ts</div>
+          <div class="node i2 t"><svg><use href="#i-code"/></svg>ledger.ts</div>
+          <div class="node t"><svg><use href="#i-file"/></svg>package.json</div>
+        </div>
+      </div>
+      <div class="card sum"><div class="cap">Architecture summary</div>
+        <div class="li">
+          <p class="s">A TypeScript API in three layers: routes, a ledger service, and auth middleware.</p>
+          <div class="row s"><span class="badge ok">Measured</span><span class="cite"><svg><use href="#i-code"/></svg>src/api/middleware.ts#L12-40</span></div>
+          <p class="s">Token checks live in one module and every route depends on it.</p>
+          <div class="row s"><span class="badge warn">Inferred</span><span class="cite"><svg><use href="#i-code"/></svg>src/lib/auth.ts#L8-31</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="dyn" class="abs" style="inset:0;pointer-events:none"><svg id="cursor" viewBox="0 0 24 24" fill="#14161d" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><path d="M4 3l7 17 2.5-7L20.5 10.5z"/></svg><div class="ripple"></div></div>
+</div>
+<script src="shared/lib.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const T = 6.4, tl = gsap.timeline({ paused: true });
+  // Dynamic elements live in-place; the stage itself is static chrome. First/last frame = hidden state.
+  const dynSel = ["#typed", ".t", ".s", "#cursor", "#caret"];
+  gsap.set(".t, .s", { opacity: 0 }); gsap.set(".t", { y: 6 }); gsap.set(".s", { y: 8 });
+  gsap.set("#cursor", { x: 600, y: 230, opacity: 0 }); gsap.set("#caret", { opacity: 0 }); gsap.set(".ripple", { opacity: 0 });
+  gsap.set("#n-mw, #n-auth", { backgroundColor: "rgba(238,241,255,0)", color: "#3a3e4a" });
+  tl.to("#caret", { opacity: 1, duration: 0.2 }, 0.2);
+  tl.to("#cursor", { opacity: 1, duration: 0.3 }, 1.5);
+  NV.type(tl, document.getElementById("typed"), "acme/payments-api", 0.6, 1.0);
+  NV.cursor(tl, [790, 62], 1.6, 0.7);
+  NV.click(tl, 797, 55, 2.3);
+  tl.to(".t", { opacity: 1, y: 0, duration: 0.4, ease: "power3.out", stagger: 0.09 }, 2.4);
+  tl.to("#n-mw, #n-auth", { backgroundColor: "rgba(238,241,255,1)", color: "#1f3ee6", duration: 0.35, stagger: 0.25 }, 3.3);
+  tl.to(".s", { opacity: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.35 }, 3.6);
+  tl.to({}, { duration: 0.01 }, T);
+  tl.to(dynSel.join(","), { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
+  tl.set("#n-mw, #n-auth", { backgroundColor: "rgba(238,241,255,0)", color: "#3a3e4a" }, T - 0.1);
+  window.__timelines["repo-analysis"] = tl;
+</script>
+</body></html>

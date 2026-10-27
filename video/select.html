@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=800, height=200" />
+<title>select</title>
+<script src="shared/gsap.min.js"></script>
+<link rel="stylesheet" href="shared/ui.css" />
+<style>
+  .stage { padding: 22px 30px; gap: 12px; justify-content: center; }
+  .input { height: 70px; font-size: 25px; border-radius: 22px; }
+  .chip { font-size: 17px; padding: 6px 16px; }
+</style></head>
+<body>
+<div id="root" data-composition-id="select" data-start="0" data-width="800" data-height="200" data-duration="6">
+  <div class="stage">
+    <div class="input on"><svg width="26" height="26" style="color:var(--ink3)"><use href="#i-search"/></svg><span class="grow"><span id="t1"></span><span id="t2"></span><span class="caret" id="caret"></span></span><span class="chip on d" id="k1"><svg width="16" height="16"><use href="#i-branch"/></svg>Repository</span><span class="chip on d" id="k2"><svg width="16" height="16"><use href="#i-user"/></svg>Developer</span></div>
+    <div class="row" style="gap:10px"><span class="muted" style="font-size:17px">Try</span><span class="chip">owner/repo</span><span class="chip">GitHub URL</span><span class="chip">@username</span></div>
+  </div>
+</div>
+<script src="shared/lib.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const T = 6, tl = gsap.timeline({ paused: true });
+  const t1 = document.getElementById("t1"), t2 = document.getElementById("t2"), W1 = "acme/payments-api", W2 = "@maya-demo";
+  gsap.set(".d", { opacity: 0, y: 4 }); gsap.set("#caret", { opacity: 0 });
+  tl.to("#caret", { opacity: 1, duration: 0.2 }, 0.2);
+  NV.type(tl, t1, W1, 0.4, 1.0);
+  tl.to("#k1", { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 1.6);
+  tl.to("#k1", { opacity: 0, duration: 0.25 }, 3.0);
+  const o = { n: W1.length };
+  tl.to(o, { n: 0, duration: 0.4, ease: "none", snap: { n: 1 }, onUpdate: () => { if (tl.time() > 2.9) t1.textContent = W1.slice(0, o.n); } }, 3.0);
+  NV.type(tl, t2, W2, 3.6, 0.7);
+  tl.to("#k2", { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 4.4);
+  tl.to(".d, #caret", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
+  tl.to({}, { duration: 0.01 }, T);
+  window.__timelines["select"] = tl;
+</script>
+</body></html>
