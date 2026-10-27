@@ -1762,6 +1762,10 @@ const getCachedPublicStats = unstable_cache(
                     console.warn("[Analytics] Using last-known public stats after transient read failures.");
                     return fallbackStats;
                 }
+                // No snapshot: a sum missing one of its sources is an undercount, so report it as unavailable (0 renders as product copy, not a number).
+                if (anonVisitorCountRaw.failed || manualAdjustments.failed || loggedInUserCount.failed) finalStats.totalVisitors = 0;
+                if (totalAnonQueriesRaw.failed || manualAdjustments.failed || authQueryTotal.failed) finalStats.totalQueries = 0;
+                if (totalScans.failed) finalStats.totalScans = 0;
             }
 
             // Debug log for admin visibility (only in server console)

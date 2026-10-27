@@ -38,6 +38,7 @@ import s from "./chat/chat.module.css";
 import { useMessageSelection } from "./chat/useMessageSelection";
 import { BadgeModal } from "./chat/BadgeModal";
 import { SecurityScanModal } from "./chat/SecurityScanModal";
+import { selectRequestFilePaths } from "@/lib/request-file-paths";
 import { buildSecurityScanMessage } from "./chat/security-scan-message";
 import { ToolQuotaModal } from "./chat/ToolQuotaModal";
 
@@ -578,12 +579,16 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
         selectedModelPreference: ModelPreference
     ) => {
         const isThinkingStream = selectedModelPreference === "thinking";
-        const eligibleFiles = repoContext.fileTree
-            .filter((path) =>
+        const tagged = messages.slice(-8).flatMap((message) => message.taggedFiles ?? []);
+        // Large repositories exceed the request's path limit; send a prioritized subset instead of failing.
+        const eligibleFiles = selectRequestFilePaths(
+            repoContext.fileTree.filter((path) =>
                 !REQUEST_FILE_PATH_SKIP_PATTERN.test(path.path) &&
                 !path.path.includes("node_modules/") &&
                 !path.path.includes(".git/")
-            );
+            ),
+            [...tagged, ...taggedFiles],
+        );
         const filePaths = eligibleFiles.map((file) => file.path);
         const fileShas = Object.fromEntries(
             eligibleFiles

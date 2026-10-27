@@ -5,7 +5,8 @@ import s from "@/components/seo/seo.module.css";
 import { cn } from "@/components/nv/cn";
 import SiteChrome from "@/components/seo/SiteChrome";
 import { FaqList, H2, Page, PageHeader } from "@/components/seo/blocks";
-import { CubesBackdrop, HowItWorks, Limits, Maker, OpenSourceGlobe } from "@/components/experiences/about/about-parts";
+import { CubesBackdrop, Limits, Maker, OpenSourceGlobe } from "@/components/experiences/about/about-parts";
+import { HowItWorks } from "@/components/experiences/about/how-it-works";
 import { FAQ_PAGE_ITEMS } from "@/lib/faq-data";
 import { getCanonicalSiteUrl } from "@/lib/site-url";
 

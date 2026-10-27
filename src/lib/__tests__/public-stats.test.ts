@@ -140,6 +140,20 @@ describe("getPublicStats resilience", () => {
         expect(second).toEqual(first);
     });
 
+    it("reports metrics with a failed source as unavailable when no snapshot exists", async () => {
+        kvValues.set("queries:total", 100);
+        scardMock.mockResolvedValue(50);
+        repoScanCountMock.mockRejectedValue(new Error("PrismaClientInitializationError"));
+        userCountMock.mockRejectedValue(new Error("PrismaClientInitializationError"));
+        userAggregateMock.mockRejectedValue(new Error("PrismaClientInitializationError"));
+
+        const getPublicStats = await loadGetPublicStats();
+        const result = await getPublicStats();
+
+        expect(result).toEqual({ totalVisitors: 0, totalQueries: 0, totalScans: 0 });
+        expect(setMock).not.toHaveBeenCalled();
+    });
+
     it("treats a failed adjustment read as a failure instead of persisting deflated totals", async () => {
         kvValues.set("queries:total", 100);
         kvValues.set("stats:adjustment:visitors", 5);

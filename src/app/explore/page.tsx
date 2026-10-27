@@ -1,3 +1,4 @@
+import EcosystemDiscovery from "@/components/discovery/EcosystemDiscovery";
 import type { Metadata } from "next";
 import JsonLdScript from "@/components/JsonLdScript";
 import s from "@/components/seo/seo.module.css";
@@ -95,14 +96,15 @@ export default function ExplorePage() {
         <PageHeader
           crumbs={[{ label: "Home", href: "/" }, { label: "Explore" }]}
           eyebrow="Explore"
-          title="Analysis, security and comparison pages"
-          lead="An index of every Novaris guide, grouped by what you are trying to decide."
+          title="Discover your next building block."
+          lead="Explore developer tools and open-source projects, then put them to work with Novaris guides."
         >
           <Prose className="mt-4">
             <p>Choose Analysis when you need to understand a codebase, Security when you are triaging risk, and Comparison when you are choosing tools.</p>
           </Prose>
         </PageHeader>
 
+        <EcosystemDiscovery />
         <div className={s.stack}>
           <CategoryBento groups={groups} />
           <AnalysisSection group={analysis} />

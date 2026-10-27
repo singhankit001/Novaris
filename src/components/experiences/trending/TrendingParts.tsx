@@ -55,6 +55,7 @@ export function RepoCard({ repo, rank, featured }: { repo: CatalogRepoEntry; ran
           <p className={cn("m-0 text-nv-small leading-relaxed text-nv-ivory-200 [-webkit-box-orient:vertical] [display:-webkit-box] overflow-hidden", featured ? "[-webkit-line-clamp:3]" : "[-webkit-line-clamp:2]")}>
             {repo.description || "No description in the catalog."}
           </p>
+          <a href={`https://github.com/${repo.owner}/${repo.repo}`} target="_blank" rel="noopener noreferrer" className="relative z-10 inline-flex min-h-11 items-center gap-2 text-nv-small text-nv-copper-400 hover:underline">View on GitHub <ArrowUpRight size={14} aria-hidden /></a>
           <div className="mt-auto flex items-end justify-between gap-3">
             <ul
               aria-label="Topics"
@@ -69,7 +70,7 @@ export function RepoCard({ repo, rank, featured }: { repo: CatalogRepoEntry; ran
             <Link
               href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
               aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
-              className="grid size-11 shrink-0 place-items-center rounded-full border border-nv-border bg-white text-nv-ivory-200 transition-colors before:absolute before:inset-0 before:content-[''] hover:border-nv-copper-500 hover:bg-nv-copper-500 hover:text-white"
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-nv-border bg-white text-nv-ivory-200 transition-colors hover:border-nv-copper-500 hover:bg-nv-copper-500 hover:text-white"
             >
               <ArrowUpRight aria-hidden className="size-4" />
             </Link>

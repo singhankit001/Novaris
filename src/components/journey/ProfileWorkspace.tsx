@@ -1,5 +1,6 @@
 "use client";
 
+import ProfileEcosystemInsights from "@/components/discovery/ProfileEcosystemInsights";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -95,6 +96,8 @@ export function ProfileWorkspace({ profile, repos, commits, freshness, reducedMo
                     <Metric icon={<Users className="size-4" />} label="Followers" value={num(profile.followers)} />
                     <Metric icon={<GitFork className="size-4" />} label="Languages" value={num(languages.length)} />
                 </dl>
+
+                <ProfileEcosystemInsights repos={repos} commits={commits} freshness={freshness} />
 
                 {repos.length === 0 ? (
                     <section className={`${s.empty} nv-rise`} style={rise(2)} aria-labelledby="ws-empty">
