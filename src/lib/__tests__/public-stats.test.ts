@@ -64,9 +64,10 @@ describe("getPublicStats resilience", () => {
         userAggregateMock.mockReset();
 
         delete process.env.ADMIN_GITHUB_USERNAME;
-        // Manual adjustments are only read when KV is configured; these scenarios model a configured KV.
+        // KV and Postgres reads are skipped when unconfigured; these scenarios model both being configured.
         process.env.KV_REST_API_URL = "https://kv.test";
         process.env.KV_REST_API_TOKEN = "test-token";
+        process.env.DATABASE_URL = "postgresql://test";
 
         getMock.mockImplementation(async (key: string) => {
             return kvValues.get(key) ?? 0;
