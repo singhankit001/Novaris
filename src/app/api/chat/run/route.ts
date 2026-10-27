@@ -2,27 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ANON_COOKIE_NAME, getAnonymousActorId } from "@/lib/actor-id";
+import { BODY_LIMIT_RUN, MAX_ID_LENGTH, bodyStatus, readJsonBody, validateRunBody, validationResponse } from "@/lib/request-validation";
 import { getInvalidSessionApiError, getSessionAuthState, getSessionUserId } from "@/lib/session-guard";
 
-type CreateRunBody = {
-    scope: "repo" | "profile";
-    owner?: string | null;
-    repo?: string | null;
-    username?: string | null;
-    clientRequestId: string;
-};
+const STORAGE_DOWN = { error: "Storage is temporarily unavailable. Please try again shortly.", code: "STORAGE_UNAVAILABLE" };
 
-function resolveConversationKey(body: CreateRunBody): { conversationKey: string; owner: string | null; repo: string | null; username: string | null } | null {
-    if (body.scope === "repo") {
-        const owner = typeof body.owner === "string" ? body.owner : null;
-        const repo = typeof body.repo === "string" ? body.repo : null;
-        if (!owner || !repo) return null;
-        return { conversationKey: `repo:${owner}:${repo}`, owner, repo, username: null };
-    }
+function isUniqueViolation(error: unknown): boolean {
+    return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "P2002";
+}
 
-    const username = typeof body.username === "string" ? body.username : null;
-    if (!username) return null;
-    return { conversationKey: `profile:${username}`, owner: null, repo: null, username };
+/** errorMessage is stored as "CODE: message"; split it so clients get a stable code field. */
+function splitStoredError(stored: string | null): { errorCode: string | null; errorMessage: string | null } {
+    if (!stored) return { errorCode: null, errorMessage: null };
+    const match = /^([A-Z_]+): ([\s\S]*)$/.exec(stored);
+    return match ? { errorCode: match[1], errorMessage: match[2] } : { errorCode: null, errorMessage: stored };
 }
 
 export async function POST(req: NextRequest) {
@@ -36,61 +29,56 @@ export async function POST(req: NextRequest) {
     const anonCookieId = req.cookies.get(ANON_COOKIE_NAME)?.value ?? null;
     const actorId = userId ?? getAnonymousActorId(req.headers, anonCookieId);
 
-    const body = (await req.json()) as Partial<CreateRunBody>;
-    const scope = body.scope;
-    const clientRequestId = typeof body.clientRequestId === "string" ? body.clientRequestId : "";
-    if ((scope !== "repo" && scope !== "profile") || !clientRequestId.trim()) {
-        return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-    }
+    const raw = await readJsonBody(req, BODY_LIMIT_RUN);
+    if (!raw.ok) return validationResponse(raw, bodyStatus(raw.code));
+    const parsed = validateRunBody(raw.value);
+    if (!parsed.ok) return validationResponse(parsed);
+    const { scope, owner, repo, username, clientRequestId } = parsed.value;
+    const conversationKey = scope === "repo" ? `repo:${owner}:${repo}` : `profile:${username}`;
 
-    const resolved = resolveConversationKey({
-        scope,
-        owner: body.owner ?? null,
-        repo: body.repo ?? null,
-        username: body.username ?? null,
-        clientRequestId,
-    });
-    if (!resolved) {
-        return NextResponse.json({ error: "Missing conversation parameters" }, { status: 400 });
-    }
+    const lookup = {
+        actorId_conversationKey_clientRequestId: { actorId, conversationKey, clientRequestId },
+    };
+    const select = { id: true, status: true, partialText: true, finalText: true } as const;
 
-    const existing = await prisma.chatRun.findUnique({
-        where: {
-            actorId_conversationKey_clientRequestId: {
-                actorId,
-                conversationKey: resolved.conversationKey,
-                clientRequestId,
-            },
-        },
-        select: { id: true, status: true, partialText: true, finalText: true },
-    });
-
-    if (existing) {
+    try {
+        // Idempotent by (actor, conversation, clientRequestId): a retry returns the existing run.
+        let existing = await prisma.chatRun.findUnique({ where: lookup, select });
+        if (!existing) {
+            try {
+                const run = await prisma.chatRun.create({
+                    data: {
+                        actorId,
+                        userId: userId ?? null,
+                        conversationKey,
+                        scope,
+                        owner,
+                        repo,
+                        username,
+                        clientRequestId,
+                        status: "RUNNING",
+                        partialText: "",
+                    },
+                    select: { id: true },
+                });
+                return NextResponse.json({ runId: run.id, status: "RUNNING", partialText: "", finalText: null });
+            } catch (error) {
+                // Two concurrent creates: the loser reads the winner's row.
+                if (!isUniqueViolation(error)) throw error;
+                existing = await prisma.chatRun.findUnique({ where: lookup, select });
+                if (!existing) throw error;
+            }
+        }
         return NextResponse.json({
             runId: existing.id,
             status: existing.status,
             partialText: existing.partialText,
             finalText: existing.finalText,
         });
+    } catch (error) {
+        console.error("Chat run create failed:", error);
+        return NextResponse.json(STORAGE_DOWN, { status: 503 });
     }
-
-    const run = await prisma.chatRun.create({
-        data: {
-            actorId,
-            userId: userId ?? null,
-            conversationKey: resolved.conversationKey,
-            scope,
-            owner: resolved.owner,
-            repo: resolved.repo,
-            username: resolved.username,
-            clientRequestId,
-            status: "RUNNING",
-            partialText: "",
-        },
-        select: { id: true },
-    });
-
-    return NextResponse.json({ runId: run.id, status: "RUNNING", partialText: "", finalText: null });
 }
 
 export async function GET(req: NextRequest) {
@@ -106,24 +94,30 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const runId = searchParams.get("runId") ?? "";
-    if (!runId.trim()) {
-        return NextResponse.json({ error: "Missing runId" }, { status: 400 });
+    if (!runId.trim() || runId.length > MAX_ID_LENGTH) {
+        return NextResponse.json({ error: "Missing or invalid runId", code: "RUN_ID_INVALID" }, { status: 400 });
     }
 
-    const run = await prisma.chatRun.findFirst({
-        where: { id: runId, actorId },
-        select: {
-            id: true,
-            status: true,
-            partialText: true,
-            finalText: true,
-            errorMessage: true,
-            updatedAt: true,
-        },
-    });
+    let run;
+    try {
+        run = await prisma.chatRun.findFirst({
+            where: { id: runId, actorId },
+            select: {
+                id: true,
+                status: true,
+                partialText: true,
+                finalText: true,
+                errorMessage: true,
+                updatedAt: true,
+            },
+        });
+    } catch (error) {
+        console.error("Chat run read failed:", error);
+        return NextResponse.json(STORAGE_DOWN, { status: 503 });
+    }
 
     if (!run) {
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
+        return NextResponse.json({ error: "Not found", code: "RUN_NOT_FOUND" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -131,7 +125,7 @@ export async function GET(req: NextRequest) {
         status: run.status,
         partialText: run.partialText,
         finalText: run.finalText,
-        errorMessage: run.errorMessage,
+        ...splitStoredError(run.errorMessage),
         updatedAt: run.updatedAt.toISOString(),
     });
 }

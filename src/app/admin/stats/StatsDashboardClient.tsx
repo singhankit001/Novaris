@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import {
-    Users, Activity, Smartphone, Monitor, Globe,
-    RefreshCw, ArrowUpDown, ChevronUp, ChevronDown,
-    UserCheck, TrendingUp, Database, Zap, Mail, Search, MessageSquare, ShieldAlert, Trash2, Info
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import type { AnalyticsData, LoggedInUserData, VisitorData } from "@/lib/analytics";
-import {
-    deleteLoggedInUserAccount,
-    resetAdminReportFunnel,
-    updateReportFalsePositiveReviewStatus,
-} from "@/app/actions";
-import { toast } from "sonner";
+import { deleteLoggedInUserAccount, resetAdminReportFunnel, updateReportFalsePositiveReviewStatus } from "@/app/actions";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import PageHeader from "@/components/Dashboard/PageHeader";
+import { Badge, StatusPill } from "@/components/nv/badge";
+import { Button } from "@/components/nv/button";
+import { BarList, Sparkline } from "@/components/nv/charts";
+import { DataTable, Metric, MetricGroup, type Column } from "@/components/nv/data";
+import { Notice, type NoticeTone } from "@/components/nv/notice";
+import { Tabs } from "@/components/nv/tabs";
 
 type HistoryRange = "24h" | "1w" | "1m" | "3m";
 type SelectionRange = "24h" | "7d";
+type FpStatus = "PENDING" | "CONFIRMED_FALSE_POSITIVE" | "REJECTED";
+type VisitorSortKey = "lastSeen" | "queryCount" | "country" | "device" | "id";
 
 interface StatsDashboardClientProps {
     data: AnalyticsData;
@@ -28,20 +27,22 @@ interface StatsDashboardClientProps {
     currentUsername: string | null;
 }
 
-type SortConfig = {
-    key: keyof VisitorData | 'id';
-    direction: 'asc' | 'desc';
+interface Feedback {
+    tone: NoticeTone;
+    title: string;
+    text?: string;
+}
+
+const RANGE_MS: Record<HistoryRange, number> = {
+    "24h": 24 * 3_600_000,
+    "1w": 7 * 24 * 3_600_000,
+    "1m": 30 * 24 * 3_600_000,
+    "3m": 90 * 24 * 3_600_000,
 };
 
-type HoveredKvPoint = {
-    index: number;
-    timestamp: number;
-    size: number;
-    xPercent: number;
-    yPercent: number;
-};
+const selectClass = "min-h-11 rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] focus:border-nv-copper-400 focus:bg-white disabled:opacity-45";
 
-function formatFalsePositiveReason(reason: string): string {
+function formatReason(reason: string): string {
     return reason
         .toLowerCase()
         .split("_")
@@ -49,135 +50,161 @@ function formatFalsePositiveReason(reason: string): string {
         .join(" ");
 }
 
-export default function StatsDashboardClient({
-    data,
-    userAgent,
-    country,
-    isMobile,
-    currentUsername,
-}: StatsDashboardClientProps) {
+function formatSize(bytes: number): string {
+    if (bytes === 0) return "0 B";
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.min(sizes.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+    return `${parseFloat((bytes / Math.pow(1024, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+const formatIST = (timestamp: number) =>
+    new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "medium", hour12: true }).format(new Date(timestamp));
+
+function Select<T extends string>({ id, label, value, options, onChange }: { id: string; label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label htmlFor={id} className="text-nv-small font-medium text-nv-ivory-200">
+                {label}
+            </label>
+            <select id={id} value={value} onChange={(e) => onChange(e.target.value as T)} className={selectClass}>
+                {options.map((o) => (
+                    <option key={o.value} value={o.value}>
+                        {o.label}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
+export default function StatsDashboardClient({ data, userAgent, country, isMobile, currentUsername }: StatsDashboardClientProps) {
     const router = useRouter();
     const [analyticsData, setAnalyticsData] = useState<AnalyticsData>(data);
-    const [isDetailsLoading, setIsDetailsLoading] = useState(false);
     const [falsePositiveRows, setFalsePositiveRows] = useState(() => data.falsePositiveReview?.recentSubmissions ?? []);
     const [accountRows, setAccountRows] = useState<LoggedInUserData[]>(() => data.loggedInUsers ?? []);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [selectedRange, setSelectedRange] = useState<HistoryRange>("24h");
-    const [selectionRange, setSelectionRange] = useState<SelectionRange>("24h");
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lastSeen', direction: 'desc' });
     const [visitorRows, setVisitorRows] = useState<VisitorData[]>(() => data.recentVisitors ?? []);
     const [nextVisitorCursor, setNextVisitorCursor] = useState<string | null>(data.nextVisitorCursor ?? null);
     const [nextLoggedInCursor, setNextLoggedInCursor] = useState<string | null>(data.nextLoggedInCursor ?? null);
-    const [isLoadingMoreVisitors, setIsLoadingMoreVisitors] = useState(false);
-    const [isLoadingMoreLoggedIn, setIsLoadingMoreLoggedIn] = useState(false);
+    const [loadingMore, setLoadingMore] = useState<"visitors" | "accounts" | null>(null);
+    const [selectedRange, setSelectedRange] = useState<HistoryRange>("24h");
+    const [selectionRange, setSelectionRange] = useState<SelectionRange>("24h");
+    const [sortKey, setSortKey] = useState<VisitorSortKey>("lastSeen");
+    const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
     const [currentTime, setCurrentTime] = useState(0);
     const [pendingSubmissionId, setPendingSubmissionId] = useState<string | null>(null);
     const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
     const [isResettingFunnel, setIsResettingFunnel] = useState(false);
     const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
     const [deleteCandidate, setDeleteCandidate] = useState<LoggedInUserData | null>(null);
-    const [hoveredKvPoint, setHoveredKvPoint] = useState<HoveredKvPoint | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [feedback, setFeedback] = useState<Feedback | null>(null);
 
     useEffect(() => {
         const tick = () => setCurrentTime(Date.now());
         tick();
-
-        const intervalId = setInterval(tick, 30_000);
-        return () => clearInterval(intervalId);
+        const id = setInterval(tick, 30_000);
+        return () => clearInterval(id);
     }, []);
 
-    useEffect(() => {
+    // Reset derived state during render when upstream props change (no effect needed).
+    const [prevData, setPrevData] = useState(data);
+    if (prevData !== data) {
+        setPrevData(data);
         setAnalyticsData(data);
         setVisitorRows(data.recentVisitors ?? []);
+        setAccountRows(data.loggedInUsers ?? []);
+        setFalsePositiveRows(data.falsePositiveReview?.recentSubmissions ?? []);
         setNextVisitorCursor(data.nextVisitorCursor ?? null);
         setNextLoggedInCursor(data.nextLoggedInCursor ?? null);
-    }, [data]);
+    }
 
-    useEffect(() => {
-        setFalsePositiveRows(analyticsData.falsePositiveReview?.recentSubmissions ?? []);
-    }, [analyticsData.falsePositiveReview]);
+    const failure = (title: string, error: unknown, fallback: string) =>
+        setFeedback({ tone: "danger", title, text: error instanceof Error ? error.message : fallback });
 
-    useEffect(() => {
-        setAccountRows(analyticsData.loggedInUsers ?? []);
-    }, [analyticsData.loggedInUsers]);
+    const relative = (timestamp: number) => {
+        const diff = currentTime - timestamp;
+        if (diff < 60_000) return "just now";
+        if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+        if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+        return `${Math.floor(diff / 86_400_000)}d ago`;
+    };
+    const isOnline = (lastSeen: number) => currentTime - lastSeen < 5 * 60_000;
 
-    useEffect(() => {
-        setHoveredKvPoint(null);
-    }, [selectedRange, analyticsData.kvStats?.history]);
-
-    const handleRefresh = () => {
+    function refresh() {
         setIsRefreshing(true);
         router.refresh();
         setTimeout(() => setIsRefreshing(false), 1000);
-    };
+    }
 
-    const handleFalsePositiveStatusChange = async (
-        submissionId: string,
-        status: "PENDING" | "CONFIRMED_FALSE_POSITIVE" | "REJECTED"
-    ) => {
+    async function changeFalsePositiveStatus(submissionId: string, status: FpStatus) {
         setPendingSubmissionId(submissionId);
+        setFeedback(null);
         try {
             const updated = await updateReportFalsePositiveReviewStatus({ submissionId, status });
-            setFalsePositiveRows((current) => current.map((row) => row.id === submissionId ? updated : row));
-            toast.success("False positive status updated");
+            setFalsePositiveRows((rows) => rows.map((row) => (row.id === submissionId ? updated : row)));
+            setFeedback({ tone: "success", title: "False positive status updated" });
             router.refresh();
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Failed to update false positive status";
-            toast.error(message);
+            failure("Could not update the status", error, "Failed to update false positive status");
         } finally {
             setPendingSubmissionId(null);
         }
-    };
+    }
 
-    const handleResetReportFunnel = async () => {
+    async function resetFunnel() {
         setIsResettingFunnel(true);
+        setFeedback(null);
         try {
             await resetAdminReportFunnel();
-            toast.success("Report funnel counters reset");
+            setFeedback({ tone: "success", title: "Report funnel counters reset" });
             setIsResetDialogOpen(false);
             router.refresh();
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Failed to reset report funnel";
-            toast.error(message);
+            setIsResetDialogOpen(false);
+            failure("Could not reset the funnel", error, "Failed to reset report funnel");
         } finally {
             setIsResettingFunnel(false);
         }
-    };
+    }
 
-    const handleDeleteAccount = async () => {
+    async function deleteAccount() {
         if (!deleteCandidate) return;
-
-        setDeletingUserId(deleteCandidate.id);
+        const target = deleteCandidate;
+        setDeletingUserId(target.id);
+        setFeedback(null);
         try {
-            await deleteLoggedInUserAccount({ userId: deleteCandidate.id });
-            setAccountRows((current) => current.filter((user) => user.id !== deleteCandidate.id));
-            toast.success("Incomplete account deleted");
-            setDeleteCandidate(null);
+            await deleteLoggedInUserAccount({ userId: target.id });
+            setAccountRows((rows) => rows.filter((u) => u.id !== target.id));
+            setFeedback({ tone: "success", title: "Incomplete account deleted" });
             router.refresh();
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Failed to delete account";
-            toast.error(message);
+            failure("Could not delete the account", error, "Failed to delete account");
         } finally {
             setDeletingUserId(null);
+            setDeleteCandidate(null);
         }
-    };
+    }
 
-    const handleLoadMoreVisitors = async () => {
-        if (!nextVisitorCursor || isLoadingMoreVisitors) return;
-        setIsLoadingMoreVisitors(true);
-        setIsDetailsLoading(true);
+    async function loadMore(kind: "visitors" | "accounts") {
+        const cursor = kind === "visitors" ? nextVisitorCursor : nextLoggedInCursor;
+        if (!cursor || loadingMore) return;
+        setLoadingMore(kind);
+        setFeedback(null);
+        const query =
+            kind === "visitors"
+                ? `visitorLimit=10&visitorCursor=${encodeURIComponent(cursor)}&loggedInLimit=10`
+                : `visitorLimit=10&loggedInLimit=10&loggedInCursor=${encodeURIComponent(cursor)}`;
         try {
-            const response = await fetch(
-                `/api/admin/stats/details?visitorLimit=10&visitorCursor=${encodeURIComponent(nextVisitorCursor)}&loggedInLimit=10`,
-                { cache: "no-store" }
-            );
-            if (!response.ok) {
-                toast.error("Failed to load more visitors");
-                return;
+            const response = await fetch(`/api/admin/stats/details?${query}`, { cache: "no-store" });
+            if (!response.ok) throw new Error(`The details request returned HTTP ${response.status}.`);
+            const details = (await response.json()) as Partial<AnalyticsData>;
+            if (kind === "visitors") {
+                setVisitorRows((rows) => [...rows, ...(details.recentVisitors ?? [])]);
+                setNextVisitorCursor(details.nextVisitorCursor ?? null);
+            } else {
+                setAccountRows((rows) => [...rows, ...(details.loggedInUsers ?? [])]);
+                setNextLoggedInCursor(details.nextLoggedInCursor ?? null);
             }
-            const details = await response.json() as Partial<AnalyticsData>;
-            setVisitorRows((current) => [...current, ...(details.recentVisitors ?? [])]);
-            setNextVisitorCursor(details.nextVisitorCursor ?? null);
             setAnalyticsData((current) => ({
                 ...current,
                 activeUsers24h: details.activeUsers24h ?? current.activeUsers24h,
@@ -185,1074 +212,363 @@ export default function StatsDashboardClient({
                 retentionRate30d: details.retentionRate30d ?? current.retentionRate30d,
             }));
         } catch (error) {
-            console.error("Failed to load more visitors:", error);
-            toast.error("Failed to load more visitors");
+            failure(kind === "visitors" ? "Could not load more visitors" : "Could not load more accounts", error, "The request failed.");
         } finally {
-            setIsLoadingMoreVisitors(false);
-            setIsDetailsLoading(false);
+            setLoadingMore(null);
         }
-    };
-
-    const handleLoadMoreLoggedInUsers = async () => {
-        if (!nextLoggedInCursor || isLoadingMoreLoggedIn) return;
-        setIsLoadingMoreLoggedIn(true);
-        setIsDetailsLoading(true);
-        try {
-            const response = await fetch(
-                `/api/admin/stats/details?visitorLimit=10&loggedInLimit=10&loggedInCursor=${encodeURIComponent(nextLoggedInCursor)}`,
-                { cache: "no-store" }
-            );
-            if (!response.ok) {
-                toast.error("Failed to load more accounts");
-                return;
-            }
-            const details = await response.json() as Partial<AnalyticsData>;
-            setAccountRows((current) => [...current, ...(details.loggedInUsers ?? [])]);
-            setNextLoggedInCursor(details.nextLoggedInCursor ?? null);
-            setAnalyticsData((current) => ({
-                ...current,
-                activeUsers24h: details.activeUsers24h ?? current.activeUsers24h,
-                returningUsers30d: details.returningUsers30d ?? current.returningUsers30d,
-                retentionRate30d: details.retentionRate30d ?? current.retentionRate30d,
-            }));
-        } catch (error) {
-            console.error("Failed to load more logged-in accounts:", error);
-            toast.error("Failed to load more accounts");
-        } finally {
-            setIsLoadingMoreLoggedIn(false);
-            setIsDetailsLoading(false);
-        }
-    };
-
-    const formatIST = (timestamp: number) => {
-        return new Intl.DateTimeFormat('en-IN', {
-            timeZone: 'Asia/Kolkata',
-            dateStyle: 'medium',
-            timeStyle: 'medium',
-            hour12: true,
-        }).format(new Date(timestamp));
-    };
-
-    const getRelativeTime = (timestamp: number) => {
-        const diff = currentTime - timestamp;
-
-        if (diff < 60000) return 'Just now';
-        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-        return `${Math.floor(diff / 86400000)}d ago`;
-    };
-
-    const isOnline = (lastSeen: number) => {
-        return (currentTime - lastSeen) < 5 * 60 * 1000; // 5 minutes
-    };
-
-    const formatSize = (bytes: number) => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
+    }
 
     const returningUsers = analyticsData.returningUsers30d ?? 0;
     const retentionRate = (analyticsData.retentionRate30d ?? 0).toFixed(1);
-    const avgQueriesPerUser = analyticsData.totalVisitors > 0
-        ? (analyticsData.totalQueries / analyticsData.totalVisitors).toFixed(1)
-        : "0";
-    const reportFunnel = analyticsData.reportFunnel;
-    const weeklyReportViews = reportFunnel?.weekly.report_viewed_shared ?? 0;
-    const weeklyFixStarts = reportFunnel?.weekly.report_fix_chat_started ?? 0;
-    const weeklyLoginGates = reportFunnel?.weekly.report_fix_login_gate_shown ?? 0;
-    const weeklyConversionRate = reportFunnel?.weeklyConversionRate ?? 0;
-    const falsePositiveReview = analyticsData.falsePositiveReview;
-    const loggedInUsers = accountRows;
-    const selectionStats = analyticsData.searchPerformance?.byWindow?.[selectionRange] ?? {
-        avgSelectionMs: 0,
-        indexHitRate: 0,
-        fallbackRate: 0,
-        selections: 0,
-    };
-    const incompleteLoggedInUsers = useMemo(
-        () => accountRows.filter((user) => !user.email),
-        [accountRows]
+    const avgQueries = analyticsData.totalVisitors > 0 ? (analyticsData.totalQueries / analyticsData.totalVisitors).toFixed(1) : "0";
+    const funnel = analyticsData.reportFunnel;
+    const fpSummary = analyticsData.falsePositiveReview;
+    const selection = analyticsData.searchPerformance?.byWindow?.[selectionRange] ?? { avgSelectionMs: 0, indexHitRate: 0, fallbackRate: 0, selections: 0 };
+    const incompleteCount = accountRows.filter((u) => !u.email).length;
+
+    const sortedVisitors = [...visitorRows].sort((a, b) => {
+        const av = a[sortKey] ?? "";
+        const bv = b[sortKey] ?? "";
+        if (av < bv) return sortDir === "asc" ? -1 : 1;
+        if (av > bv) return sortDir === "asc" ? 1 : -1;
+        return 0;
+    });
+
+    const history = analyticsData.kvStats?.history ?? [];
+    const latestPoint = history[history.length - 1]?.timestamp ?? 0;
+    const horizon = (currentTime > 0 ? currentTime : latestPoint) - RANGE_MS[selectedRange];
+    const rangedHistory = history.filter((h) => h.timestamp >= horizon);
+    const sparkValues = rangedHistory.length > 60 ? rangedHistory.filter((_, i) => i % Math.ceil(rangedHistory.length / 60) === 0) : rangedHistory;
+    const kvMax = analyticsData.kvStats?.maxSize || 0;
+    const kvNow = analyticsData.kvStats?.currentSize || 0;
+
+    const deviceItems = Object.entries(analyticsData.deviceStats)
+        .filter(([, count]) => count > 0)
+        .map(([device, count]) => ({ label: device, value: count, display: `${count} (${Math.round((count / Math.max(analyticsData.totalVisitors, 1)) * 100)}%)`, tone: "copper" as const }));
+    const countryItems = Object.entries(analyticsData.countryStats)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 6)
+        .map(([name, count]) => ({ label: name, value: count, tone: "patina" as const }));
+
+    const overview = (
+        <div className="space-y-10">
+            <section aria-labelledby="kpi-h" className="space-y-4">
+                <h2 id="kpi-h" className="text-nv-title font-medium text-nv-ivory-50">
+                    Usage
+                </h2>
+                <MetricGroup className="md:grid-cols-5">
+                    <Metric label="Visitors" value={analyticsData.totalVisitors} source={`${returningUsers} returning, analytics store`} />
+                    <Metric label="Queries" value={analyticsData.totalQueries} source={`${avgQueries} per visitor`} />
+                    <Metric label="Retention, 30 days" value={`${retentionRate}%`} unit="" source="2+ active days over all active users" />
+                    <Metric label="Logged-in accounts" value={analyticsData.totalLoggedInUsers} source={`${accountRows.length} loaded, Postgres`} />
+                    <Metric label="KV storage" value={formatSize(kvNow)} source={`${((kvNow / (kvMax || 1)) * 100).toFixed(2)}% of ${formatSize(kvMax)}`} />
+                </MetricGroup>
+                <p className="m-0 text-nv-small text-nv-ivory-300">
+                    Active in the last 24 hours: <span className="nv-num text-nv-ivory-100">{analyticsData.activeUsers24h}</span>. Totals come from the analytics store and carry no trend comparison.
+                </p>
+            </section>
+
+            <section aria-labelledby="split-h" className="grid gap-8 md:grid-cols-2">
+                <div className="space-y-3">
+                    <h2 id="split-h" className="text-nv-title font-medium text-nv-ivory-50">
+                        Devices and countries
+                    </h2>
+                    {deviceItems.length > 0 ? <BarList caption="Visitors by device" items={deviceItems} /> : <p className="m-0 text-nv-ivory-300">No device data recorded.</p>}
+                </div>
+                <div className="md:pt-10">{countryItems.length > 0 ? <BarList caption="Top countries by visitors" items={countryItems} /> : <p className="m-0 text-nv-ivory-300">No country data recorded.</p>}</div>
+            </section>
+
+            <section aria-labelledby="search-h" className="space-y-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                    <h2 id="search-h" className="text-nv-title font-medium text-nv-ivory-50">
+                        File selection performance
+                    </h2>
+                    <Select id="sel-range" label="Window" value={selectionRange} onChange={setSelectionRange} options={[{ value: "24h", label: "Last 24 hours" }, { value: "7d", label: "Last 7 days" }]} />
+                </div>
+                <MetricGroup>
+                    <Metric label="Average selection" value={selection.avgSelectionMs} unit="ms" source="selection timings" />
+                    <Metric label="Index hit rate" value={`${selection.indexHitRate.toFixed(1)}%`} source="selection timings" />
+                    <Metric label="Fallback rate" value={`${selection.fallbackRate.toFixed(1)}%`} source="selection timings" />
+                    <Metric label="Selections" value={selection.selections} source="selection timings" />
+                </MetricGroup>
+            </section>
+
+            <section aria-labelledby="funnel-h" className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 id="funnel-h" className="text-nv-title font-medium text-nv-ivory-50">
+                        Report to chat funnel, 7 days
+                    </h2>
+                    <Button variant="danger" leading={<RefreshCw aria-hidden className="size-4" />} loading={isResettingFunnel} onClick={() => setIsResetDialogOpen(true)}>
+                        Reset funnel
+                    </Button>
+                </div>
+                <MetricGroup>
+                    <Metric label="Shared views" value={funnel?.weekly.report_viewed_shared ?? 0} source="funnel counters" />
+                    <Metric label="Login gates shown" value={funnel?.weekly.report_fix_login_gate_shown ?? 0} source="funnel counters" />
+                    <Metric label="Fix chats started" value={funnel?.weekly.report_fix_chat_started ?? 0} source="funnel counters" />
+                    <Metric label="Conversion" value={`${(funnel?.weeklyConversionRate ?? 0).toFixed(1)}%`} source="chats / shared views" />
+                </MetricGroup>
+            </section>
+
+            <section aria-labelledby="kv-h" className="space-y-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                    <h2 id="kv-h" className="text-nv-title font-medium text-nv-ivory-50">
+                        KV storage history
+                    </h2>
+                    <Select
+                        id="kv-range"
+                        label="Range"
+                        value={selectedRange}
+                        onChange={setSelectedRange}
+                        options={[{ value: "24h", label: "Last 24 hours" }, { value: "1w", label: "Last week" }, { value: "1m", label: "Last month" }, { value: "3m", label: "Last 3 months" }]}
+                    />
+                </div>
+                {sparkValues.length < 2 ? (
+                    <p className="m-0 text-nv-ivory-300">Not enough storage samples in this range to draw a trend yet.</p>
+                ) : (
+                    <>
+                        <Sparkline
+                            values={sparkValues.map((p) => p.size)}
+                            label="KV storage size"
+                            summary={`${sparkValues.length} samples from ${formatSize(sparkValues[0]?.size ?? 0)} to ${formatSize(sparkValues[sparkValues.length - 1]?.size ?? 0)}`}
+                            width={640}
+                            height={96}
+                            className="max-w-2xl [&>svg]:max-w-none"
+                        />
+                        <p className="m-0 text-nv-small text-nv-ivory-300">
+                            {sparkValues.length} samples, {new Date(sparkValues[0]?.timestamp ?? 0).toLocaleString()} to {new Date(sparkValues[sparkValues.length - 1]?.timestamp ?? 0).toLocaleString()}. Limit {formatSize(kvMax)}.
+                        </p>
+                    </>
+                )}
+            </section>
+
+            <section aria-labelledby="sess-h" className="space-y-2">
+                <h2 id="sess-h" className="text-nv-title font-medium text-nv-ivory-50">
+                    Your current session
+                </h2>
+                <dl className="m-0 grid gap-4 text-nv-small sm:grid-cols-3">
+                    <div>
+                        <dt className="nv-eyebrow">Country</dt>
+                        <dd className="m-0 text-nv-ivory-100">{country || "Unknown"}</dd>
+                    </div>
+                    <div>
+                        <dt className="nv-eyebrow">Device</dt>
+                        <dd className="m-0 text-nv-ivory-100">{isMobile ? "Mobile" : "Desktop"}</dd>
+                    </div>
+                    <div className="min-w-0">
+                        <dt className="nv-eyebrow">User agent</dt>
+                        <dd className="m-0 break-all font-nv-mono text-nv-micro text-nv-ivory-200">{userAgent || "Not sent"}</dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
     );
 
-    const sortedVisitors = useMemo(() => {
-        const items = [...visitorRows];
-        items.sort((a, b) => {
-            const aValue = a[sortConfig.key as keyof VisitorData] ?? '';
-            const bValue = b[sortConfig.key as keyof VisitorData] ?? '';
+    const fpColumns: Column<(typeof falsePositiveRows)[number]>[] = [
+        {
+            key: "repo",
+            header: "Repository",
+            render: (s) => (
+                <span className="flex flex-col">
+                    <span>
+                        {s.owner}/{s.repo}
+                    </span>
+                    <span className="nv-eyebrow">{s.isSharedView ? "Shared report" : "Private report"}</span>
+                </span>
+            ),
+        },
+        {
+            key: "finding",
+            header: "Finding",
+            render: (s) => (
+                <span className="flex flex-col">
+                    <span>{s.title}</span>
+                    <span className="font-nv-mono text-nv-micro text-nv-ivory-300">
+                        {s.severity} · {s.file}
+                        {s.line ? `:${s.line}` : ""}
+                    </span>
+                </span>
+            ),
+        },
+        {
+            key: "notes",
+            header: "Reporter notes",
+            render: (s) => (
+                <span className="flex max-w-md flex-col gap-1.5">
+                    <Badge status="warning">{formatReason(s.reason)}</Badge>
+                    <span className="whitespace-pre-wrap text-nv-small text-nv-ivory-200">{s.details}</span>
+                </span>
+            ),
+        },
+        { key: "by", header: "Submitted by", render: (s) => (s.submittedByGithubLogin ? `@${s.submittedByGithubLogin}` : "Anonymous") },
+        { key: "at", header: "Created", render: (s) => `${formatIST(s.createdAt)} (${relative(s.createdAt)})` },
+        {
+            key: "status",
+            header: "Review status",
+            render: (s) => (
+                <select
+                    aria-label={`Review status for ${s.title}`}
+                    value={s.status}
+                    disabled={pendingSubmissionId === s.id}
+                    onChange={(e) => void changeFalsePositiveStatus(s.id, e.target.value as FpStatus)}
+                    className={`${selectClass} min-w-52`}
+                >
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED_FALSE_POSITIVE">Confirmed false positive</option>
+                    <option value="REJECTED">Rejected</option>
+                </select>
+            ),
+        },
+    ];
 
-            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-        return items;
-    }, [visitorRows, sortConfig]);
+    const falsePositives = (
+        <div className="space-y-4">
+            <MetricGroup>
+                <Metric label="Total" value={fpSummary?.total ?? 0} source="review queue" />
+                <Metric label="Pending" value={fpSummary?.pending ?? 0} source="review queue" />
+                <Metric label="Confirmed" value={fpSummary?.confirmedFalsePositive ?? 0} source="review queue" />
+                <Metric label="Rejected" value={fpSummary?.rejected ?? 0} source="review queue" />
+            </MetricGroup>
+            <DataTable caption="Recent false positive submissions" columns={fpColumns} rows={falsePositiveRows} rowKey={(s) => s.id} empty="No false positive submissions yet." />
+        </div>
+    );
 
-    const displayedVisitors = useMemo(() => {
-        return sortedVisitors;
-    }, [sortedVisitors]);
-    const displayedLoggedInUsers = useMemo(() => {
-        return loggedInUsers;
-    }, [loggedInUsers]);
+    const accountColumns: Column<LoggedInUserData>[] = [
+        {
+            key: "account",
+            header: "Account",
+            render: (u) => (
+                <span className="flex flex-col">
+                    <span className="flex items-center gap-2">
+                        {u.githubLogin ? `@${u.githubLogin}` : u.id.slice(0, 10)}
+                        {!u.email && <StatusPill status="danger">Incomplete</StatusPill>}
+                    </span>
+                    <span className="nv-eyebrow">Joined {formatIST(u.createdAt)}</span>
+                </span>
+            ),
+        },
+        { key: "email", header: "Email", render: (u) => u.email || "Missing email" },
+        { key: "q", header: "Queries", numeric: true, render: (u) => u.queryCount },
+        { key: "scans", header: "Scans", numeric: true, render: (u) => u.scanCount },
+        { key: "search", header: "Searches", numeric: true, render: (u) => u.searchCount },
+        { key: "chat", header: "Chats", numeric: true, render: (u) => u.chatCount },
+        { key: "last", header: "Last activity (IST)", render: (u) => (u.lastActivityAt ? `${formatIST(u.lastActivityAt)} (${relative(u.lastActivityAt)})` : "No activity") },
+        {
+            key: "actions",
+            header: "Actions",
+            render: (u) =>
+                !u.email && u.githubLogin !== currentUsername ? (
+                    <Button variant="danger" leading={<Trash2 aria-hidden className="size-4" />} loading={deletingUserId === u.id} onClick={() => setDeleteCandidate(u)}>
+                        Delete
+                    </Button>
+                ) : (
+                    <span className="text-nv-small text-nv-ivory-300">{u.githubLogin === currentUsername ? "Protected" : "Retained"}</span>
+                ),
+        },
+    ];
 
-    const requestSort = (key: keyof VisitorData | 'id') => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
+    const accounts = (
+        <div className="space-y-4">
+            <p className="m-0 text-nv-small text-nv-ivory-300">
+                Showing <span className="nv-num">{accountRows.length}</span> of <span className="nv-num">{analyticsData.totalLoggedInUsers}</span>. <span className="nv-num">{incompleteCount}</span> loaded accounts have no email and can be deleted.
+            </p>
+            <DataTable caption="Logged-in accounts" columns={accountColumns} rows={accountRows} rowKey={(u) => u.id} empty="No logged-in account activity yet." />
+            {nextLoggedInCursor && (
+                <Button loading={loadingMore === "accounts"} onClick={() => void loadMore("accounts")}>
+                    Show 10 more accounts
+                </Button>
+            )}
+        </div>
+    );
 
-    const renderSortIcon = (column: keyof VisitorData | 'id') => {
-        if (sortConfig.key !== column) return <ArrowUpDown className="w-4 h-4 text-zinc-600" />;
-        return sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4 text-purple-400" /> : <ChevronDown className="w-4 h-4 text-purple-400" />;
-    };
+    const visitorColumns: Column<VisitorData>[] = [
+        { key: "id", header: "Actor", render: (v) => <span className="font-nv-mono text-nv-small">{v.actorType === "authenticated" && v.githubLogin ? `@${v.githubLogin}` : v.id.slice(0, 16)}</span> },
+        { key: "type", header: "Type", render: (v) => <Badge status={v.actorType === "authenticated" ? "info" : "neutral"}>{v.actorType}</Badge> },
+        { key: "country", header: "Country", render: (v) => v.country },
+        { key: "device", header: "Device", render: (v) => <span className="capitalize">{v.device}</span> },
+        { key: "q", header: "Queries", numeric: true, render: (v) => v.queryCount || 0 },
+        { key: "seen", header: "Last seen (IST)", render: (v) => `${formatIST(v.lastSeen)} (${relative(v.lastSeen)})` },
+        { key: "online", header: "Status", render: (v) => <StatusPill status={isOnline(v.lastSeen) ? "success" : "neutral"}>{isOnline(v.lastSeen) ? "Online" : "Offline"}</StatusPill> },
+    ];
+
+    const visitors = (
+        <div className="space-y-4">
+            <div className="flex flex-wrap items-end gap-3">
+                <Select
+                    id="v-sort"
+                    label="Sort by"
+                    value={sortKey}
+                    onChange={setSortKey}
+                    options={[{ value: "lastSeen", label: "Last seen" }, { value: "queryCount", label: "Queries" }, { value: "country", label: "Country" }, { value: "device", label: "Device" }, { value: "id", label: "Actor ID" }]}
+                />
+                <Button onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))} aria-label={`Sort direction: ${sortDir === "asc" ? "ascending" : "descending"}. Activate to reverse.`}>
+                    {sortDir === "asc" ? "Ascending" : "Descending"}
+                </Button>
+                <p className="m-0 text-nv-small text-nv-ivory-300">
+                    Showing <span className="nv-num">{sortedVisitors.length}</span>
+                    {nextVisitorCursor ? ", more available" : ""}. Sorting applies to loaded rows.
+                </p>
+            </div>
+            <DataTable caption="Recent visitors, anonymous and signed in" columns={visitorColumns} rows={sortedVisitors} rowKey={(v) => v.id} empty="No visitors recorded in the current dataset." />
+            {nextVisitorCursor && (
+                <Button loading={loadingMore === "visitors"} onClick={() => void loadMore("visitors")}>
+                    Show 10 more visitors
+                </Button>
+            )}
+        </div>
+    );
 
     return (
         <div className="space-y-8">
-            <div className="max-w-7xl mx-auto space-y-8">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                                Analytics Dashboard
-                            </h1>
-                            <p className="text-zinc-300 text-sm mt-1">Real-time platform performance monitoring (IST)</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        {isDetailsLoading && (
-                            <span className="hidden sm:inline-flex rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-cyan-200">
-                                Loading Detailed Panels…
-                            </span>
-                        )}
-                        <div className="text-right hidden sm:block">
-                            <div className="text-sm text-zinc-200">Current Time (IST)</div>
-                            <div className="text-xs font-mono text-zinc-300">
-                                {currentTime > 0 ? formatIST(currentTime) : "Syncing..."}
-                            </div>
-                        </div>
-                        <button
-                            onClick={handleRefresh}
-                            disabled={isRefreshing}
-                            className="flex items-center gap-2 bg-zinc-900 border border-white/10 px-4 py-2 rounded-lg hover:bg-zinc-800 transition-all active:scale-95 disabled:opacity-50"
-                        >
-                            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-purple-400' : ''}`} />
-                            <span className="text-sm font-medium">Refresh</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Session Debug Info */}
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-zinc-900/30 border border-yellow-500/10 rounded-xl p-4 overflow-hidden relative"
-                >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500/50" />
-                    <h3 className="text-yellow-500/80 font-mono text-[10px] mb-3 uppercase tracking-[0.2em]">Your Current Session</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm font-mono">
-                        <div className="space-y-1">
-                            <span className="text-zinc-300 block text-[10px] uppercase">Country</span>
-                            <span className="text-zinc-200 flex items-center gap-2">
-                                <Globe className="w-3 h-3 text-zinc-200" />
-                                {country || "Unknown"}
-                            </span>
-                        </div>
-                        <div className="space-y-1">
-                            <span className="text-zinc-300 block text-[10px] uppercase">Device</span>
-                            <span className={isMobile ? "text-orange-400 flex items-center gap-2" : "text-blue-400 flex items-center gap-2"}>
-                                {isMobile ? <Smartphone className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}
-                                {isMobile ? "Mobile" : "Desktop"}
-                            </span>
-                        </div>
-                        <div className="space-y-1 sm:col-span-1">
-                            <span className="text-zinc-300 block text-[10px] uppercase">User Agent Snippet</span>
-                            <span className="text-zinc-300 truncate block text-xs" title={userAgent}>{userAgent.slice(0, 40)}...</span>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Main KPIs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <StatsCard
-                        title="Total Visitors"
-                        value={analyticsData.totalVisitors}
-                        subValue={`${returningUsers} returning`}
-                        infoText="Returning users are actors active on at least 2 distinct days in the last 30 days."
-                        icon={<Users className="w-5 h-5 text-purple-400" />}
-                        trend="+12%"
-                    />
-                    <StatsCard
-                        title="Total Queries"
-                        value={analyticsData.totalQueries}
-                        subValue={`${avgQueriesPerUser} per visitor`}
-                        icon={<Activity className="w-5 h-5 text-blue-400" />}
-                        trend="+5%"
-                    />
-                    <StatsCard
-                        title="Retention Rate"
-                        value={`${retentionRate}%`}
-                        subValue="Returning users"
-                        infoText="Retention rate = returning users (2+ distinct active days in last 30 days) divided by all active users in last 30 days."
-                        icon={<TrendingUp className="w-5 h-5 text-green-400" />}
-                    />
-                    <StatsCard
-                        title="Logged Accounts"
-                        value={analyticsData.totalLoggedInUsers}
-                        subValue={`${displayedLoggedInUsers.length} loaded${nextLoggedInCursor ? " (more available)" : ""}`}
-                        icon={<UserCheck className="w-5 h-5 text-cyan-400" />}
-                    />
-                    <StatsCard
-                        title="KV Storage"
-                        value={formatSize(analyticsData.kvStats?.currentSize || 0)}
-                        subValue={`${((analyticsData.kvStats?.currentSize || 0) / (analyticsData.kvStats?.maxSize || 1) * 100).toFixed(2)}% of ${formatSize(analyticsData.kvStats?.maxSize || 0)}`}
-                        icon={<Database className="w-5 h-5 text-amber-400" />}
-                    />
-                </div>
-
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
-                    <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-                        <div>
-                            <h2 className="text-lg font-semibold flex items-center gap-2">
-                                <Search className="w-5 h-5 text-cyan-400" />
-                                Search Performance
-                            </h2>
-                            <span className="text-xs text-zinc-300 uppercase tracking-wider">File selection speed + fallback rate</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                            {(["24h", "7d"] as const).map((range) => (
-                                <button
-                                    key={range}
-                                    type="button"
-                                    onClick={() => setSelectionRange(range)}
-                                    className={`rounded-lg border px-3 py-1 font-semibold uppercase tracking-wider transition-colors ${selectionRange === range ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-200" : "border-white/10 bg-zinc-900 text-zinc-400 hover:text-zinc-200"}`}
-                                >
-                                    {range}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <MetricTile label="Avg Selection" value={`${selectionStats.avgSelectionMs} ms`} />
-                        <MetricTile label="Index Hit Rate" value={`${selectionStats.indexHitRate.toFixed(1)}%`} />
-                        <MetricTile label="Fallback Rate" value={`${selectionStats.fallbackRate.toFixed(1)}%`} />
-                        <MetricTile label="Selections" value={selectionStats.selections} />
-                    </div>
-                </div>
-
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
-                    <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-                        <div>
-                            <h2 className="text-lg font-semibold flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-indigo-400" />
-                                Report to Chat Funnel (7d)
-                            </h2>
-                            <span className="text-xs text-zinc-300 uppercase tracking-wider">{"North star: report -> chat starts"}</span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setIsResetDialogOpen(true)}
-                            disabled={isResettingFunnel}
-                            className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-red-200 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            <RefreshCw className={`w-3.5 h-3.5 ${isResettingFunnel ? "animate-spin" : ""}`} />
-                            Reset Funnel
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <MetricTile label="Shared Views" value={weeklyReportViews} />
-                        <MetricTile label="Login Gates" value={weeklyLoginGates} />
-                        <MetricTile label="Fix Chats" value={weeklyFixStarts} />
-                        <MetricTile label="Conv Rate" value={`${weeklyConversionRate.toFixed(1)}%`} />
-                    </div>
-                </div>
-
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
-                    <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-                        <h2 className="text-lg font-semibold flex items-center gap-2">
-                            <ShieldAlert className="w-5 h-5 text-amber-400" />
-                            False Positive Review
-                        </h2>
-                        <span className="text-xs text-zinc-300 uppercase tracking-wider">Recent submissions + review state</span>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <MetricTile label="Total" value={falsePositiveReview?.total ?? 0} />
-                        <MetricTile label="Pending" value={falsePositiveReview?.pending ?? 0} />
-                        <MetricTile label="Confirmed" value={falsePositiveReview?.confirmedFalsePositive ?? 0} />
-                        <MetricTile label="Rejected" value={falsePositiveReview?.rejected ?? 0} />
-                    </div>
-                </div>
-
-                {/* Secondary Metrics & Simple Trends */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-semibold flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-blue-400" />
-                                Activity Visualization
-                            </h2>
-                            <div className="flex items-center gap-3 text-xs text-zinc-300">
-                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-purple-500" /> Visitors</div>
-                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> Queries</div>
-                            </div>
-                        </div>
-
-                        {/* Simple Bar Visualization of Device Breakdown because we don't have time-series history in KV yet */}
-                        <div className="space-y-8">
-                            <div>
-                                <div className="flex justify-between items-end mb-2">
-                                    <span className="text-sm text-zinc-200">Device Distribution</span>
-                                    <span className="text-xs text-zinc-300">BY PERCENTAGE</span>
-                                </div>
-                                <div className="h-12 w-full flex rounded-xl overflow-hidden bg-zinc-800">
-                                    {Object.entries(analyticsData.deviceStats).map(([device, count]) => {
-                                        const percentage = (count / analyticsData.totalVisitors) * 100;
-                                        if (percentage === 0) return null;
-                                        const colors = {
-                                            desktop: 'bg-blue-500',
-                                            mobile: 'bg-orange-500',
-                                            unknown: 'bg-zinc-600'
-                                        };
-                                        return (
-                                            <motion.div
-                                                key={device}
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${percentage}%` }}
-                                                className={`${colors[device as keyof typeof colors] || 'bg-zinc-500'} h-full flex items-center justify-center relative group`}
-                                            >
-                                                <span className="opacity-0 group-hover:opacity-100 transition-opacity absolute text-[10px] font-bold text-white uppercase whitespace-nowrap">
-                                                    {device}: {Math.round(percentage)}%
-                                                </span>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4">
-                                <div className="space-y-3">
-                                    <h3 className="text-sm font-medium text-zinc-300">Top Countries</h3>
-                                    <div className="space-y-4">
-                                        {Object.entries(analyticsData.countryStats)
-                                            .sort(([, a], [, b]) => b - a)
-                                            .slice(0, 4)
-                                            .map(([country, count]) => (
-                                                <div key={country} className="space-y-1">
-                                                    <div className="flex justify-between text-xs">
-                                                        <span className="text-zinc-200">{country}</span>
-                                                        <span className="text-zinc-300">{count}</span>
-                                                    </div>
-                                                    <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                                                        <motion.div
-                                                            initial={{ width: 0 }}
-                                                            animate={{ width: `${(count / analyticsData.totalVisitors) * 100}%` }}
-                                                            className="h-full bg-purple-500/40"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                    </div>
-                                </div>
-
-                                <div className="bg-purple-900/10 border border-purple-500/20 rounded-xl p-4 flex flex-col justify-center">
-                                    <div className="flex items-center gap-3 mb-2 text-purple-400">
-                                        <UserCheck className="w-5 h-5" />
-                                        <span className="font-semibold">Engagement Insight</span>
-                                    </div>
-                                    <p className="text-sm text-zinc-200 leading-relaxed">
-                                        Your platform has a <span className="text-white font-medium">{retentionRate}% retention rate</span>.
-                                        High query volume from {Object.entries(analyticsData.countryStats).sort(([, a], [, b]) => b - a)[0]?.[0] || 'users'} suggests
-                                        strong feature adoption in those regions.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
-                        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-green-400" />
-                            Activity Pulse
-                        </h2>
-                        <div className="space-y-6">
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-200">Active (24h)</span>
-                                    <span className="font-mono text-zinc-200">{analyticsData.activeUsers24h}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-200">Avg. Queries</span>
-                                    <span className="font-mono text-zinc-200">{avgQueriesPerUser}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-200">Total Sessions</span>
-                                    <span className="font-mono text-zinc-200">{analyticsData.totalVisitors}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-zinc-200">Returning Users</span>
-                                    <span className="font-mono text-zinc-200">{returningUsers}</span>
-                                </div>
-                            </div>
-
-                            <div className="pt-4">
-                                <button className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-zinc-300 transition-colors">
-                                    Export CSV Report
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* storage usage chart */}
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h2 className="text-xl font-semibold flex items-center gap-2">
-                                <Database className="w-5 h-5 text-amber-400" />
-                                KV Cache Storage History
-                            </h2>
-                            <p className="text-zinc-300 text-xs mt-1">Storage usage trend over the selected period (MB)</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <select
-                                value={selectedRange}
-                                onChange={(e) => setSelectedRange(e.target.value as HistoryRange)}
-                                className="bg-white/5 border border-white/10 rounded-lg text-xs py-1 px-3 text-zinc-300 focus:outline-none focus:border-amber-500/50"
-                            >
-                                <option value="24h">Last 24 Hours</option>
-                                <option value="1w">Last Week</option>
-                                <option value="1m">Last Month</option>
-                                <option value="3m">Last 3 Months</option>
-                            </select>
-                            <div className="flex items-center gap-2 text-xs font-mono text-zinc-200">
-                                <Zap className="w-3 h-3 text-amber-500" />
-                                <span>LIMIT: {formatSize(analyticsData.kvStats?.maxSize || 0)}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="h-64 w-full relative">
-                        {(() => {
-                            const history = analyticsData.kvStats?.history || [];
-                            if (history.length < 2) return (
-                                <div className="flex flex-col items-center justify-center h-full text-zinc-600">
-                                    <Database className="w-10 h-10 opacity-10 mb-2" />
-                                    <p className="text-sm">Collecting storage history data...</p>
-                                </div>
-                            );
-
-                            const now = currentTime > 0
-                                ? currentTime
-                                : (history[history.length - 1]?.timestamp ?? 0);
-                            const ranges = {
-                                "24h": now - 24 * 60 * 60 * 1000,
-                                "1w": now - 7 * 24 * 60 * 60 * 1000,
-                                "1m": now - 30 * 24 * 60 * 60 * 1000,
-                                "3m": now - 90 * 24 * 60 * 60 * 1000
-                            };
-
-                            let filteredHistory = history.filter(h => h.timestamp >= ranges[selectedRange]);
-
-                            // If too many points, aggregate to keep SVG manageable
-                            const maxPoints = 60;
-                            if (filteredHistory.length > maxPoints) {
-                                const step = Math.ceil(filteredHistory.length / maxPoints);
-                                filteredHistory = filteredHistory.filter((_, i) => i % step === 0);
-                            }
-
-                            if (filteredHistory.length < 2) return (
-                                <div className="flex flex-col items-center justify-center h-full text-zinc-600">
-                                    <Database className="w-10 h-10 opacity-10 mb-2" />
-                                    <p className="text-sm">No data points for this range yet...</p>
-                                </div>
-                            );
-
-                            const points = filteredHistory;
-                            const minSize = Math.min(...points.map((point) => point.size));
-                            const maxSize = Math.max(...points.map((point) => point.size));
-                            const baselineRange = Math.max(maxSize - minSize, 1024);
-                            const padding = baselineRange * 0.1;
-                            const scaledMin = Math.max(0, minSize - padding);
-                            const scaledMax = maxSize + padding;
-                            const scaledRange = Math.max(1, scaledMax - scaledMin);
-
-                            const getRelativeY = (size: number) => {
-                                const rawY = 100 - ((size - scaledMin) / scaledRange) * 100;
-                                return Math.max(0, Math.min(100, rawY));
-                            };
-
-                            const normalizedPoints = points
-                                .map((point, index) => `${index},${getRelativeY(point.size)}`)
-                                .join(" ");
-                            const areaPoints = `0,100 ${normalizedPoints} ${points.length - 1},100`;
-                            const yAxisTicks = [0, 25, 50, 75, 100].map((tick) => ({
-                                tick,
-                                value: scaledMax - (tick / 100) * scaledRange,
-                            }));
-
-                            return (
-                                <div className="w-full h-full pt-2">
-                                    <div className="flex h-full gap-3">
-                                        <div className="hidden w-20 shrink-0 flex-col justify-between pb-6 text-[10px] font-mono text-zinc-300 sm:flex">
-                                            {yAxisTicks.map(({ tick, value }) => (
-                                                <span key={tick} className="leading-none">
-                                                    {formatSize(Math.max(0, value))}
-                                                </span>
-                                            ))}
-                                        </div>
-                                        <div
-                                            className="relative h-full flex-1"
-                                            onMouseLeave={() => setHoveredKvPoint(null)}
-                                        >
-                                            <svg className="h-full w-full overflow-hidden" preserveAspectRatio="none" viewBox={`0 0 ${points.length - 1} 100`}>
-                                                <defs>
-                                                    <linearGradient id="line-gradient" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
-                                                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-                                                    </linearGradient>
-                                                </defs>
-
-                                                {[0, 25, 50, 75, 100].map((y) => (
-                                                    <line
-                                                        key={y}
-                                                        x1="0"
-                                                        y1={y}
-                                                        x2={points.length - 1}
-                                                        y2={y}
-                                                        stroke="rgba(255,255,255,0.05)"
-                                                        strokeWidth="1"
-                                                        vectorEffect="non-scaling-stroke"
-                                                    />
-                                                ))}
-
-                                                <polyline
-                                                    points={areaPoints}
-                                                    fill="url(#line-gradient)"
-                                                    className="transition-all duration-700"
-                                                />
-                                                <polyline
-                                                    points={normalizedPoints}
-                                                    fill="none"
-                                                    stroke="#f59e0b"
-                                                    strokeWidth="2"
-                                                    strokeLinejoin="round"
-                                                    strokeLinecap="round"
-                                                    vectorEffect="non-scaling-stroke"
-                                                    className="transition-all duration-700"
-                                                />
-
-                                                {points.map((point, index) => {
-                                                    const y = getRelativeY(point.size);
-                                                    const xPercent = points.length > 1
-                                                        ? (index / (points.length - 1)) * 100
-                                                        : 0;
-                                                    const isHovered = hoveredKvPoint?.index === index;
-                                                    return (
-                                                        <g key={`${point.timestamp}-${index}`} className="cursor-pointer group/point">
-                                                            <rect
-                                                                x={index - 0.5}
-                                                                y={0}
-                                                                width={1}
-                                                                height={100}
-                                                                fill="transparent"
-                                                                onMouseEnter={() => setHoveredKvPoint({
-                                                                    index,
-                                                                    timestamp: point.timestamp,
-                                                                    size: point.size,
-                                                                    xPercent,
-                                                                    yPercent: y,
-                                                                })}
-                                                            />
-                                                            <circle
-                                                                cx={index}
-                                                                cy={y}
-                                                                r="3"
-                                                                fill="#f59e0b"
-                                                                className={isHovered ? "opacity-100 transition-opacity" : "opacity-0 transition-opacity group-hover/point:opacity-100"}
-                                                                vectorEffect="non-scaling-size"
-                                                            />
-                                                        </g>
-                                                    );
-                                                })}
-                                            </svg>
-
-                                            {hoveredKvPoint && (
-                                                <div
-                                                    className="pointer-events-none absolute z-20 min-w-[170px] -translate-x-1/2 -translate-y-[115%] rounded-lg border border-amber-500/30 bg-zinc-950/95 px-3 py-2 text-xs shadow-lg shadow-black/40"
-                                                    style={{
-                                                        left: `${hoveredKvPoint.xPercent}%`,
-                                                        top: `${hoveredKvPoint.yPercent}%`,
-                                                    }}
-                                                >
-                                                    <p className="font-mono text-[11px] text-amber-300">{formatSize(hoveredKvPoint.size)}</p>
-                                                    <p className="mt-1 text-[10px] text-zinc-200">
-                                                        {new Date(hoveredKvPoint.timestamp).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            <div className="absolute bottom-0 left-0 w-full flex justify-between px-1 text-[9px] font-mono text-zinc-600">
-                                                <span>{new Date(points[0].timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                <span>{new Date(points[points.length - 1].timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                    </div>
-                </div>
-
-                {/* Logged-In Accounts Table */}
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
-                        <h2 className="text-xl font-semibold">False Positive Queue</h2>
-                        <span className="text-xs text-zinc-300 font-mono">
-                            Showing {falsePositiveRows.length} recent submissions
-                        </span>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-zinc-900/80 text-zinc-200 font-medium">
-                                <tr>
-                                    <th className="px-6 py-4">Repository</th>
-                                    <th className="px-6 py-4">Finding</th>
-                                    <th className="px-6 py-4">Reporter Notes</th>
-                                    <th className="px-6 py-4">Submitted By</th>
-                                    <th className="px-6 py-4">Created</th>
-                                    <th className="px-6 py-4">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {falsePositiveRows.map((submission) => (
-                                    <tr key={submission.id} className="hover:bg-white/[0.02] transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-zinc-200 font-medium">{submission.owner}/{submission.repo}</span>
-                                                <span className="text-[10px] text-zinc-300 font-mono uppercase">
-                                                    {submission.isSharedView ? "Shared report" : "Private report"}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-zinc-200">{submission.title}</span>
-                                                <span className="text-xs text-zinc-300">
-                                                    {submission.severity.toUpperCase()} • {submission.file}{submission.line ? `:${submission.line}` : ""}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="max-w-md space-y-2">
-                                                <span className="inline-flex rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
-                                                    {formatFalsePositiveReason(submission.reason)}
-                                                </span>
-                                                <p className="whitespace-pre-wrap text-xs leading-relaxed text-zinc-200">
-                                                    {submission.details}
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-zinc-300">
-                                            {submission.submittedByGithubLogin ? `@${submission.submittedByGithubLogin}` : "Anonymous"}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-zinc-300">{formatIST(submission.createdAt)}</span>
-                                                <span className="text-[10px] text-zinc-300 font-mono uppercase">{getRelativeTime(submission.createdAt)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <select
-                                                value={submission.status}
-                                                onChange={(e) => void handleFalsePositiveStatusChange(
-                                                    submission.id,
-                                                    e.target.value as "PENDING" | "CONFIRMED_FALSE_POSITIVE" | "REJECTED"
-                                                )}
-                                                disabled={pendingSubmissionId === submission.id}
-                                                className="min-w-[210px] rounded-lg border border-white/10 bg-zinc-800 px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
-                                            >
-                                                <option value="PENDING">Pending</option>
-                                                <option value="CONFIRMED_FALSE_POSITIVE">Confirmed False Positive</option>
-                                                <option value="REJECTED">Rejected</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {falsePositiveRows.length === 0 && (
-                                    <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center text-zinc-300">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <ShieldAlert className="w-8 h-8 opacity-20" />
-                                                <p>No false positive submissions yet.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
-                        <div className="flex flex-col gap-2">
-                            <h2 className="text-xl font-semibold">Logged-In Accounts (Postgres)</h2>
-                            <div className="flex flex-wrap items-center gap-2 text-xs">
-                                <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 font-mono text-zinc-300">
-                                    Showing {displayedLoggedInUsers.length} of {analyticsData.totalLoggedInUsers}
-                                </span>
-                                <span className="rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 font-semibold uppercase tracking-wider text-red-200">
-                                    {incompleteLoggedInUsers.length} incomplete without email
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-zinc-900/80 text-zinc-200 font-medium">
-                                <tr>
-                                    <th className="px-6 py-4">Account</th>
-                                    <th className="px-6 py-4">Email</th>
-                                    <th className="px-6 py-4 text-right">Queries</th>
-                                    <th className="px-6 py-4 text-right">Scans</th>
-                                    <th className="px-6 py-4 text-right">Searches</th>
-                                    <th className="px-6 py-4 text-right">Chats</th>
-                                    <th className="px-6 py-4">Last Activity (IST)</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {displayedLoggedInUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-zinc-200 font-medium">
-                                                        {user.githubLogin ? `@${user.githubLogin}` : user.id.slice(0, 10)}
-                                                    </span>
-                                                    {!user.email && (
-                                                        <span className="rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-200">
-                                                            Incomplete
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span className="text-[10px] text-zinc-300 font-mono uppercase">
-                                                    Joined {formatIST(user.createdAt)}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-zinc-300">
-                                            <span className={`inline-flex items-center gap-2 ${user.email ? "" : "text-red-200"}`}>
-                                                <Mail className="w-3 h-3 text-zinc-300" />
-                                                {user.email || "Missing email"}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono text-zinc-200">{user.queryCount}</td>
-                                        <td className="px-6 py-4 text-right font-mono text-zinc-200">{user.scanCount}</td>
-                                        <td className="px-6 py-4 text-right font-mono text-zinc-200">
-                                            <span className="inline-flex items-center gap-1">
-                                                <Search className="w-3 h-3 text-zinc-300" />
-                                                {user.searchCount}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono text-zinc-200">
-                                            <span className="inline-flex items-center gap-1">
-                                                <MessageSquare className="w-3 h-3 text-zinc-300" />
-                                                {user.chatCount}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {user.lastActivityAt ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-zinc-300">{formatIST(user.lastActivityAt)}</span>
-                                                    <span className="text-[10px] text-zinc-300 font-mono uppercase">{getRelativeTime(user.lastActivityAt)}</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-zinc-300">No activity</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            {!user.email && user.githubLogin !== currentUsername ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setDeleteCandidate(user)}
-                                                    disabled={deletingUserId === user.id}
-                                                    className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-red-200 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                    {deletingUserId === user.id ? "Deleting..." : "Delete"}
-                                                </button>
-                                            ) : (
-                                                <span className="text-xs text-zinc-600">
-                                                    {user.githubLogin === currentUsername ? "Protected" : "Retained"}
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {loggedInUsers.length === 0 && (
-                                    <tr>
-                                        <td colSpan={8} className="px-6 py-12 text-center text-zinc-300">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <UserCheck className="w-8 h-8 opacity-20" />
-                                                <p>No logged-in account activity yet.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                    {nextLoggedInCursor && (
-                        <div className="flex justify-center border-t border-white/10 p-4">
-                            <button
-                                type="button"
-                                onClick={() => void handleLoadMoreLoggedInUsers()}
-                                disabled={isLoadingMoreLoggedIn}
-                                className="bg-zinc-900 border border-white/10 px-6 py-2.5 rounded-xl hover:bg-zinc-800 hover:border-white/20 transition-all font-medium text-sm text-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isLoadingMoreLoggedIn ? "Loading..." : "Show 10 more logged-in accounts"}
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Visitors Table */}
-                <div className="bg-zinc-900/50 border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
-                        <h2 className="text-xl font-semibold">Recent Visitors (Anon + Logged-in)</h2>
-                        <span className="text-xs text-zinc-300 font-mono">
-                            Showing {displayedVisitors.length}{nextVisitorCursor ? " (more available)" : ""}
-                        </span>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-zinc-900/80 text-zinc-200 font-medium">
-                                <tr>
-                                    <th className="px-6 py-4 cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('id')}>
-                                        <div className="flex items-center gap-2">
-                                            Actor ID {renderSortIcon("id")}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-4">Type</th>
-                                    <th className="px-6 py-4 cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('country')}>
-                                        <div className="flex items-center gap-2">
-                                            Country {renderSortIcon("country")}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-4 cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('device')}>
-                                        <div className="flex items-center gap-2">
-                                            Device {renderSortIcon("device")}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-4 cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('queryCount')}>
-                                        <div className="flex items-center gap-2">
-                                            Queries {renderSortIcon("queryCount")}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-4 cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('lastSeen')}>
-                                        <div className="flex items-center gap-2">
-                                            Last Seen (IST) {renderSortIcon("lastSeen")}
-                                        </div>
-                                    </th>
-                                    <th className="px-6 py-4 text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                <AnimatePresence mode="popLayout">
-                                    {displayedVisitors.map((visitor) => {
-                                        const online = isOnline(visitor.lastSeen);
-                                        return (
-                                            <motion.tr
-                                                layout
-                                                key={visitor.id}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                className="hover:bg-white/[0.02] transition-colors group"
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 flex items-center justify-center text-[10px] text-zinc-500 group-hover:text-zinc-300 transition-colors">
-                                                            {visitor.id.slice(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <span className="font-mono text-xs text-zinc-500 group-hover:text-zinc-200 transition-colors">
-                                                            {visitor.actorType === "authenticated" && visitor.githubLogin
-                                                                ? `@${visitor.githubLogin}`
-                                                                : visitor.id.slice(0, 16)}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${visitor.actorType === "authenticated" ? "border-cyan-500/20 bg-cyan-500/10 text-cyan-200" : "border-amber-500/20 bg-amber-500/10 text-amber-200"}`}>
-                                                        {visitor.actorType}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-zinc-300">{visitor.country}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`flex items-center gap-2 capitalize ${visitor.device === 'mobile' ? 'text-orange-400/80' : 'text-blue-400/80'}`}>
-                                                        {visitor.device === 'mobile' ? <Smartphone className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}
-                                                        {visitor.device}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 font-mono text-zinc-300">{visitor.queryCount || 0}</td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-zinc-300">{formatIST(visitor.lastSeen)}</span>
-                                                        <span className="text-[10px] text-zinc-300 font-mono uppercase">{getRelativeTime(visitor.lastSeen)}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    {online ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-wider border border-green-500/20">
-                                                            <div className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
-                                                            Online
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-bold uppercase tracking-wider border border-white/5">
-                                                            Offline
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </motion.tr>
-                                        );
-                                    })}
-                                </AnimatePresence>
-                                {visitorRows.length === 0 && (
-                                    <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-zinc-300">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Users className="w-8 h-8 opacity-20" />
-                                                <p>No visitors recorded in the current dataset.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {nextVisitorCursor && (
-                    <div className="flex justify-center pb-8">
-                        <button
-                            type="button"
-                            onClick={() => void handleLoadMoreVisitors()}
-                            disabled={isLoadingMoreVisitors}
-                            className="bg-zinc-900 border border-white/10 px-8 py-3 rounded-xl hover:bg-zinc-800 hover:border-white/20 transition-all font-medium text-sm text-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isLoadingMoreVisitors ? "Loading..." : "Show 10 more visitors"}
-                        </button>
-                    </div>
-                )}
-
-                <ConfirmDialog
-                    isOpen={isResetDialogOpen}
-                    title="Reset report funnel metrics?"
-                    message="This clears the current report funnel counters in KV so the 7-day card starts fresh. Historical values cannot be restored."
-                    confirmText={isResettingFunnel ? "Resetting..." : "Reset Funnel"}
-                    cancelText="Cancel"
-                    confirmVariant="danger"
-                    onCancel={() => {
-                        if (!isResettingFunnel) {
-                            setIsResetDialogOpen(false);
-                        }
-                    }}
-                    onConfirm={() => {
-                        if (!isResettingFunnel) {
-                            void handleResetReportFunnel();
-                        }
-                    }}
-                />
-
-                <ConfirmDialog
-                    isOpen={Boolean(deleteCandidate)}
-                    title="Delete incomplete account?"
-                    message={deleteCandidate
-                        ? `Delete ${deleteCandidate.githubLogin ? `@${deleteCandidate.githubLogin}` : deleteCandidate.id.slice(0, 10)}. This permanently removes the incomplete account and any cascaded child rows.`
-                        : ""}
-                    confirmText={deletingUserId ? "Deleting..." : "Delete Account"}
-                    cancelText="Cancel"
-                    confirmVariant="danger"
-                    onCancel={() => {
-                        if (!deletingUserId) {
-                            setDeleteCandidate(null);
-                        }
-                    }}
-                    onConfirm={() => {
-                        if (!deletingUserId) {
-                            void handleDeleteAccount();
-                        }
-                    }}
-                />
-            </div>
-        </div>
-    );
-}
-
-function StatsCard({ title, value, icon, subValue, trend, infoText }: {
-    title: string,
-    value: string | number,
-    icon: React.ReactNode,
-    subValue?: string,
-    trend?: string,
-    infoText?: string,
-}) {
-    return (
-        <motion.div
-            whileHover={{ y: -2 }}
-            className="bg-zinc-900/50 border border-white/10 rounded-2xl p-6 relative overflow-hidden group"
-        >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                {icon}
-            </div>
-            <div className="flex items-center gap-4 mb-4">
-                <div className="p-2.5 bg-white/5 rounded-xl border border-white/5 group-hover:border-white/10 transition-colors">
-                    {icon}
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-zinc-200">{title}</div>
-                    {infoText && (
-                        <div className="relative group/info">
-                            <button
-                                type="button"
-                                aria-label={`${title} definition`}
-                                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 bg-zinc-900 text-zinc-500 transition-colors hover:text-zinc-200"
-                            >
-                                <Info className="h-3 w-3" />
-                            </button>
-                            <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden w-64 -translate-x-1/2 rounded-lg border border-white/15 bg-zinc-950/95 px-3 py-2 text-[11px] leading-relaxed text-zinc-300 shadow-xl shadow-black/50 group-hover/info:block group-focus-within/info:block">
-                                {infoText}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-                <div className="text-3xl font-bold text-white tracking-tight">{value}</div>
-                {trend && (
-                    <span className="text-[10px] font-bold text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded uppercase">
-                        {trend}
-                    </span>
-                )}
-            </div>
-            {subValue && (
-                <div className="text-xs text-zinc-300 mt-2 font-medium uppercase tracking-wider">{subValue}</div>
+            <PageHeader
+                eyebrow="Admin"
+                title="Analytics"
+                description="Values read from the analytics store and Postgres. Times are in IST."
+                actions={
+                    <Button leading={<RefreshCw aria-hidden className="size-4" />} loading={isRefreshing} onClick={refresh}>
+                        Refresh
+                    </Button>
+                }
+            />
+            {feedback && (
+                <Notice tone={feedback.tone} title={feedback.title}>
+                    {feedback.text}
+                </Notice>
             )}
-        </motion.div>
-    );
-}
+            <Tabs
+                label="Analytics sections"
+                items={[
+                    { id: "overview", label: "Overview", panel: overview },
+                    { id: "fp", label: "False positives", count: falsePositiveRows.length, panel: falsePositives },
+                    { id: "accounts", label: "Accounts", count: analyticsData.totalLoggedInUsers, panel: accounts },
+                    { id: "visitors", label: "Visitors", count: visitorRows.length, panel: visitors },
+                ]}
+            />
 
-function MetricTile({ label, value }: { label: string; value: string | number }) {
-    return (
-        <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
-            <p className="text-[11px] uppercase tracking-wider text-zinc-300">{label}</p>
-            <p className="mt-1 text-lg font-semibold text-zinc-100">{value}</p>
+            <ConfirmDialog
+                isOpen={isResetDialogOpen}
+                title="Reset report funnel metrics?"
+                message="This clears the report funnel counters in KV so the 7-day figures start fresh. Historical values cannot be restored."
+                confirmText="Reset funnel"
+                cancelText="Cancel"
+                confirmVariant="danger"
+                onCancel={() => !isResettingFunnel && setIsResetDialogOpen(false)}
+                onConfirm={() => !isResettingFunnel && void resetFunnel()}
+            />
+            <ConfirmDialog
+                isOpen={Boolean(deleteCandidate)}
+                title="Delete incomplete account?"
+                message={
+                    deleteCandidate
+                        ? `Delete ${deleteCandidate.githubLogin ? `@${deleteCandidate.githubLogin}` : deleteCandidate.id.slice(0, 10)}. This permanently removes the incomplete account and any cascaded child rows.`
+                        : ""
+                }
+                confirmText="Delete account"
+                cancelText="Cancel"
+                confirmVariant="danger"
+                onCancel={() => !deletingUserId && setDeleteCandidate(null)}
+                onConfirm={() => !deletingUserId && void deleteAccount()}
+            />
         </div>
     );
 }

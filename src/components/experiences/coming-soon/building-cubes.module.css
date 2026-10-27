@@ -1,0 +1,35 @@
+/* Three isometric cubes settle into a stack in sequence, then rest. transform + opacity only. */
+.cube {
+  opacity: 0;
+  transform: translateY(-28px);
+  animation: settle 1.1s var(--nv-ease-out, cubic-bezier(0.23, 1, 0.32, 1)) forwards;
+  animation-delay: calc(var(--i) * 420ms + 200ms);
+}
+
+@keyframes settle {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.glow {
+  animation: breathe 5s ease-in-out 2s infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cube {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .glow {
+    animation: none;
+  }
+}

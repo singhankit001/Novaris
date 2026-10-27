@@ -1,17 +1,12 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
-import dynamic from "next/dynamic";
-
-const Global3DParallaxBackground = dynamic(
-    () => import("./Global3DParallaxBackground"),
-    { ssr: false }
-);
+import { ServiceWorkerRegistration } from "./ServiceWorkerRegistration";
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <SessionProvider refetchOnWindowFocus={false}>
-            <Global3DParallaxBackground />
+            <ServiceWorkerRegistration />
             {children}
         </SessionProvider>
     );

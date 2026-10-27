@@ -1,29 +1,24 @@
-import { Loader2, Search, Wrench } from "lucide-react";
+import s from "./chat.module.css";
 
 interface StreamStatusProps {
     message?: string;
     isStreaming: boolean;
 }
 
+/** Phase label from the latest real `status` or `tool` chunk. Never a percentage. */
 export function StreamStatus({ message, isStreaming }: StreamStatusProps) {
     if (!isStreaming || !message) return null;
-
     const normalized = message.trim();
-    const isGoogleSearch = /^Searching Google for /i.test(normalized);
-    const isToolCall = /^Calling /i.test(normalized);
-
     return (
-        <div className="not-prose mb-1.5 w-full max-w-full rounded-xl border border-white/10 bg-zinc-900/70 px-3 py-2.5 min-h-10 overflow-hidden">
-            <div className="flex items-start gap-2 text-sm leading-5 text-zinc-300 min-w-0">
-                {isGoogleSearch ? (
-                    <Search className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
-                ) : isToolCall ? (
-                    <Wrench className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
-                ) : (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-400 shrink-0 mt-0.5" />
-                )}
-                <span className="flex-1 min-w-0 whitespace-normal break-words [overflow-wrap:anywhere]">{normalized}</span>
-            </div>
+        <div
+            role="progressbar"
+            aria-label="Analysis in progress"
+            aria-valuetext={normalized}
+            className="not-prose mb-4 flex w-full max-w-full items-start gap-3 text-nv-small text-nv-ivory-200 [overflow-wrap:anywhere]"
+        >
+            <span aria-hidden className={`${s.orb} mt-0.5 shrink-0`} />
+            <span className={`${s.shimmer} min-w-0 flex-1 font-medium leading-[1.4]`}>{normalized}</span>
+            <span role="status" aria-live="polite" className="sr-only">{normalized}</span>
         </div>
     );
 }

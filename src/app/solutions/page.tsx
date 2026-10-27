@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import JsonLdScript from "@/components/JsonLdScript";
-import SeoVisual from "@/components/seo/SeoVisual";
+import { ChooseTimeline, ConvergeSection, JourneySection } from "@/components/experiences/solutions/Journey";
+import { OutputsFlow } from "@/components/experiences/solutions/OutputsFlow";
+import s from "@/components/seo/seo.module.css";
+import { cn } from "@/components/nv/cn";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { ActionLink, CtaBand, FaqList, H2, LinkRow, Page, PageHeader, Prose } from "@/components/seo/blocks";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -115,126 +119,85 @@ const softwareSchema = buildSoftwareApplicationStructuredData({
 
 export default function SolutionsPage() {
   return (
-    <main className="min-h-screen bg-transparent text-white px-6 py-20 relative z-10">
+    <SiteChrome current="/solutions">
       <JsonLdScript data={breadcrumbSchema} />
       <JsonLdScript data={itemListSchema} />
       <JsonLdScript data={faqSchema} />
       <JsonLdScript data={softwareSchema} />
 
-      <div className="mx-auto max-w-6xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span>/</span>
-          <span className="text-zinc-200">Solutions</span>
-        </nav>
+      <Page wide>
+        <PageHeader
+          crumbs={[{ label: "Home", href: "/" }, { label: "Solutions" }]}
+          eyebrow="Solutions"
+          title="Repository analysis, AI code review, and security scanning"
+          lead="Novaris gives engineering teams one place to understand architecture, review implementation, and triage security findings, starting from a GitHub URL."
+        >
+          <Prose className="mt-4">
+            <p>
+              Choose a starting point based on your immediate goal, then connect workflows for onboarding, release
+              readiness, and technical risk review.
+            </p>
+          </Prose>
+        </PageHeader>
 
-        <header className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
-            Solutions for Repository Analysis, AI Code Review, and Security Scanning
-          </h1>
-          <p className="text-zinc-300 text-lg leading-relaxed max-w-4xl mb-5">
-            Novaris gives engineering teams a practical way to move from repository uncertainty to
-            informed execution. Instead of switching between disconnected tools, teams can use one
-            context-aware workflow family to understand architecture, review implementation, and
-            prioritize security remediation.
-          </p>
-          <p className="text-zinc-200 leading-relaxed max-w-4xl">
-            Choose a starting point based on your immediate goal, then connect workflows to build a
-            repeatable operating model for onboarding, release readiness, and technical risk reduction.
-          </p>
-        </header>
-
-        <section className="mb-12">
-          <SeoVisual
-            variant="hero-flow"
-            ariaLabel="Novaris solutions workflow from repository input to analysis and action"
-            sizeMode="wide"
-            animate
-            priority="high"
-          />
-        </section>
-
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
-          {solutionCards.map((card) => (
-            <Link
-              key={card.href}
-              href={card.href}
-              className="block rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 hover:bg-zinc-900/70 hover:border-zinc-700 transition-colors"
-            >
-              <h2 className="text-xl font-semibold mb-2">{card.title}</h2>
-              <p className="text-zinc-200 mb-4 leading-relaxed">{card.description}</p>
-              <span className="text-sm text-cyan-300">Open workflow</span>
-            </Link>
-          ))}
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-12">
-          <h2 className="text-2xl font-semibold mb-4">How to choose the right workflow</h2>
-          <p className="text-zinc-300 leading-relaxed mb-4">
-            Start with <strong>GitHub Repository Analysis</strong> when the primary challenge is understanding
-            architecture and module relationships. This is the best first move for onboarding, due diligence,
-            or migration planning.
-          </p>
-          <h3 className="text-xl font-medium mb-2">Use AI Code Review Tool when review quality is the bottleneck</h3>
-          <p className="text-zinc-300 leading-relaxed mb-4">
-            If pull requests are slow or recurring issues slip through, move into the AI Code Review workflow
-            to prioritize high-impact review topics with richer repository context.
-          </p>
-          <h3 className="text-xl font-medium mb-2">Use Security Scanner when triage speed matters most</h3>
-          <p className="text-zinc-300 leading-relaxed">
-            When security findings outpace remediation capacity, Security Scanner helps teams focus on likely
-            high-impact risks and convert findings into sprint-ready engineering actions.
-          </p>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8 mb-12">
-          <h2 className="text-2xl font-semibold mb-5">Comparison guides for tool selection</h2>
-          <p className="text-zinc-200 mb-5 leading-relaxed">
-            Use these comparison pages to evaluate workflow fit by context depth, triage quality, and remediation clarity.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {compareLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-xl border border-zinc-700 px-4 py-3 text-zinc-200 hover:bg-zinc-900 transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
+        <div className={s.stack}>
+        <JourneySection />
+        <ConvergeSection />
+        <OutputsFlow />
+        <section aria-labelledby="sol-start-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
+            <H2 id="sol-start-h">Pick a starting point</H2>
+          </div>
+          <div className={s.right}>
+            <div className={s.rows}>
+              {solutionCards.map((card) => (
+                <LinkRow key={card.href} href={card.href} title={card.title} summary={card.description} meta="Open" />
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="mb-12 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
-          <h2 className="text-2xl font-semibold mb-6">Frequently Asked Questions</h2>
-          <div className="space-y-5">
-            {faqItems.map((item) => (
-              <article key={item.question} className="border-b border-white/10 pb-4 last:border-0">
-                <h3 className="text-lg font-medium mb-2">{item.question}</h3>
-                <p className="text-zinc-300 leading-relaxed">{item.answer}</p>
-              </article>
-            ))}
+        <section aria-labelledby="sol-choose-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
+            <H2 id="sol-choose-h">How to choose the right workflow</H2>
+          </div>
+          <div className={s.right}>
+            <ChooseTimeline />
           </div>
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 md:p-8">
-          <h2 className="text-2xl font-semibold mb-3">Take the next step</h2>
-          <p className="text-zinc-200 mb-6">
-            Start with one repository, then scale the workflow that delivers the fastest measurable impact for your team.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/chat" className="px-5 py-3 rounded-lg bg-white text-black font-medium hover:bg-zinc-200 transition-colors">
-              Start Analysis
-            </Link>
-            <Link href="/explore" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors">
-              Explore SEO Pages
-            </Link>
-            <Link href="/compare" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors">
-              Compare Workflows
-            </Link>
+        <section aria-labelledby="sol-compare-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
+            <H2 id="sol-compare-h">Comparison guides for tool selection</H2>
+            <p className="mt-4 leading-relaxed text-nv-ivory-200">
+              Written guides that compare approaches by context depth, triage quality, and remediation clarity.
+            </p>
+          </div>
+          <div className={s.right}>
+            <div className={s.rows}>
+              {compareLinks.map((item) => (
+                <LinkRow key={item.href} href={item.href} title={item.name} />
+              ))}
+            </div>
           </div>
         </section>
-      </div>
-    </main>
+
+        <section aria-labelledby="sol-faq-h" className={s.grid12}>
+          <div className={cn(s.left, s.stickyLeft)}>
+            <H2 id="sol-faq-h">Frequently asked questions</H2>
+          </div>
+          <div className={s.right}>
+            <FaqList items={faqItems} />
+          </div>
+        </section>
+
+        <CtaBand id="sol-next-h" title={<>Next <em>step</em></>} text="Start with one repository, then keep the workflow that answers your questions best.">
+          <ActionLink href="/chat" variant="primary" large>Start analysis</ActionLink>
+          <ActionLink href="/explore" large>Explore guides</ActionLink>
+          <ActionLink href="/compare" large>Compare workflows</ActionLink>
+        </CtaBand>
+        </div>
+      </Page>
+    </SiteChrome>
   );
 }

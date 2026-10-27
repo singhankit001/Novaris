@@ -9,19 +9,29 @@ import {
     getCanonicalMermaidDeclaration,
     isSupportedMermaidVisualCode,
 } from "@/lib/diagram-utils";
-import { Download, X, Maximize2, ZoomIn, Sparkles, Copy, FileCode, Eye } from "lucide-react";
-import { toast } from "sonner";
+import { Download, Maximize2, Copy, FileCode, Eye } from "lucide-react";
+import DOMPurify from "dompurify";
+import { Dialog } from "@/components/nv/dialog";
+import { IndeterminateProgress } from "@/components/nv/skeleton";
 import html2canvas from "html2canvas-pro";
-import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
-import { initMermaid } from "@/lib/mermaid-init";
-import { APP_FONT_STACK } from "@/lib/design-tokens";
+import { APP_FONT_STACK, DIAGRAM_THEME, initMermaid } from "@/lib/mermaid-init";
 import { ensureMermaidMinimumDetail } from "@/lib/diagram-utils";
 import { resolveRouteBeadCount, shouldAnimateDedicatedPreview, shouldEnableLoopingBeads } from "@/lib/mermaid-animation";
 import { pickContrastingTextColor } from "@/lib/color-contrast";
 
 // Initialize mermaid once
 initMermaid();
+
+/** SVG profile only; no scripts, no foreignObject, no event handlers. <style> stays because Mermaid themes with it. */
+export function sanitizeSvg(svg: string): string {
+    if (!svg) return "";
+    return DOMPurify.sanitize(svg, {
+        USE_PROFILES: { svg: true, svgFilters: true },
+        ADD_TAGS: ["style"],
+        FORBID_TAGS: ["script", "foreignObject", "iframe", "object", "embed"],
+        FORBID_ATTR: ["onload", "onclick", "onerror"],
+    });
+}
 
 interface MermaidProps {
     chart: string;
@@ -35,12 +45,12 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const XLINK_NS = "http://www.w3.org/1999/xlink";
 const SUPPORTED_MERMAID_TYPES_LABEL = "flowchart, sequenceDiagram, stateDiagram-v2, classDiagram, erDiagram, mindmap, gantt, xychart";
 const MINDMAP_BRANCH_COLORS = [
-    { fillVar: "--mindmap-branch-1-fill", strokeVar: "--mindmap-branch-1-stroke", fallbackFill: "#1d4ed8", fallbackStroke: "#60a5fa" },
-    { fillVar: "--mindmap-branch-2-fill", strokeVar: "--mindmap-branch-2-stroke", fallbackFill: "#0e7490", fallbackStroke: "#67e8f9" },
-    { fillVar: "--mindmap-branch-3-fill", strokeVar: "--mindmap-branch-3-stroke", fallbackFill: "#047857", fallbackStroke: "#6ee7b7" },
-    { fillVar: "--mindmap-branch-4-fill", strokeVar: "--mindmap-branch-4-stroke", fallbackFill: "#6d28d9", fallbackStroke: "#c4b5fd" },
-    { fillVar: "--mindmap-branch-5-fill", strokeVar: "--mindmap-branch-5-stroke", fallbackFill: "#b45309", fallbackStroke: "#fcd34d" },
-    { fillVar: "--mindmap-branch-6-fill", strokeVar: "--mindmap-branch-6-stroke", fallbackFill: "#be185d", fallbackStroke: "#f9a8d4" },
+    { fillVar: "--mindmap-branch-1-fill", strokeVar: "--mindmap-branch-1-stroke", fallbackFill: "#e6ebff", fallbackStroke: "#2f54ff" },
+    { fillVar: "--mindmap-branch-2-fill", strokeVar: "--mindmap-branch-2-stroke", fallbackFill: "#ece6ff", fallbackStroke: "#7a4dff" },
+    { fillVar: "--mindmap-branch-3-fill", strokeVar: "--mindmap-branch-3-stroke", fallbackFill: "#e3f6fc", fallbackStroke: "#0a7aa3" },
+    { fillVar: "--mindmap-branch-4-fill", strokeVar: "--mindmap-branch-4-stroke", fallbackFill: "#eef1f6", fallbackStroke: "#5a5f6e" },
+    { fillVar: "--mindmap-branch-5-fill", strokeVar: "--mindmap-branch-5-stroke", fallbackFill: "#fff2dc", fallbackStroke: "#9a5a00" },
+    { fillVar: "--mindmap-branch-6-fill", strokeVar: "--mindmap-branch-6-stroke", fallbackFill: "#fdebf5", fallbackStroke: "#b0306f" },
 ] as const;
 const MINDMAP_SECTION_PATTERN = /^section-(-?\d+)$/;
 const MINDMAP_EDGE_SECTION_PATTERN = /^section-edge-(-?\d+)$/;
@@ -60,12 +70,29 @@ const MINDMAP_EDGE_STROKE_WIDTH = "1.5";
 const MINDMAP_EDGE_TRIM_PX = 10;
 const GENERIC_DIAGRAM_EDGE_STROKE_WIDTH = "1.5";
 
+// Diagram palette from Novaris tokens (hex, because SVG attributes are set from script).
+const NV_DIAGRAM_VARS: Record<string, string> = {
+    "--mindmap-branch-text-dark": DIAGRAM_THEME.textOnColor,
+    "--mindmap-branch-text-light": "#ffffff",
+    "--mindmap-center-fill": DIAGRAM_THEME.primary,
+    "--mindmap-center-stroke": DIAGRAM_THEME.line,
+    "--mindmap-center-text": DIAGRAM_THEME.textOnColor,
+    "--mindmap-category-fill": DIAGRAM_THEME.secondary,
+    "--mindmap-category-stroke": DIAGRAM_THEME.border,
+    "--mindmap-category-text": DIAGRAM_THEME.textOnColor,
+    "--xychart-text": DIAGRAM_THEME.textOnColor,
+    "--xychart-axis": DIAGRAM_THEME.axis,
+    "--xychart-bar": DIAGRAM_THEME.line,
+    "--xychart-line": "#7a4dff",
+    "--diagram-color-line": DIAGRAM_THEME.line,
+    "--diagram-color-surface": DIAGRAM_THEME.surface,
+    "--diagram-color-border": DIAGRAM_THEME.border,
+    "--diagram-color-text-on-color": DIAGRAM_THEME.textOnColor,
+    "--diagram-color-secondary": DIAGRAM_THEME.secondary,
+};
+
 function resolveThemeVar(variable: string, fallback: string): string {
-    if (typeof window === "undefined") {
-        return fallback;
-    }
-    const value = window.getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
-    return value || fallback;
+    return NV_DIAGRAM_VARS[variable] ?? fallback;
 }
 
 function extractErrorMessage(error: unknown): string {
@@ -251,8 +278,8 @@ function isMindmapBlackColor(color: string): boolean {
 function resolveMindmapPalette(): string[] {
     const fallbackPalette = MINDMAP_BRANCH_COLORS.map((entry) => entry.fallbackStroke);
     const resolvedPalette = MINDMAP_BRANCH_COLORS.map((entry, index) => {
-        const resolved = resolveThemeVar(entry.strokeVar, fallbackPalette[index] ?? "#60a5fa");
-        return isMindmapBlackColor(resolved) ? (fallbackPalette[index] ?? "#60a5fa") : resolved;
+        const resolved = resolveThemeVar(entry.strokeVar, fallbackPalette[index] ?? "#2f54ff");
+        return isMindmapBlackColor(resolved) ? (fallbackPalette[index] ?? "#2f54ff") : resolved;
     });
 
     for (let index = 1; index < resolvedPalette.length; index += 1) {
@@ -607,7 +634,7 @@ function applyMindmapThemeOverrides(svgElement: SVGSVGElement): void {
         }
         const paletteIndex = sectionOrder.get(section) ?? 0;
         const color = palette[paletteIndex % palette.length];
-        return color ?? palette[0] ?? "#60a5fa";
+        return color ?? palette[0] ?? "#2f54ff";
     };
 
     elevateMindmapNodesAboveEdges(svgElement);
@@ -701,7 +728,7 @@ function applyMindmapThemeOverrides(svgElement: SVGSVGElement): void {
 function applyXyChartThemeOverrides(svgElement: SVGSVGElement): void {
     const textColor = resolveThemeVar("--xychart-text", "#e5e7eb");
     const axisColor = resolveThemeVar("--xychart-axis", "#6b7280");
-    const barColor = resolveThemeVar("--xychart-bar", "#60a5fa");
+    const barColor = resolveThemeVar("--xychart-bar", "#2f54ff");
     const lineColor = resolveThemeVar("--xychart-line", "#34d399");
 
     const mainGroup = svgElement.querySelector<SVGGElement>("g.main");
@@ -823,7 +850,7 @@ function addRouteBeads(svgElement: SVGSVGElement, routePaths: SVGPathElement[], 
 
         const bead = document.createElementNS(SVG_NS, "circle");
         bead.setAttribute("r", "2.6");
-        bead.setAttribute("fill", "#60a5fa");
+        bead.setAttribute("fill", DIAGRAM_THEME.line);
         bead.setAttribute("opacity", "0.8");
 
         const animateMotion = document.createElementNS(SVG_NS, "animateMotion");
@@ -904,7 +931,11 @@ function runMermaidEntranceAnimations(svgElement: SVGSVGElement, chart: string, 
 export const Mermaid = ({ chart, isStreaming = false, rawCode }: MermaidProps) => {
     const [svg, setSvg] = useState<string>("");
     const [renderedChart, setRenderedChart] = useState<string>("");
-    const [isBrowser, setIsBrowser] = useState(false);
+    const [note, setNote] = useState<{ text: string; tone: "success" | "error" } | null>(null);
+    const flash = (text: string, tone: "success" | "error") => {
+        setNote({ text, tone });
+        window.setTimeout(() => setNote(null), 3500);
+    };
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isFixing, setIsFixing] = useState(false);
@@ -920,6 +951,8 @@ export const Mermaid = ({ chart, isStreaming = false, rawCode }: MermaidProps) =
     // During streaming, we don't want to show the full-screen blurring overlay because it makes it
     // look like the UI is blocked. Only show it if we are fixing the diagram or if we have no SVG at all
     // and are NOT in the middle of a stream (i.e. first render or explicit generation).
+    // Mermaid runs at securityLevel "strict"; the SVG is still purified before it touches the DOM.
+    const safeSvg = useMemo(() => sanitizeSvg(svg), [svg]);
     const showOverlay = !svg && (isFixing || isGenerating);
     const activeMermaidSource = useMemo(() => {
         if (rawCode && rawCode.trim().length > 0) {
@@ -940,10 +973,6 @@ export const Mermaid = ({ chart, isStreaming = false, rawCode }: MermaidProps) =
         return `mermaid-${Math.abs(hash).toString(36)}`;
     }, [chart]);
     const fixedCacheKey = useMemo(() => `novaris:fixed-mermaid:${id}`, [id]);
-
-    useEffect(() => {
-        setIsBrowser(true);
-    }, []);
 
     useEffect(() => {
         if (!chart) return;
@@ -1272,267 +1301,131 @@ export const Mermaid = ({ chart, isStreaming = false, rawCode }: MermaidProps) =
     }, [isModalOpen, svg, chart, renderedChart]);
 
     const exportToPNG = async (e?: React.MouseEvent) => {
-        e?.stopPropagation(); // Prevent modal opening if clicking export button
-        // Use the ref that is currently visible (modal or inline)
+        e?.stopPropagation();
         const element = isModalOpen ? modalRef.current : diagramRef.current;
         if (!element) return;
-
         try {
-            const canvas = await html2canvas(element, {
-                backgroundColor: '#18181b', // zinc-900
-                scale: 2, // Higher resolution
-            });
-
-            const link = document.createElement('a');
+            const canvas = await html2canvas(element, { backgroundColor: DIAGRAM_THEME.surface, scale: 2 });
+            const link = document.createElement("a");
             link.download = `architecture-diagram-${Date.now()}.png`;
             link.href = canvas.toDataURL();
             link.click();
-            toast.success('Diagram exported successfully!');
+            flash("Diagram saved as a PNG.", "success");
         } catch (error) {
-            console.error('Export failed:', error);
-            toast.error('Failed to export diagram');
+            console.error("Export failed:", error);
+            flash("PNG export failed. Copy the Mermaid code instead.", "error");
         }
     };
 
     const handleCopyRawCode = async (e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!activeMermaidSource.trim()) {
-            toast.error("No Mermaid code to copy");
+            flash("There is no Mermaid code to copy yet.", "error");
             return;
         }
         try {
             await navigator.clipboard.writeText(activeMermaidSource);
             setCopiedRaw(true);
             window.setTimeout(() => setCopiedRaw(false), 1800);
-            toast.success("Mermaid code copied");
+            flash("Mermaid code copied.", "success");
         } catch {
-            toast.error("Failed to copy Mermaid code");
+            flash("Copy failed. The browser blocked clipboard access.", "error");
         }
     };
 
+    const ready = !isGenerating && Boolean(svg);
+    const tool =
+        "inline-flex size-11 touch-manipulation items-center justify-center rounded-nv-sm text-nv-ivory-200 hover:bg-nv-graphite-800 hover:text-nv-ivory-50";
+    const toolbar = (
+        <div role="toolbar" aria-label="Diagram actions" className="flex items-center">
+            <button type="button" onClick={() => setIsRawView((p) => !p)} className={tool} aria-label={isRawView ? "Show diagram" : "Show Mermaid code"} aria-pressed={isRawView}>
+                {isRawView ? <Eye aria-hidden className="size-4" /> : <FileCode aria-hidden className="size-4" />}
+            </button>
+            <button type="button" onClick={handleCopyRawCode} className={tool} aria-label="Copy Mermaid code">
+                <Copy aria-hidden className={`size-4 ${copiedRaw ? "text-nv-success" : ""}`} />
+            </button>
+            {!isRawView && (
+                <button type="button" onClick={exportToPNG} className={tool} aria-label="Save diagram as PNG">
+                    <Download aria-hidden className="size-4" />
+                </button>
+            )}
+        </div>
+    );
+    const sourceBox = (cls: string) => (
+        <pre tabIndex={0} className={`m-0 overflow-auto bg-nv-graphite-950 p-4 font-mono text-nv-micro leading-relaxed text-nv-ivory-200 whitespace-pre-wrap break-words [overflow-wrap:anywhere] ${cls}`}>
+            {activeMermaidSource || "No Mermaid code available."}
+        </pre>
+    );
+
     return (
-        <>
-            <div
-                className={`my-4 group relative isolate ${isGenerating || isRawView ? "cursor-default" : "cursor-zoom-in"}`}
-                onClick={() => {
-                    if (!isGenerating && svg && !isRawView) {
-                        setIsModalOpen(true);
-                    }
-                }}
-            >
+        <figure className="not-prose my-6 min-w-0 overflow-hidden rounded-nv-lg border border-nv-graphite-700 bg-nv-graphite-900 shadow-nv-card">
+            <figcaption className="flex min-h-11 items-center justify-between gap-2 border-b border-nv-graphite-700 bg-gradient-to-b from-white to-nv-graphite-850 pl-4">
+                <span className="nv-eyebrow inline-flex items-center gap-2"><span aria-hidden className="size-1.5 rounded-full bg-nv-violet-400" />Diagram · {isStreaming ? "drawing" : isRawView ? "Mermaid code" : "model-generated"}</span>
+                {ready && (
+                    <span className="flex items-center">
+                        {toolbar}
+                        {!isRawView && (
+                            <button type="button" onClick={() => setIsModalOpen(true)} className={tool} aria-label="Open diagram full screen">
+                                <Maximize2 aria-hidden className="size-4" />
+                            </button>
+                        )}
+                    </span>
+                )}
+            </figcaption>
+
+            <div className="relative min-w-0" style={{ minHeight: svg || isRawView ? "auto" : "160px" }}>
                 {isRawView ? (
-                    <div
-                        className="overflow-hidden max-h-[80vh] p-2 md:p-4 rounded-lg border border-white/5 hover:border-white/10 transition-colors min-w-0"
-                        style={{ minHeight: activeMermaidSource ? 'auto' : '200px' }}
-                    >
-                        <pre className="m-0 max-h-[72vh] overflow-auto rounded-lg border border-white/10 bg-zinc-950/80 p-4 text-xs leading-relaxed text-zinc-200 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{activeMermaidSource || "No Mermaid code available."}</pre>
-                    </div>
+                    sourceBox("max-h-[72vh]")
                 ) : (
                     <div
                         ref={diagramRef}
-                        className="diagram-inline-content overflow-hidden max-h-[80vh] p-2 md:p-4 rounded-lg border border-white/5 hover:border-white/10 transition-colors flex items-center justify-center min-w-0"
-                        dangerouslySetInnerHTML={{ __html: svg }}
-                        style={{ minHeight: svg ? 'auto' : '200px' }}
+                        role="img"
+                        aria-label="Diagram generated from the model's Mermaid code. Use Show Mermaid code for a text version."
+                        className="diagram-inline-content flex min-w-0 items-center justify-center overflow-hidden p-3 md:p-4"
+                        dangerouslySetInnerHTML={{ __html: safeSvg }}
                     />
                 )}
                 <style>{`
-                    .diagram-inline-content svg {
-                        width: auto !important;
-                        height: auto !important;
-                        max-width: 100% !important;
-                        max-height: calc(80vh - 2rem) !important;
-                        display: block;
-                        margin: 0 auto;
-                    }
-                    @media (min-width: 768px) {
-                        .diagram-inline-content svg {
-                            max-height: calc(80vh - 4rem) !important;
-                        }
-                    }
+                    .diagram-inline-content svg { width: auto !important; height: auto !important; max-width: 100% !important; max-height: 70vh !important; display: block; margin: 0 auto; }
                 `}</style>
 
-                {/* Overlay controls */}
-                {!isGenerating && svg && (
-                    <div className="absolute top-2 right-2 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsRawView((prev) => !prev);
-                            }}
-                            className="p-2 bg-zinc-800/85 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg backdrop-blur-sm"
-                            title={isRawView ? "Show preview" : "Show raw Mermaid code"}
-                        >
-                            {isRawView ? <Eye className="w-4 h-4" /> : <FileCode className="w-4 h-4" />}
-                        </button>
-                        <button
-                            onClick={handleCopyRawCode}
-                            className="p-2 bg-zinc-800/85 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg backdrop-blur-sm"
-                            title="Copy Mermaid code"
-                        >
-                            <Copy className={`w-4 h-4 ${copiedRaw ? "text-emerald-400" : ""}`} />
-                        </button>
-                        {!isRawView && (
-                            <button
-                                onClick={exportToPNG}
-                                className="p-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg backdrop-blur-sm"
-                                title="Export as PNG"
-                            >
-                                <Download className="w-4 h-4" />
-                            </button>
-                        )}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isRawView) {
-                                    setIsModalOpen(true);
-                                }
-                            }}
-                            className="p-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg backdrop-blur-sm"
-                            title="View Fullscreen"
-                        >
-                            <Maximize2 className="w-4 h-4" />
-                        </button>
-                    </div>
-                )}
-
                 {showOverlay && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/55 backdrop-blur-sm rounded-lg z-10">
-                        <div className="flex items-center gap-2 text-zinc-200">
-                            <Sparkles className="w-5 h-5 animate-pulse text-purple-400" />
-                            <span className="text-sm font-medium">
-                                {isFixing ? "Fixing diagram..." : "Generating diagram..."}
-                            </span>
-                        </div>
+                    <div role="status" className="absolute inset-0 z-10 grid place-items-center bg-nv-graphite-900">
+                        <IndeterminateProgress label={isFixing ? "Fixing diagram" : "Drawing diagram"} phase={isFixing ? "Asking the model to repair the diagram" : "Drawing the diagram"} />
                     </div>
                 )}
 
                 {error && !isFixing && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 backdrop-blur-sm rounded-lg p-4 text-center z-10">
-                        <p className="text-red-400 text-sm mb-3 max-w-[90%] break-words">{error}</p>
-                        {!isUnsupportedTypeError && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRetry();
-                                }}
-                                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-sm transition-colors flex items-center gap-2"
-                            >
-                                <Sparkles className="w-4 h-4" />
-                                Fix Diagram
+                    <div role="alert" className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 overflow-auto bg-nv-graphite-900 p-4 text-center">
+                        <p className="max-w-[90%] break-words text-nv-small text-nv-danger">{error}</p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {!isUnsupportedTypeError && (
+                                <button type="button" onClick={handleRetry} className="inline-flex min-h-11 items-center gap-2 rounded-nv-sm border border-nv-danger-edge bg-nv-danger-wash px-4 text-nv-small text-nv-danger">
+                                    Try to repair the diagram
+                                </button>
+                            )}
+                            <button type="button" onClick={() => setIsRawView(true)} className="inline-flex min-h-11 items-center rounded-nv-sm border border-nv-graphite-600 px-4 text-nv-small text-nv-ivory-100">
+                                Show the code
                             </button>
-                        )}
+                        </div>
                     </div>
                 )}
             </div>
+            <p role="status" aria-live="polite" className={note ? `border-t px-3 py-2 text-nv-small ${note.tone === "error" ? "border-nv-danger-edge text-nv-danger" : "border-nv-graphite-700 text-nv-ivory-200"}` : "sr-only"}>
+                {note?.text}
+            </p>
 
-            {/* Fullscreen Modal */}
-            {isBrowser && createPortal(
-                <AnimatePresence>
-                    {isModalOpen && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-3 md:p-6"
-                            onClick={() => setIsModalOpen(false)}
-                        >
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative isolate w-[min(96vw,1440px)] h-[min(92vh,980px)] rounded-2xl overflow-hidden flex flex-col bg-transparent"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                {/* Header */}
-                                <div className="flex shrink-0 items-center justify-between p-4 bg-transparent">
-                                    <h3 className="text-sm font-medium text-zinc-200 flex items-center gap-2">
-                                        <ZoomIn className="w-4 h-4" />
-                                        {isRawView ? "Mermaid Raw Code" : "Diagram Preview"}
-                                    </h3>
-                                    <div className="flex items-center gap-2">
-                                        {!isGenerating && svg && (
-                                            <>
-                                                <button
-                                                    onClick={() => setIsRawView((prev) => !prev)}
-                                                    className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                                                    title={isRawView ? "Show preview" : "Show raw Mermaid code"}
-                                                >
-                                                    {isRawView ? <Eye className="w-5 h-5" /> : <FileCode className="w-5 h-5" />}
-                                                </button>
-                                                <button
-                                                    onClick={handleCopyRawCode}
-                                                    className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                                                    title="Copy Mermaid code"
-                                                >
-                                                    <Copy className={`w-5 h-5 ${copiedRaw ? "text-emerald-400" : ""}`} />
-                                                </button>
-                                            </>
-                                        )}
-                                        {!isGenerating && svg && !isRawView && (
-                                            <button
-                                                onClick={exportToPNG}
-                                                className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                                                title="Export as PNG"
-                                            >
-                                                <Download className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => setIsModalOpen(false)}
-                                            className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                                            title="Close"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-h-0 overflow-hidden relative diagram-modal-content">
-                                    <style>{`
-                                        .diagram-modal-content {
-                                            display: flex;
-                                            align-items: center;
-                                            justify-content: center;
-                                            overflow: hidden;
-                                            padding: 12px;
-                                        }
-                                        .diagram-modal-content svg {
-                                            width: auto !important;
-                                            height: auto !important;
-                                            max-width: 100% !important;
-                                            max-height: 100% !important;
-                                            overflow: hidden !important;
-                                            display: block;
-                                            margin: auto !important;
-                                            background: transparent !important;
-                                            backface-visibility: hidden;
-                                            transform: translateZ(0);
-                                            will-change: opacity, transform;
-                                        }
-                                    `}</style>
-                                    <div className="h-full w-full overflow-hidden">
-                                        <div className="h-full w-full grid place-items-center">
-                                            {isRawView ? (
-                                                <div className="h-full w-full overflow-auto rounded-lg border border-white/10 bg-zinc-950/80 p-4 text-xs leading-relaxed text-zinc-200 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-                                                    {activeMermaidSource || "No Mermaid code available."}
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    ref={modalRef}
-                                                    className="h-full w-full flex items-center justify-center overflow-hidden"
-                                                    dangerouslySetInnerHTML={{ __html: svg }}
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>,
-                document.body
-            )}
-        </>
+            <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} title={isRawView ? "Mermaid code" : "Diagram"} className="h-[min(92dvh,980px)] w-[min(96vw,1440px)] rounded-nv-lg">
+                {isModalOpen && (
+                    <div className="flex h-full min-h-0 flex-col gap-2">
+                        {toolbar}
+                        <div className="diagram-modal-content grid min-h-0 flex-1 place-items-center overflow-hidden">
+                            <style>{`.diagram-modal-content svg { width: auto !important; height: auto !important; max-width: 100% !important; max-height: 100% !important; display: block; margin: auto; }`}</style>
+                            {isRawView ? sourceBox("h-full w-full") : <div ref={modalRef} role="img" aria-label="Diagram, full screen" className="flex size-full items-center justify-center overflow-hidden" dangerouslySetInnerHTML={{ __html: safeSvg }} />}
+                        </div>
+                    </div>
+                )}
+            </Dialog>
+        </figure>
     );
 };

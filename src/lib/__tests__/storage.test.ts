@@ -177,7 +177,7 @@ describe("saveConversation and loadConversation", () => {
     });
 
     it("serializes cloud save and clear mutations so clear runs last", async () => {
-        let releasePost: (() => void) | null = null;
+        let releasePost!: () => void;
         const postGate = new Promise<void>((resolve) => {
             releasePost = resolve;
         });
@@ -217,7 +217,7 @@ describe("saveConversation and loadConversation", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(fetchMock.mock.calls[0]?.[1]?.method).toBe("POST");
 
-        releasePost?.();
+        releasePost();
         await savePromise;
         await clearPromise;
 

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=624, height=784" />
+<title>ai-chat-narrow</title>
+<script src="shared/gsap.min.js"></script>
+<link rel="stylesheet" href="shared/ui.css" />
+<style>
+  body { font-size: 24px; }
+  .stage { padding: 28px; gap: 18px; justify-content: flex-start; }
+  .q { align-self: flex-end; max-width: 92%; padding: 14px 24px; border-radius: 22px 22px 6px 22px; background: var(--blue); color: #fff; font-size: 26px; }
+  .read { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .read .chip { font-size: 22px; padding: 8px 18px; }
+  .claim { padding: 16px 22px; border-radius: 20px; background: #fff; border: 1px solid var(--hair); box-shadow: var(--shadow); font-size: 26px; line-height: 1.4; }
+  .claim .row { margin-top: 12px; gap: 12px; flex-wrap: wrap; }
+  .badge { font-size: 21px; padding: 4px 16px; } .cite { font-size: 21px; padding: 6px 16px 6px 12px; } .cite svg { width: 22px; height: 22px; }
+  .composer { margin-top: auto; height: 68px; display: flex; align-items: center; gap: 14px; padding: 0 24px; border-radius: 22px; background: #fff; border: 1.5px solid var(--border); box-shadow: var(--shadow); font-size: 23px; color: var(--ink3); }
+</style></head>
+<body>
+<div id="root" data-composition-id="ai-chat-narrow" data-start="0" data-width="624" data-height="784" data-duration="7.6">
+  <div class="stage">
+    <div class="q d" id="q">How is authentication enforced?</div>
+    <div class="read d" id="rd"><span class="chip on">Reading</span><span class="chip">middleware.ts</span><span class="chip">lib/auth.ts</span><span class="chip">lib/http.ts</span></div>
+    <div class="claim d" id="c1">Requests pass through a single auth middleware before they reach route handlers.<div class="row"><span class="badge ok">Measured</span><span class="cite"><svg><use href="#i-code"/></svg>src/middleware.ts#L12-40</span></div></div>
+    <div class="claim d" id="c2">The retry policy probably protects against rate limits.<div class="row"><span class="badge warn">Inferred</span><span class="cite"><svg><use href="#i-code"/></svg>src/lib/http.ts#L55-71</span></div></div>
+    <div class="composer"><span class="grow">Ask about this repository</span><svg width="28" height="28" style="color:var(--blue)"><use href="#i-send"/></svg></div>
+  </div>
+</div>
+<script src="shared/lib.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const T = 7.6, tl = gsap.timeline({ paused: true });
+  gsap.set(".d", { opacity: 0 }); gsap.set(".read .chip:not(.on)", { opacity: 0.35 });
+  tl.fromTo("#q", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", immediateRender: false }, 0.5);
+  tl.to("#rd", { opacity: 1, duration: 0.4 }, 1.4);
+  [1.7, 2.2, 2.7].forEach((at, i) => tl.to(`.read .chip:nth-child(${i + 2})`, { opacity: 1, duration: 0.3 }, at));
+  tl.fromTo("#c1", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", immediateRender: false }, 3.5);
+  tl.fromTo("#c2", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", immediateRender: false }, 4.6);
+  tl.to(".d", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
+  tl.to({}, { duration: 0.01 }, T);
+  window.__timelines["ai-chat-narrow"] = tl;
+</script>
+</body></html>

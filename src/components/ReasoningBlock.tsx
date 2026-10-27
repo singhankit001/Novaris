@@ -1,153 +1,78 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+"use client";
+
+import { useId, useState } from "react";
+import { ChevronDown, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import s from "./chat/chat.module.css";
 
 interface ReasoningBlockProps {
     steps: string[];
     isStreaming?: boolean;
 }
 
-export function ReasoningBlock({ steps, isStreaming }: ReasoningBlockProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    // Filter out generic status steps
-    const filteredSteps = (steps || []).filter(step =>
-        !step.startsWith("Reasoning:") && !step.startsWith("Process:") && !step.startsWith("STATUS:")
+function formatStep(step: string) {
+    const match = step.match(/^\*\*([^*]+)\*\*([\s\S]*)/);
+    if (!match) return step;
+    return (
+        <div>
+            <span className="font-medium text-nv-ivory-100">{match[1]}</span>
+            {match[2] && <div className="mt-1">{match[2].trim()}</div>}
+        </div>
     );
+}
 
-    const hasRealThoughts = filteredSteps.length > 0;
+function currentStepTitle(step: string) {
+    const match = step.match(/^\*\*([^*]+)\*\*/);
+    if (match) return match[1];
+    const clean = step.replace(/^(Reasoning|Process|STATUS):\s*/, "");
+    return clean.length > 90 ? `${clean.substring(0, 90)}...` : clean;
+}
 
-    // Pure "Thinking..." pre-step state: streaming but no real content yet
-    if (!hasRealThoughts && isStreaming) {
+/** Model reasoning summary (Thinking mode). Collapsed to the current step; expand for the whole list. */
+export function ReasoningBlock({ steps, isStreaming }: ReasoningBlockProps) {
+    const uid = useId();
+    const [expanded, setExpanded] = useState(false);
+    const shown = (steps || []).filter((st) => !st.startsWith("Reasoning:") && !st.startsWith("Process:") && !st.startsWith("STATUS:"));
+    const hasSteps = shown.length > 0;
+
+    if (!hasSteps && !isStreaming) return null;
+    if (!hasSteps) {
         return (
-            <div className="not-prose select-none flex min-h-10 items-center">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-purple-400/80">
-                        Thinking
-                    </span>
-                    <span className="flex gap-0.5 items-center">
-                        {[0, 1, 2].map(i => (
-                            <motion.span
-                                key={i}
-                                className="w-1 h-1 rounded-full bg-purple-400"
-                                animate={{ opacity: [0.3, 1, 0.3] }}
-                                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                            />
-                        ))}
-                    </span>
-                </div>
-            </div>
+            <p role="status" className="not-prose mb-4 flex min-h-8 items-center gap-3 text-nv-small font-medium text-nv-violet-600">
+                <span aria-hidden className={s.orb} />
+                <span className={s.shimmer}>Thinking</span>
+            </p>
         );
     }
 
-    // Nothing to show if no steps and not streaming
-    if (!hasRealThoughts && !isStreaming) return null;
-
-    const currentStep = filteredSteps[filteredSteps.length - 1];
-
-    // Helper to format a reasoning step
-    const formatStep = (step: string) => {
-        const match = step.match(/^\*\*([^*]+)\*\*([\s\S]*)/);
-        if (match) {
-            return (
-                <div>
-                    <span className="font-semibold text-zinc-300">{match[1]}</span>
-                    {match[2] && <div className="mt-1 text-zinc-300">{match[2].trim()}</div>}
-                </div>
-            );
-        }
-        return step;
-    };
-
-    // Helper to get just the title of the current step
-    const getCurrentStepTitle = (step: string) => {
-        const match = step.match(/^\*\*([^*]+)\*\*/);
-        if (match) return match[1];
-        const cleanStep = step.replace(/^(Reasoning|Process|STATUS):\s*/, '');
-        return cleanStep.length > 60 ? cleanStep.substring(0, 60) + "..." : cleanStep;
-    };
-
+    const current = shown[shown.length - 1];
     return (
-        <div className="mb-2 not-prose select-none">
-            {/* Reasoning label + expand toggle */}
+        <div className="not-prose mb-5 w-full min-w-0 overflow-hidden rounded-nv-lg border border-nv-violet-400/20 bg-gradient-to-b from-nv-violet-wash to-white shadow-nv-xs">
             <button
-                onClick={() => hasRealThoughts && setIsExpanded(v => !v)}
-                disabled={!hasRealThoughts}
-                className={cn(
-                    "flex flex-col items-start gap-1 mb-1.5 group outline-none max-w-full text-left min-w-0 justify-center min-h-10",
-                    !hasRealThoughts && "cursor-default"
-                )}
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                aria-expanded={expanded}
+                aria-controls={`${uid}-steps`}
+                className="group flex min-h-11 w-full min-w-0 touch-manipulation items-center gap-3 px-4 py-2 text-left"
             >
-                <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-purple-400/80 group-hover:text-purple-400 transition-colors">
-                        {isStreaming ? "Thinking" : "Reasoned"}
-                    </span>
-
-                    {isStreaming && (
-                        <span className="flex gap-0.5 items-center">
-                            {[0, 1, 2].map(i => (
-                                <motion.span
-                                    key={i}
-                                    className="w-1 h-1 rounded-full bg-purple-400"
-                                    animate={{ opacity: [0.3, 1, 0.3] }}
-                                    transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-                                />
-                            ))}
-                        </span>
+                {isStreaming ? <span aria-hidden className={cn(s.orb, "shrink-0")} /> : <Sparkles aria-hidden className="size-4 shrink-0 text-nv-violet-400" />}
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="nv-eyebrow !text-nv-violet-600">{isStreaming ? "Thinking" : `Reasoned in ${shown.length} step${shown.length === 1 ? "" : "s"}`}</span>
+                    {!expanded && current && (
+                        <span className="w-full min-w-0 whitespace-normal break-words text-nv-small text-nv-ivory-200 [overflow-wrap:anywhere] sm:truncate sm:whitespace-nowrap">{currentStepTitle(current)}</span>
                     )}
-
-                    {/* Dropdown arrow — only when collapsed with steps available */}
-                    {hasRealThoughts && (
-                        <motion.span
-                            animate={{ rotate: isExpanded ? 180 : 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="inline-flex shrink-0 text-zinc-500 group-hover:text-zinc-200 transition-colors"
-                        >
-                            <ChevronDown className="w-3.5 h-3.5" />
-                        </motion.span>
-                    )}
-                </div>
-
-                {/* Inline current reasoning step (shown when collapsed) */}
-                {!isExpanded && currentStep && (
-                    <div className="text-xs text-zinc-300 w-full min-w-0 pr-2 whitespace-normal break-words [overflow-wrap:anywhere] sm:truncate sm:whitespace-nowrap sm:pr-4">
-                        {getCurrentStepTitle(currentStep)}
-                    </div>
-                )}
+                </span>
+                <ChevronDown aria-hidden className={cn("size-4 shrink-0 text-nv-ivory-300 transition-transform duration-150", expanded && "rotate-180")} />
             </button>
-
-            {/* Expanded: all steps as a timeline */}
-            <AnimatePresence>
-                {isExpanded && hasRealThoughts && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="mt-2 space-y-3 pl-3 border-l border-purple-500/20">
-                            {filteredSteps.map((step, idx) => {
-                                const isCurrent = idx === filteredSteps.length - 1;
-                                return (
-                                    <div
-                                        key={idx}
-                                        className={cn(
-                                            "text-xs leading-relaxed break-words min-w-0",
-                                            isCurrent && isStreaming
-                                                ? "text-zinc-300"
-                                                : "text-zinc-500"
-                                        )}
-                                    >
-                                        {formatStep(step)}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {expanded && (
+                <ol id={`${uid}-steps`} className="nv-fade m-0 mx-4 mb-4 mt-1 list-none space-y-3 border-l border-nv-violet-400/30 pl-4 text-nv-small">
+                    {shown.map((step, i) => (
+                        <li key={i} className={cn("min-w-0 break-words", i === shown.length - 1 && isStreaming ? "text-nv-ivory-100" : "text-nv-ivory-300")}>
+                            {formatStep(step)}
+                        </li>
+                    ))}
+                </ol>
+            )}
         </div>
     );
 }

@@ -1,8 +1,10 @@
 import { Metadata } from "next";
-import Link from "next/link";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { ActionLink, Page, PageHeader } from "@/components/seo/blocks";
 import JsonLdScript from "@/components/JsonLdScript";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import { buildBreadcrumbStructuredData, buildFaqStructuredData } from "@/lib/structured-data";
+import { FaqAccordion } from "@/components/experiences/faq/faq-accordion";
 import { FAQ_PAGE_ITEMS } from "@/lib/faq-data";
 
 export const metadata: Metadata = createSeoMetadata({
@@ -25,35 +27,33 @@ export default function FAQPage() {
     ]);
 
     return (
-        <main className="min-h-screen max-w-4xl mx-auto py-24 px-6">
+        <SiteChrome current="/faq">
             <JsonLdScript data={faqSchema} />
             <JsonLdScript data={breadcrumbSchema} />
 
-            <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
-                <Link href="/" className="hover:text-white transition-colors">Home</Link>
-                <span>/</span>
-                <span className="text-zinc-200">FAQ</span>
-            </nav>
-            
-            <div className="mb-12">
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">Frequently Asked Questions</h1>
-                <p className="text-lg text-zinc-200">Everything you need to know about analyzing, visualizing, and querying GitHub repositories with Novaris.</p>
-            </div>
-
-            <div className="space-y-8">
-                {FAQ_PAGE_ITEMS.map((faq, index) => (
-                    <div key={index} className="border-b border-white/10 pb-6 last:border-0">
-                        <h2 className="text-xl font-semibold mb-3 text-white">{faq.question}</h2>
-                        <p className="text-zinc-200 leading-relaxed">{faq.answer}</p>
+            <Page wide>
+                <PageHeader
+                    crumbs={[{ label: "Home", href: "/" }, { label: "FAQ" }]}
+                    eyebrow="FAQ"
+                    title="Frequently asked questions"
+                    lead="Answers about analyzing, visualizing, and asking questions about GitHub repositories with Novaris."
+                />
+                <div className="grid gap-12 lg:grid-cols-12">
+                    <aside className="lg:col-span-4">
+                        <div className="lg:sticky lg:top-28">
+                            <p className="max-w-[34ch] text-nv-body leading-relaxed text-nv-ivory-200 text-pretty">
+                                Short answers, all on one page. Open one, or expand them all.
+                            </p>
+                            <div className="mt-6">
+                                <ActionLink href="/" variant="primary" large>Analyze a repository</ActionLink>
+                            </div>
+                        </div>
+                    </aside>
+                    <div className="min-w-0 lg:col-span-8">
+                        <FaqAccordion items={FAQ_PAGE_ITEMS} />
                     </div>
-                ))}
-            </div>
-            
-            <div className="mt-16 text-center">
-                <Link href="/" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-black bg-white hover:bg-zinc-200 transition-colors">
-                    Start Analyzing for Free
-                </Link>
-            </div>
-        </main>
+                </div>
+            </Page>
+        </SiteChrome>
     );
 }

@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import JsonLdScript from "@/components/JsonLdScript";
-import SeoVisual from "@/components/seo/SeoVisual";
+import s from "@/components/seo/seo.module.css";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { ActionLink, H2, Page, PageHeader } from "@/components/seo/blocks";
+import { GuideFinder } from "@/components/experiences/compare/guide-finder";
+import { cn } from "@/components/nv/cn";
+import { Notice } from "@/components/nv/notice";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import { buildBreadcrumbStructuredData, buildItemListStructuredData } from "@/lib/structured-data";
 
@@ -20,16 +24,19 @@ const comparisonPages = [
     title: "Static Analysis vs Novaris",
     href: "/static-analysis-vs-novaris",
     summary: "Compare rule-based static analysis and context-aware repository workflows.",
+    question: "How do rule-based checks differ from reading a whole repository?",
   },
   {
     title: "Novaris vs SonarQube",
     href: "/novaris-vs-sonarqube",
     summary: "Understand where SonarQube and Novaris can complement each other.",
+    question: "Where do code-quality gates and repository analysis fit together?",
   },
   {
     title: "Novaris vs Snyk",
     href: "/novaris-vs-snyk",
     summary: "Compare security context, triage quality, and actionability.",
+    question: "How does broad security coverage compare with repository-level triage?",
   },
 ];
 
@@ -45,50 +52,46 @@ const itemListSchema = buildItemListStructuredData({
 
 export default function ComparePage() {
   return (
-    <main className="min-h-screen bg-transparent text-white px-6 py-20 relative z-10">
+    <SiteChrome current="/compare">
       <JsonLdScript data={breadcrumbSchema} />
       <JsonLdScript data={itemListSchema} />
 
-      <div className="mx-auto max-w-5xl">
-        <nav aria-label="Breadcrumb" className="mb-8 text-sm text-zinc-200 flex items-center gap-2">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span>/</span>
-          <span className="text-zinc-200">Compare</span>
-        </nav>
+      <Page wide>
+        <PageHeader
+          crumbs={[{ label: "Home", href: "/" }, { label: "Compare" }]}
+          eyebrow="Guides"
+          title="Compare context-aware workflows"
+          lead="Three written guides that compare repository analysis approaches by context depth, signal quality, and what you can do with the output."
+        />
 
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">Compare Context-Aware Workflows</h1>
-        <p className="text-zinc-300 text-lg leading-relaxed max-w-3xl mb-8">
-          Use this hub to compare repository analysis approaches across context depth, security signal quality, and engineering actionability.
-        </p>
+        <GuideFinder guides={comparisonPages} />
 
-        <section className="mb-10">
-          <SeoVisual
-            variant="comparison-grid"
-            ariaLabel="Comparison matrix for repository analysis workflows"
-            sizeMode="wide"
-            animate
-            priority="high"
-          />
-        </section>
-
-        <div className="space-y-4 mb-10">
-          {comparisonPages.map((track) => (
-            <Link key={track.title} href={track.href} className="block rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 hover:bg-zinc-900/60 transition-colors">
-              <h2 className="text-xl font-semibold mb-2">{track.title}</h2>
-              <p className="text-zinc-200">{track.summary}</p>
-            </Link>
-          ))}
+        <div className={cn(s.grid12, "mt-20")}>
+          <div className="min-w-0 lg:col-span-7">
+            <H2>How each guide compares</H2>
+            <ul className="mt-8 flex list-none flex-wrap gap-2 p-0">
+              {["Context depth", "Triage quality", "Remediation clarity", "Onboarding speed", "Workflow fit"].map((c) => (
+                <li key={c} className="rounded-full border border-nv-graphite-700 bg-white px-4 py-2 text-nv-small text-nv-ivory-200">
+                  {c}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 max-w-[var(--nv-measure)] text-nv-small text-nv-ivory-300">
+              Every guide uses the same five criteria, so the tables read the same way.
+            </p>
+          </div>
+          <aside className="lg:col-span-4 lg:col-start-9">
+            <Notice tone="info" title="These are articles, not a comparison tool">
+              There is no interactive matrix or benchmark here. Each guide is editorial writing based on public
+              documentation. Check each vendor&apos;s current docs before you decide.
+            </Notice>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <ActionLink href="/solutions">Explore solutions</ActionLink>
+              <ActionLink href="/blog" variant="primary">Read insights</ActionLink>
+            </div>
+          </aside>
         </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Link href="/solutions" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 hover:bg-zinc-900 transition-colors">
-            Explore Solutions
-          </Link>
-          <Link href="/blog" className="px-5 py-3 rounded-lg bg-white text-black font-medium hover:bg-zinc-200 transition-colors">
-            Read Comparison Guides
-          </Link>
-        </div>
-      </div>
-    </main>
+      </Page>
+    </SiteChrome>
   );
 }

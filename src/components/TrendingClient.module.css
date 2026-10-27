@@ -1,0 +1,20 @@
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 4px; border-radius: 999px; border: 1px solid var(--nv-hairline); background: rgb(255 255 255 / 0.7); box-shadow: var(--nv-shadow-xs); }
+.segItem { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 999px; font-size: 0.875rem; font-weight: 500; color: var(--nv-text-2); text-decoration: none; transition: background-color 160ms, color 160ms, box-shadow 160ms; }
+.segItem:hover { color: var(--nv-ivory-50); background: var(--nv-graphite-850); }
+.segOn, .segOn:hover { color: #fff; background: linear-gradient(180deg, #5273ff, #2f54ff); box-shadow: var(--nv-shadow-accent); }
+
+.tools { display: grid; gap: 20px; margin-bottom: 32px; }
+@media (min-width: 1024px) { .tools { grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); align-items: start; gap: 40px; } }
+.find { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--nv-border); background: #fff; box-shadow: var(--nv-shadow-xs); transition: border-color 160ms, box-shadow 160ms; }
+.find:focus-within { border-color: var(--nv-copper-400); box-shadow: 0 0 0 4px rgb(47 84 255 / 0.12); }
+.find input { flex: 1; min-width: 0; min-height: 48px; border: 0; background: transparent; font-size: 0.9375rem; color: var(--nv-ivory-50); outline: none !important; box-shadow: none !important; }
+.find input::placeholder { color: var(--nv-graphite-400); }
+.chips { display: flex; gap: 8px; margin: 0; padding: 0 0 4px; border: 0; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+@media (min-width: 1024px) { .chips { flex-wrap: wrap; overflow: visible; } }
+.chip { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--nv-hairline); background: #fff; font-size: 0.8125rem; color: var(--nv-ivory-200); cursor: pointer; touch-action: manipulation; transition: border-color 160ms, background-color 160ms, color 160ms; }
+.chip:hover { border-color: var(--nv-copper-700); color: var(--nv-ivory-50); }
+.chipOn, .chipOn:hover { border-color: var(--nv-copper-400); background: var(--nv-copper-wash); color: var(--nv-copper-300); }
+.status { margin: 0 0 12px; font-size: 0.8125rem; color: var(--nv-text-3); }
+
+.more { margin-top: 32px; }

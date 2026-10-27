@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+"use client";
+
+import { useId, useMemo, useState } from "react";
 import { FileIcon, FolderIcon } from "./FileIcon";
 import { ChevronRight, CheckSquare, Square } from "lucide-react";
 
@@ -88,7 +90,8 @@ function FileNode({
     expandedSet,
     toggleExpand,
     toggleFile,
-    toggleDirectory
+    toggleDirectory,
+    searchActive = false,
 }: {
     node: TreeNode;
     level: number;
@@ -97,36 +100,37 @@ function FileNode({
     toggleExpand: (path: string) => void;
     toggleFile: (path: string) => void;
     toggleDirectory: (paths: string[]) => void;
+    searchActive?: boolean;
 }) {
     const paddingLeft = 12 + level * 12;
     if (node.type === 'file') {
         const isChecked = selectedSet.has(node.path);
         return (
-            <div className="flex items-center gap-2 py-1" style={{ paddingLeft }}>
-                <button type="button" onClick={() => toggleFile(node.path)} className="text-zinc-400 hover:text-white shrink-0">
-                    {isChecked ? <CheckSquare className="w-4 h-4 text-purple-400" /> : <Square className="w-4 h-4" />}
+            <div className="flex min-h-10 items-center gap-1 rounded-nv-xs py-0.5 transition-colors hover:bg-nv-graphite-850" style={{ paddingLeft }}>
+                <button type="button" aria-label={`Select ${node.path}`} aria-pressed={isChecked} onClick={() => toggleFile(node.path)} className="grid size-8 shrink-0 place-items-center rounded-nv-xs text-nv-ivory-300 transition-colors hover:bg-nv-copper-wash hover:text-nv-copper-400">
+                    {isChecked ? <CheckSquare className="w-4 h-4 text-nv-copper-400" /> : <Square className="w-4 h-4" />}
                 </button>
                 <FileIcon filename={node.name} />
-                <span className="text-xs text-zinc-300 truncate">{node.name}</span>
+                <span className="text-nv-small text-nv-ivory-200 truncate">{node.name}</span>
             </div>
         );
     }
 
-    const isExpanded = expandedSet.has(node.path);
+    const isExpanded = searchActive || expandedSet.has(node.path);
     const dirPaths = node.filePaths || [];
     const allSelected = dirPaths.length > 0 && dirPaths.every(path => selectedSet.has(path));
 
     return (
         <div>
-            <div className="flex items-center gap-2 py-1" style={{ paddingLeft }}>
-                <button type="button" onClick={() => toggleExpand(node.path)} className="text-zinc-400 hover:text-white shrink-0">
+            <div className="flex min-h-10 items-center gap-1 rounded-nv-xs py-0.5 transition-colors hover:bg-nv-graphite-850" style={{ paddingLeft }}>
+                <button type="button" aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.name}`} aria-expanded={isExpanded} onClick={() => toggleExpand(node.path)} className="grid size-8 shrink-0 place-items-center rounded-nv-xs text-nv-ivory-300 transition-colors hover:bg-nv-copper-wash hover:text-nv-copper-400">
                     <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 </button>
-                <button type="button" onClick={() => toggleDirectory(dirPaths)} className="text-zinc-400 hover:text-white shrink-0">
-                    {allSelected ? <CheckSquare className="w-4 h-4 text-purple-400" /> : <Square className="w-4 h-4" />}
+                <button type="button" aria-label={`Select all files in ${node.name}`} aria-pressed={allSelected} onClick={() => toggleDirectory(dirPaths)} className="grid size-8 shrink-0 place-items-center rounded-nv-xs text-nv-ivory-300 transition-colors hover:bg-nv-copper-wash hover:text-nv-copper-400">
+                    {allSelected ? <CheckSquare className="w-4 h-4 text-nv-copper-400" /> : <Square className="w-4 h-4" />}
                 </button>
                 <FolderIcon name={node.name} isExpanded={isExpanded} />
-                <span className="text-xs text-zinc-300">{node.name || 'root'}</span>
+                <span className="text-nv-small text-nv-ivory-200">{node.name || 'root'}</span>
             </div>
             {isExpanded && (
                 <div>
@@ -140,6 +144,7 @@ function FileNode({
                             toggleExpand={toggleExpand}
                             toggleFile={toggleFile}
                             toggleDirectory={toggleDirectory}
+                            searchActive={searchActive}
                         />
                     ))}
                 </div>
@@ -149,13 +154,14 @@ function FileNode({
 }
 
 export function FileTreePicker({ files, selected, onChange }: FileTreePickerProps) {
+    const uid = useId();
     const [search, setSearch] = useState('');
     const [expanded, setExpanded] = useState<Set<string>>(new Set(['']));
     const selectedSet = useMemo(() => new Set(selected), [selected]);
 
     const allPaths = useMemo(() => files.map((f) => f.path), [files]);
     const tree = useMemo(() => sortTree(buildTree(allPaths)), [allPaths]);
-    const filteredTree = useMemo(() => filterTree(tree, search) || tree, [tree, search]);
+    const filteredTree = useMemo(() => filterTree(tree, search), [tree, search]);
 
     const toggleExpand = (path: string) => {
         setExpanded(prev => {
@@ -186,15 +192,17 @@ export function FileTreePicker({ files, selected, onChange }: FileTreePickerProp
 
     return (
         <div className="space-y-3">
+            <label htmlFor={`${uid}-filter`} className="sr-only">Filter repository files</label>
             <input
-                type="text"
+                id={`${uid}-filter`}
+                type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500/50 outline-none text-sm"
+                className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-950 px-3 py-2 text-nv-small text-nv-ivory-50 placeholder:text-nv-graphite-400 focus:border-nv-copper-400"
                 placeholder="Filter files..."
             />
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-white/10 bg-zinc-950/50 p-2">
-                {(filteredTree.children || []).map(child => (
+            <div className="max-h-64 overflow-y-auto rounded-nv-md border border-nv-graphite-600 bg-nv-graphite-950 p-2">
+                {(filteredTree?.children || []).map(child => (
                     <FileNode
                         key={child.path}
                         node={child}
@@ -204,21 +212,23 @@ export function FileTreePicker({ files, selected, onChange }: FileTreePickerProp
                         toggleExpand={toggleExpand}
                         toggleFile={toggleFile}
                         toggleDirectory={toggleDirectory}
+                        searchActive={Boolean(search.trim())}
                     />
                 ))}
+                {!filteredTree && <p role="status" className="px-3 py-6 text-nv-small text-nv-ivory-300">No files match your search.</p>}
             </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-200">
+            <div className="flex flex-wrap items-center gap-2 text-nv-small text-nv-ivory-300">
                 <button
                     type="button"
                     onClick={() => onChange(allPaths)}
-                    className="px-2 py-1 rounded bg-zinc-800 border border-white/10 hover:bg-zinc-700"
+                    className="min-h-9 rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-800 px-3 py-1 text-nv-ivory-200 transition-colors hover:border-nv-copper-400 hover:bg-nv-copper-wash"
                 >
                     Select All
                 </button>
                 <button
                     type="button"
                     onClick={() => onChange([])}
-                    className="px-2 py-1 rounded bg-zinc-800 border border-white/10 hover:bg-zinc-700"
+                    className="min-h-9 rounded-nv-sm border border-nv-graphite-500 bg-nv-graphite-800 px-3 py-1 text-nv-ivory-200 transition-colors hover:border-nv-copper-400 hover:bg-nv-copper-wash"
                 >
                     Clear
                 </button>

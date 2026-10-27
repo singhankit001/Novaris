@@ -1,13 +1,9 @@
+import { ErrorState } from "@/components/nv/states";
+
 export default function AdminAccessDeniedPage() {
     return (
-        <div className="min-h-[60vh] flex items-center justify-center px-6">
-            <div className="max-w-md w-full rounded-2xl border border-white/10 bg-zinc-950/50 p-6 text-center">
-                <h1 className="text-lg font-semibold text-white">Access denied</h1>
-                <p className="mt-2 text-sm text-zinc-200">
-                    You are signed in, but your account is not authorized to view this page.
-                </p>
-            </div>
-        </div>
+        <ErrorState title="Access denied" detail="403">
+            <p>You are signed in, but your account is not authorized to view this page.</p>
+        </ErrorState>
     );
 }
-

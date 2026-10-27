@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { ActionLink, Page, PageHeader } from "@/components/seo/blocks";
+import { BuildingCubes } from "@/components/experiences/coming-soon/building-cubes";
 import { buildOgImageUrl, createSeoMetadata, truncateMetaText } from "@/lib/seo";
 
 function formatFeatureLabel(raw?: string): string {
@@ -55,22 +57,22 @@ export default async function ComingSoonPage({
   const label = formatFeatureLabel(feature ?? slug);
 
   return (
-    <main className="min-h-screen bg-[#09090b] text-white px-6 py-24">
-      <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-zinc-900/40 p-8 md:p-10 text-center">
-        <p className="text-cyan-300 text-xs uppercase tracking-[0.22em] mb-4">Coming Soon</p>
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-5">{label} is on the roadmap</h1>
-        <p className="text-zinc-300 leading-relaxed mb-8">
-          We are actively building this page. You can explore current capabilities from Solutions and Insights meanwhile.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/solutions" className="px-5 py-3 rounded-xl bg-white text-black font-medium hover:bg-zinc-200 transition-colors">
-            Explore Solutions
-          </Link>
-          <Link href="/blog" className="px-5 py-3 rounded-xl border border-white/15 text-zinc-200 hover:bg-zinc-800/60 transition-colors">
-            Read Insights
-          </Link>
+    <SiteChrome>
+      <Page>
+        <div className="pt-8">
+          <BuildingCubes />
         </div>
-      </div>
-    </main>
+        <PageHeader
+          align="center"
+          eyebrow="Roadmap"
+          title={`${label} is not available yet`}
+          lead="This page is not built yet. The pages that exist today are under Solutions and Insights."
+        />
+        <div className="flex flex-wrap justify-center gap-3">
+          <ActionLink href="/solutions" variant="primary" large>Explore solutions</ActionLink>
+          <ActionLink href="/blog" large>Read insights</ActionLink>
+        </div>
+      </Page>
+    </SiteChrome>
   );
 }

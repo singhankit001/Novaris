@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
-import WelcomeBanner from "@/components/Dashboard/WelcomeBanner";
-import AdvancedVisuals from "@/components/Dashboard/AdvancedVisuals";
-import QuickStats from "@/components/Dashboard/QuickStats";
-import RecentScans from "@/components/Dashboard/RecentScans";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { buildInvalidSessionSignOutRedirect, getSessionAuthState, getSessionUserId } from "@/lib/session-guard";
+import OverviewStats from "@/components/Dashboard/OverviewStats";
+import PageHeader from "@/components/Dashboard/PageHeader";
+import ScansTable from "@/components/Dashboard/ScansTable";
+import { buttonClasses } from "@/components/nv/button-styles";
 
 export default async function DashboardPage() {
     const session = await auth();
@@ -26,20 +27,32 @@ export default async function DashboardPage() {
         redirect("/");
     }
 
+    const name = user.username ?? user.name ?? "your account";
+
     return (
         <div className="space-y-12">
-            <WelcomeBanner user={user} />
-
-            <AdvancedVisuals />
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <RecentScans userId={userId} limit={5} showViewAll />
-                </div>
-                <div className="space-y-8">
-                    <QuickStats />
-                </div>
-            </div>
+            <PageHeader
+                eyebrow="Dashboard"
+                title={`Signed in as ${name}`}
+                description="Saved security scans for repositories you analyzed while signed in. Reports expire 7 days after the scan."
+                actions={
+                    <Link href="/" className={buttonClasses("primary")}>
+                        Scan a repository
+                    </Link>
+                }
+            />
+            <section aria-labelledby="totals-h" className="space-y-4">
+                <h2 id="totals-h" className="nv-eyebrow">
+                    Totals
+                </h2>
+                <OverviewStats />
+            </section>
+            <section aria-labelledby="recent-h" className="space-y-4">
+                <h2 id="recent-h" className="nv-display text-nv-title text-nv-ivory-50">
+                    Recent scans
+                </h2>
+                <ScansTable limit={5} showViewAll />
+            </section>
         </div>
     );
 }

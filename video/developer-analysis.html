@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=1020, height=600" />
+<title>developer-analysis</title>
+<script src="shared/gsap.min.js"></script>
+<link rel="stylesheet" href="shared/ui.css" />
+<style>
+  .stage { padding: 32px 36px; gap: 18px; }
+  .input { height: 64px; font-size: 24px; border-radius: 20px; }
+  .btn { height: 48px; font-size: 20px; }
+  .main { display: grid; grid-template-columns: 340px 1fr; gap: 18px; flex: 1; min-height: 0; }
+  .card { padding: 18px 20px; border-radius: 18px; }
+  .lang { display: grid; grid-template-columns: 120px 1fr 52px; align-items: center; gap: 12px; font-size: 18px; margin-top: 12px; color: var(--ink2); }
+  .lang b { font-weight: 500; font-family: var(--mono); font-size: 16px; color: var(--ink3); text-align: right; }
+  .repo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--hair); background: #fff; font-size: 18px; }
+  .repo .mono { font-size: 17px; color: var(--ink); }
+  .repo small { font-size: 15px; color: var(--ink3); }
+  .grid { display: grid; grid-template-columns: repeat(26, 1fr); grid-template-rows: repeat(5, 1fr); gap: 5px; margin-top: 12px; grid-auto-flow: column; }
+  .grid i { aspect-ratio: 1; border-radius: 4px; background: #e8ecff; }
+  .badge { font-size: 15px; padding: 3px 12px; } .cap { font-size: 14px; }
+</style></head>
+<body>
+<div id="root" data-composition-id="developer-analysis" data-start="0" data-width="1020" data-height="600" data-duration="7">
+  <div class="stage">
+    <div class="row"><div class="input on grow"><svg width="26" height="26" style="color:var(--ink3)"><use href="#i-search"/></svg><span><span id="typed" class="d"></span><span class="caret d" id="caret"></span></span></div><div class="btn">Analyze</div></div>
+    <div class="main">
+      <div class="col" style="gap:18px">
+        <div class="card"><div class="row d" id="prof"><div class="avatar" style="width:70px;height:70px;font-size:30px;border-radius:22px">M</div><div><div style="font-weight:600;font-size:24px">maya-demo</div><div class="mono muted" style="font-size:15px">public profile</div></div></div>
+          <div class="row d" style="margin-top:14px;gap:8px;flex-wrap:wrap"><span class="chip on">24 repositories</span><span class="chip">3 languages</span></div></div>
+        <div class="card grow"><div class="cap">Languages</div>
+          <div class="lang d"><span>TypeScript</span><div class="bar"><i data-w="0.62"></i></div><b>62%</b></div>
+          <div class="lang d"><span>Go</span><div class="bar"><i data-w="0.24" style="background:var(--violet)"></i></div><b>24%</b></div>
+          <div class="lang d"><span>Python</span><div class="bar"><i data-w="0.14" style="background:var(--ion)"></i></div><b>14%</b></div></div>
+      </div>
+      <div class="col" style="gap:18px">
+        <div class="card"><div class="cap" style="margin-bottom:10px">Repository insights</div>
+          <div class="col" style="gap:8px">
+            <div class="repo d"><div><div class="mono">payments-api</div><small>Ledger service and auth middleware</small></div><span class="badge ok">Measured</span></div>
+            <div class="repo d"><div><div class="mono">edge-cache</div><small>Request cache for the API gateway</small></div><span class="badge ok">Measured</span></div>
+            <div class="repo d"><div><div class="mono">notebooks</div><small>Data experiments, mostly inactive</small></div><span class="badge warn">Inferred</span></div>
+          </div></div>
+        <div class="card grow"><div class="cap">Contributions, last 12 months</div><div class="grid" id="grid"></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="dyn" class="abs" style="inset:0;pointer-events:none"><svg id="cursor" class="d" viewBox="0 0 24 24" fill="#14161d" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><path d="M4 3l7 17 2.5-7L20.5 10.5z"/></svg><div class="ripple"></div></div>
+</div>
+<script src="shared/lib.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const T = 7, tl = gsap.timeline({ paused: true });
+  const g = document.getElementById("grid"); let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const lv = ["#e8ecff", "#cdd6ff", "#9fb0ff", "#6f89ff", "#2f54ff"];
+  for (let i = 0; i < 130; i++) { const e = document.createElement("i"); e.style.background = lv[Math.floor(Math.pow(rnd(), 1.6) * 5)]; e.className = "d c"; g.appendChild(e); }
+  gsap.set(".d", { opacity: 0 }); gsap.set(".bar i", { scaleX: 0 }); gsap.set("#cursor", { x: 640, y: 300 });
+  gsap.set(".ripple", { opacity: 0 });
+  tl.to("#caret", { opacity: 1, duration: 0.2 }, 0.2);
+  NV.type(tl, document.getElementById("typed"), "@maya-demo", 0.5, 0.8);
+  tl.set("#typed", { opacity: 1 }, 0.5);
+  tl.to("#cursor", { opacity: 1, duration: 0.3 }, 1.2);
+  NV.cursor(tl, [925, 52], 1.2, 0.7);
+  NV.click(tl, 930, 46, 1.95);
+  tl.fromTo("#prof", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", immediateRender: false }, 2.2);
+  tl.to("#prof + div", { opacity: 1, duration: 0.4 }, 2.4);
+  tl.to(".lang", { opacity: 1, duration: 0.3, stagger: 0.12 }, 2.7);
+  document.querySelectorAll(".bar i").forEach((e) => (e.style.width = e.dataset.w * 100 + "%"));
+  tl.to(".bar i", { scaleX: 1, duration: 0.7, ease: "power3.out", stagger: 0.12 }, 2.8);
+  tl.to(".repo", { opacity: 1, duration: 0.4, stagger: 0.25 }, 3.3);
+  tl.to(".c", { opacity: 1, duration: 0.3, stagger: { each: 0.008, from: "start" } }, 4.2);
+  tl.to(".d", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
+  tl.to({}, { duration: 0.01 }, T);
+  window.__timelines["developer-analysis"] = tl;
+</script>
+</body></html>

@@ -11,7 +11,7 @@ describe("Mermaid raw/preview controls", () => {
     it("supports optional rawCode prop and raw-preview toggle state", () => {
         expect(mermaidComponentSource).toContain("rawCode?: string");
         expect(mermaidComponentSource).toContain("const [isRawView, setIsRawView] = useState(false);");
-        expect(mermaidComponentSource).toContain("setIsRawView((prev) => !prev)");
+        expect(mermaidComponentSource).toContain("setIsRawView((p) => !p)");
     });
 
     it("includes copy handler for Mermaid raw code", () => {
@@ -20,9 +20,16 @@ describe("Mermaid raw/preview controls", () => {
         expect(mermaidComponentSource).toContain("Mermaid code copied");
     });
 
-    it("prevents control clicks from opening fullscreen preview unintentionally", () => {
-        expect(mermaidComponentSource).toContain("e.stopPropagation()");
-        expect(mermaidComponentSource).toContain("if (!isGenerating && svg && !isRawView)");
+    it("opens fullscreen only from an explicit button, and only for a finished diagram in preview mode", () => {
+        expect(mermaidComponentSource).toContain("const ready = !isGenerating && Boolean(svg);");
+        expect(mermaidComponentSource).toContain('aria-label="Open diagram full screen"');
+        expect(mermaidComponentSource).not.toContain("cursor-zoom-in");
+    });
+
+    it("purifies Mermaid SVG before inserting it", () => {
+        expect(mermaidComponentSource).toContain("DOMPurify.sanitize");
+        expect(mermaidComponentSource).toContain("__html: safeSvg");
+        expect(mermaidComponentSource).not.toContain("__html: svg");
     });
 
     it("sends syntaxError and diagramType when requesting AI syntax fixes", () => {

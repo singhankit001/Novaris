@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Loader2, TrendingUp } from "lucide-react";
+import { useState, useEffect, useId, useRef } from "react";
+import { ArrowRight, Loader2, Search } from "lucide-react";
 import { getRepoSuggestions } from "@/app/actions";
-import SuggestionsList from "./SuggestionsList";
+import SuggestionsList, { suggestionOptionId } from "./SuggestionsList";
 import type { RepoSuggestion } from "@/lib/services/repo-suggestions";
 import type { CatalogRepoEntry } from "@/lib/repo-catalog";
 import type { SearchHistoryItem } from "@/lib/services/history-service";
 import Link from "next/link";
+import { cn } from "@/components/nv/cn";
+import s from "./RepoSearch.module.css";
 
 interface RepoSearchProps {
     onSearchSubmit: (query: string) => void;
@@ -16,6 +17,10 @@ interface RepoSearchProps {
     trendingRepos: CatalogRepoEntry[];
     recentSearches: SearchHistoryItem[];
     isSessionActive: boolean;
+    /** Set while the portal-activation exit plays before navigation. */
+    activating?: boolean;
+    /** Id for the input so the page can focus it. */
+    inputId?: string;
 }
 
 export default function RepoSearch({
@@ -24,12 +29,30 @@ export default function RepoSearch({
     trendingRepos,
     recentSearches,
     isSessionActive,
+    activating = false,
+    inputId,
 }: RepoSearchProps) {
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<RepoSuggestion[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+    const [emptyError, setEmptyError] = useState(false);
+    const listId = useId();
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // "/" focuses the field from anywhere that is not already a text control.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            const el = e.target as HTMLElement | null;
+            if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+            if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+            e.preventDefault();
+            inputRef.current?.focus();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, []);
 
     useEffect(() => {
         let isCancelled = false;
@@ -68,11 +91,15 @@ export default function RepoSearch({
         return () => {
             isCancelled = true;
             clearTimeout(timer);
+            // A cancelled request skips its own reset, so release the spinner here; only the
+            // request started by the next effect run may turn it back on.
+            setIsFetchingSuggestions(false);
         };
     }, [input, loading]);
 
     const handleInputChange = (val: string) => {
         setInput(val);
+        setEmptyError(false);
         setSelectedIndex(-1);
     };
 
@@ -100,6 +127,10 @@ export default function RepoSearch({
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setShowSuggestions(false);
+        if (!input.trim()) {
+            setEmptyError(true);
+            return;
+        }
         onSearchSubmit(input);
     };
 
@@ -110,109 +141,91 @@ export default function RepoSearch({
         onSearchSubmit(suggestionInput);
     };
 
+    const picks = isSessionActive && recentSearches.length > 0
+        ? { label: "Recent", items: recentSearches.slice(0, 3).map((r) => ({ key: r.query, text: r.query, query: r.query })) }
+        : {
+              label: "Try",
+              items: (trendingRepos.length > 0
+                  ? trendingRepos.slice(0, 3).map((r) => ({ key: `${r.owner}/${r.repo}`, text: `${r.owner}/${r.repo}`, query: `${r.owner}/${r.repo}` }))
+                  : [
+                        { key: "torvalds", text: "torvalds", query: "torvalds" },
+                        { key: "facebook/react", text: "facebook/react", query: "facebook/react" },
+                        { key: "vercel/next.js", text: "vercel/next.js", query: "vercel/next.js" },
+                    ]),
+          };
+    const activeId = showSuggestions && selectedIndex >= 0 ? suggestionOptionId(listId, selectedIndex) : undefined;
+    const busy = loading || isFetchingSuggestions;
+
     return (
-        <div className="w-full flex flex-col items-center">
-            <form onSubmit={handleFormSubmit} className="w-full max-w-md relative group">
-                <div className="flex items-center bg-[#0a0a0f]/80 border border-white/10 focus-within:border-cyan-500/40 focus-within:shadow-[0_0_30px_rgba(6,182,212,0.15)] transition-all duration-300 p-2 rounded-2xl shadow-inner">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => handleInputChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onFocus={() => input.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                        placeholder="GitHub URL, username, or repo"
-                        className="flex-1 bg-transparent border-none outline-none text-white px-3 py-2 md:px-4 md:py-3 placeholder-zinc-500 text-sm md:text-base w-full min-w-0 font-sans font-medium"
-                    />
-                    <AnimatePresence>
-                        {input.length > 0 && (
-                            <motion.button
-                                initial={{ opacity: 0, x: 10, scale: 0.9 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, x: 10, scale: 0.9 }}
-                                transition={{ duration: 0.15, ease: "easeOut" }}
-                                type="submit"
-                                disabled={loading}
-                                className="p-2.5 md:p-3.5 rounded-xl transition-all disabled:opacity-60 shrink-0 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold hover:opacity-90 active:scale-95 focus-visible:outline-none shadow-[0_0_15px_rgba(168,85,247,0.35)]"
-                            >
-                                {loading || isFetchingSuggestions ? (
-                                    <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
-                                ) : (
-                                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-                                )}
-                            </motion.button>
-                        )}
-                    </AnimatePresence>
-                </div>
-                <AnimatePresence>
-                    {showSuggestions && (
-                        <SuggestionsList
-                            suggestions={suggestions}
-                            onSelect={handleSuggestionSelect}
-                            isVisible={showSuggestions}
-                            selectedIndex={selectedIndex}
+        <div className="w-full">
+            <form onSubmit={handleFormSubmit} className="relative" noValidate>
+                <div className={s.shell} data-activating={activating}>
+                    <div className={cn(s.field, "nv-holo-ring", emptyError && s.fieldError)}>
+                        <Search aria-hidden className={cn(s.icon, "size-6")} />
+                        <input
+                            ref={inputRef}
+                            id={inputId}
+                            type="text"
+                            role="combobox"
+                            aria-expanded={showSuggestions}
+                            aria-autocomplete="list"
+                            value={input}
+                            onChange={(e) => handleInputChange(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onFocus={() => input.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
+                            onBlur={() => setShowSuggestions(false)}
+                            placeholder="owner/repo, URL or username"
+                            aria-label="GitHub URL, username, or repository"
+                            aria-controls={showSuggestions ? listId : undefined}
+                            aria-activedescendant={activeId}
+                            aria-invalid={emptyError || undefined}
+                            aria-describedby={emptyError ? `${listId}-err` : undefined}
+                            autoComplete="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                            className={s.input}
                         />
-                    )}
-                </AnimatePresence>
+                        <span aria-hidden className={s.hint}>
+                            {input ? <><kbd className={s.kbd}>↵</kbd> to analyze</> : <><kbd className={s.kbd}>/</kbd> to focus</>}
+                        </span>
+                        <button type="submit" disabled={loading} aria-label={loading ? "Analyzing" : "Analyze"} className={s.submit}>
+                            <span aria-hidden className={s.submitLabel}>
+                                {loading ? "Analyzing" : "Analyze"}
+                            </span>
+                            {busy ? <Loader2 aria-hidden className="size-5 animate-spin" /> : <ArrowRight aria-hidden className="size-5" />}
+                        </button>
+                    </div>
+                </div>
+                {emptyError && (
+                    <p id={`${listId}-err`} role="alert" className={s.err}>
+                        Enter a GitHub URL, a username, or owner/repo to analyze.
+                    </p>
+                )}
+                {showSuggestions && (
+                    <SuggestionsList id={listId} suggestions={suggestions} onSelect={handleSuggestionSelect} selectedIndex={selectedIndex} />
+                )}
+                <p className="sr-only" aria-live="polite">
+                    {showSuggestions ? `${suggestions.length} suggestions available` : ""}
+                </p>
             </form>
 
-            <div className="mt-4 md:mt-6 flex flex-col items-center gap-4 md:gap-6 w-full">
-                <div className="flex flex-wrap justify-center items-center gap-2 md:gap-4 text-[10px] sm:text-xs md:text-sm text-zinc-300">
-                    {isSessionActive && recentSearches.length > 0 ? (
-                        <>
-                            <span>Recent:</span>
-                            {recentSearches.slice(0, 3).map((search, i) => (
-                                <span key={search.query} className={`${i >= 2 ? 'hidden sm:flex' : 'flex'} items-center gap-2 md:gap-4`}>
-                                    <button
-                                        onClick={() => {
-                                            setInput(search.query);
-                                            onSearchSubmit(search.query);
-                                        }}
-                                        className="hover:text-white transition-colors truncate max-w-[120px] md:max-w-none"
-                                    >
-                                        {search.query}
-                                    </button>
-                                    {i < Math.min(recentSearches.length, 3) - 1 && <span className={`${i >= 1 ? 'hidden sm:inline' : 'inline'}`}>•</span>}
-                                </span>
-                            ))}
-                        </>
-                    ) : (
-                        <>
-                            <span>Try:</span>
-                            {trendingRepos.length > 0 ? (
-                                trendingRepos.slice(0, 3).map((repo, i) => (
-                                    <span key={`${repo.owner}/${repo.repo}`} className={`${i === 2 ? 'hidden sm:flex' : 'flex'} items-center gap-2`}>
-                                        <button 
-                                            onClick={() => {
-                                                const query = `${repo.owner}/${repo.repo}`;
-                                                setInput(query);
-                                                onSearchSubmit(query);
-                                            }} 
-                                            className="hover:text-white transition-colors truncate max-w-[120px]"
-                                        >
-                                            {repo.repo}
-                                        </button>
-                                        {i < 2 && <span className={`${i === 1 ? 'hidden sm:inline' : 'inline'}`}>•</span>}
-                                    </span>
-                                ))
-                            ) : (
-                                <>
-                                    <button onClick={() => { setInput("torvalds"); onSearchSubmit("torvalds"); }} className="hover:text-white transition-colors">torvalds</button>
-                                    <span className="inline">•</span>
-                                    <button onClick={() => { setInput("facebook/react"); onSearchSubmit("facebook/react"); }} className="hover:text-white transition-colors">facebook/react</button>
-                                    <span className="hidden sm:inline">•</span>
-                                    <button onClick={() => { setInput("vercel/next.js"); onSearchSubmit("vercel/next.js"); }} className="hidden md:inline hover:text-white transition-colors">vercel/next.js</button>
-                                </>
-                            )}
-                        </>
-                    )}
-                </div>
-
-                <Link
-                    href="/trending"
-                    className="flex items-center gap-1.5 px-3 py-1 md:py-1.5 rounded-full bg-zinc-900/50 border border-white/5 hover:border-blue-500/30 text-blue-400 hover:text-blue-300 transition-all text-[10px] md:text-xs font-semibold animate-soft-pulse hover:animate-none"
-                >
-                    <TrendingUp size={12} className="md:w-3.5 md:h-3.5" /> Explore Trending Repositories
+            <div className={s.picks}>
+                <span className="mr-1">{picks.label}</span>
+                {picks.items.map((item) => (
+                    <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => {
+                            setInput(item.query);
+                            onSearchSubmit(item.query);
+                        }}
+                        className={s.pick}
+                    >
+                        {item.text}
+                    </button>
+                ))}
+                <Link href="/trending" className={s.browse}>
+                    Browse trending
                 </Link>
             </div>
         </div>

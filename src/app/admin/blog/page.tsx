@@ -1,109 +1,77 @@
 import { getAllPosts } from "@/lib/services/blog-service";
 import Link from "next/link";
-import { PlusCircle, Edit3, Eye } from "lucide-react";
+import { Edit3, Eye, PlusCircle } from "lucide-react";
 import { DeletePostButton } from "@/components/admin/DeletePostButton";
+import PageHeader from "@/components/Dashboard/PageHeader";
+import { StatusPill } from "@/components/nv/badge";
+import { buttonClasses } from "@/components/nv/button-styles";
+import { DataTable, type Column } from "@/components/nv/data";
+import { EmptyState } from "@/components/nv/states";
+
+type Post = Awaited<ReturnType<typeof getAllPosts>>[number];
+
+const iconLink = "inline-flex size-11 items-center justify-center rounded-nv-sm text-nv-ivory-200 hover:bg-nv-graphite-800 hover:text-nv-ivory-50";
+
+const columns: Column<Post>[] = [
+  {
+    key: "title",
+    header: "Title",
+    render: (p) => (
+      <span className="flex flex-col">
+        <span className="text-nv-ivory-50">{p.title}</span>
+        <span className="font-nv-mono text-nv-micro text-nv-ivory-300">/{p.slug}</span>
+      </span>
+    ),
+  },
+  { key: "status", header: "Status", render: (p) => <StatusPill status={p.published ? "success" : "warning"}>{p.published ? "Published" : "Draft"}</StatusPill> },
+  { key: "category", header: "Category", render: (p) => p.category },
+  { key: "date", header: "Date", render: (p) => p.date },
+  {
+    key: "actions",
+    header: "Actions",
+    render: (p) => (
+      <span className="flex items-center gap-1">
+        {p.published ? (
+          <Link href={`/blog/${p.slug}`} target="_blank" aria-label={`View ${p.title} live`} className={iconLink}>
+            <Eye aria-hidden className="size-4" />
+          </Link>
+        ) : (
+          <span role="img" aria-label="Drafts are not publicly visible" title="Drafts are not publicly visible" className={`${iconLink} cursor-not-allowed opacity-45`}>
+            <Eye aria-hidden className="size-4" />
+          </span>
+        )}
+        <Link href={`/admin/blog/${p.id}`} aria-label={`Edit ${p.title}`} className={iconLink}>
+          <Edit3 aria-hidden className="size-4" />
+        </Link>
+        <DeletePostButton id={p.id} title={p.title} />
+      </span>
+    ),
+  },
+];
 
 export default async function BlogAdminPage() {
   const posts = await getAllPosts();
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Blog Posts</h1>
-          <p className="text-zinc-200 text-sm">
-            Manage your articles, drafts, and published content.
-          </p>
-        </div>
-        <Link 
-          href="/admin/blog/new"
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl font-bold transition-all"
-        >
-          <PlusCircle size={18} />
-          Create Post
-        </Link>
-      </div>
-
-      <div className="bg-zinc-900/50 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/5 bg-white/5">
-                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-xs font-bold text-zinc-300 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {posts.map((post) => (
-                <tr key={post.id} className="hover:bg-white/[0.02] transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-zinc-200 group-hover:text-white transition-colors">
-                        {post.title}
-                      </span>
-                      <span className="text-xs text-zinc-300 mt-0.5">/{post.slug}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
-                      post.published 
-                        ? "bg-green-500/10 text-green-400 border-green-500/20" 
-                        : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-                    }`}>
-                      {post.published ? "Published" : "Draft"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-zinc-200">{post.category}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-zinc-200">{post.date}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {post.published ? (
-                        <Link 
-                          href={`/blog/${post.slug}`}
-                          target="_blank"
-                          className="p-1.5 text-zinc-300 hover:text-blue-400 hover:bg-blue-400/5 rounded-lg transition-all"
-                          title="View Live"
-                        >
-                          <Eye size={16} />
-                        </Link>
-                      ) : (
-                        <span
-                          className="p-1.5 text-zinc-700 rounded-lg cursor-not-allowed"
-                          title="Drafts are not publicly visible"
-                        >
-                          <Eye size={16} />
-                        </span>
-                      )}
-                      <Link 
-                        href={`/admin/blog/${post.id}`}
-                        className="p-1.5 text-zinc-300 hover:text-purple-400 hover:bg-purple-400/5 rounded-lg transition-all"
-                        title="Edit"
-                      >
-                        <Edit3 size={16} />
-                      </Link>
-                      <DeletePostButton id={post.id} title={post.title} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {posts.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-zinc-300 italic">
-                    No posts found. Create your first post to get started!
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Blog posts"
+        description="Articles, drafts and published content."
+        actions={
+          <Link href="/admin/blog/new" className={buttonClasses("primary")}>
+            <PlusCircle aria-hidden className="size-4" />
+            Create post
+          </Link>
+        }
+      />
+      {posts.length === 0 ? (
+        <EmptyState title="No posts yet" action={<Link href="/admin/blog/new" className={buttonClasses("primary")}>Create the first post</Link>}>
+          <p>Drafts and published posts will be listed here.</p>
+        </EmptyState>
+      ) : (
+        <DataTable caption="Blog posts" columns={columns} rows={posts} rowKey={(p) => p.id} />
+      )}
     </div>
   );
 }

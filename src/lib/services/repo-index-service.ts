@@ -1,5 +1,6 @@
 import { kv } from "@vercel/kv";
 import { gzipSync, gunzipSync } from "node:zlib";
+import { isRepoMarkedPrivate } from "@/lib/cache";
 
 export type RepoIndexEntry = {
     path: string;
@@ -304,6 +305,8 @@ export async function buildRepoIndex(
 }
 
 export async function loadRepoIndex(owner: string, repo: string): Promise<RepoIndex | null> {
+    // The index lists file paths and is keyed only by owner/repo, so it is never shared for private repos.
+    if (await isRepoMarkedPrivate(owner, repo)) return null;
     const headSha = await safeKvOperation(() => kv.get<string>(getIndexHeadKey(owner, repo)));
     if (!headSha || typeof headSha !== "string") return null;
 
@@ -395,6 +398,7 @@ export async function ensureRepoIndexForTree(
     tree: Array<{ path: string; type: string }>
 ): Promise<void> {
     try {
+        if (await isRepoMarkedPrivate(owner, repo)) return;
         await buildRepoIndex(owner, repo, treeSha, tree);
     } catch (error) {
         console.warn("Failed to build repo index:", error);

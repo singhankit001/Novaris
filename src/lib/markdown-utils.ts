@@ -191,3 +191,35 @@ export function repairMarkdown(content: string): string {
 
     return lines.join('\n');
 }
+
+/**
+ * Resolve a path the model wrote (`utils.ts`, `lib/`) to a real path in the repository tree.
+ * Returns the input unchanged when nothing matches, so callers check existence themselves.
+ */
+export function resolveRepoPath(path: string, isFolder: boolean, fileTree: { path: string }[]): string {
+    if (fileTree.length === 0) return path;
+    if (fileTree.some((f) => f.path === path)) return path;
+
+    const matches = fileTree.filter((f) => f.path.endsWith(`/${path}`) || f.path === path);
+    if (matches.length === 1) return matches[0].path;
+    if (matches.length > 1) {
+        const preferred = matches.find((m) => m.path.startsWith("src/") || m.path.startsWith("lib/"));
+        if (preferred) return preferred.path;
+        const nonTest = matches.find((m) => !m.path.includes("test"));
+        if (nonTest) return nonTest.path;
+        return [...matches].sort((a, b) => a.path.length - b.path.length)[0].path;
+    }
+    if (isFolder && fileTree.some((f) => f.path.startsWith(`${path}/`))) return path;
+    return path;
+}
+
+const PATH_EXTENSION = /\.(ts|tsx|js|jsx|py|md|css|json|yaml|yml|sh|html|go|rs|java|c|cpp|h|sql|env|toml)$/;
+const KNOWN_FOLDERS = ["src", "lib", "app", "components", "pages", "public", "tests", "docs"];
+
+/** Classify inline code as a possible file or folder reference. Existence is checked by the caller. */
+export function classifyInlinePath(text: string): "file" | "folder" | null {
+    if (text.length <= 2 || text.includes(" ")) return null;
+    if (PATH_EXTENSION.test(text)) return "file";
+    if (text.endsWith("/") || text.includes("/") || KNOWN_FOLDERS.includes(text.toLowerCase())) return "folder";
+    return null;
+}

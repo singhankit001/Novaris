@@ -72,6 +72,7 @@ vi.mock("@/lib/prompt-builder", () => ({
 vi.mock("@/lib/cache", () => ({
     getCachedQuerySelection: getCachedQuerySelectionMock,
     cacheQuerySelection: cacheQuerySelectionMock,
+    isRepoMarkedPrivate: vi.fn(async () => false),
 }));
 
 vi.mock("@/lib/github", () => ({

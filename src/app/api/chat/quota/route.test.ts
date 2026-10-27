@@ -18,6 +18,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/actor-id", () => ({
     ANON_COOKIE_NAME: "rm_anon_id",
     getAnonymousActorId: getAnonymousActorIdMock,
+    getAnonymousNetworkId: () => "ip_net",
 }));
 
 vi.mock("@/lib/cache", () => ({
@@ -50,7 +51,7 @@ describe("GET /api/chat/quota", () => {
         const body = await response.json();
 
         expect(response.status).toBe(200);
-        expect(getToolBudgetWindowUsageMock).toHaveBeenCalledWith("repo", "anonymous", "anon_actor");
+        expect(getToolBudgetWindowUsageMock).toHaveBeenCalledWith("repo", "anonymous", ["anon_actor", "ip_net"]);
         expect(body).toMatchObject({
             scope: "repo",
             audience: "anonymous",
@@ -71,7 +72,7 @@ describe("GET /api/chat/quota", () => {
         const body = await response.json();
 
         expect(response.status).toBe(200);
-        expect(getToolBudgetWindowUsageMock).toHaveBeenCalledWith("profile", "authenticated", "user_123");
+        expect(getToolBudgetWindowUsageMock).toHaveBeenCalledWith("profile", "authenticated", ["user_123"]);
         expect(body).toMatchObject({
             scope: "profile",
             audience: "authenticated",

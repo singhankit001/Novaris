@@ -1,12 +1,27 @@
 import type { NextConfig } from "next";
-import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
-  turbopack: {}, // Silence Turbopack warning for webpack-based next-pwa
+  // Pin the root: a stray lockfile in a parent directory otherwise becomes the inferred workspace root.
+  turbopack: { root: __dirname },
+  outputFileTracingRoot: __dirname,
+  // Stop `next dev` from writing a managed AGENTS.md into the repository.
+  agentRules: false,
   experimental: {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+  },
+  async headers() {
+    return [
+      {
+        // The browser must revalidate the worker script so updates roll out on the next visit.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [
@@ -28,6 +43,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    qualities: [75, 100],
     remotePatterns: [
       {
         protocol: 'https',
@@ -57,59 +73,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: false, // Enable in dev for testing
-  fallbacks: {
-    document: '/_offline.html',
-  },
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/fonts\.(?:gstatic|googleapis)\.com\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'google-fonts',
-        expiration: {
-          maxEntries: 4,
-          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/api\.github\.com\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'github-api',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 5 * 60, // 5 minutes
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-images',
-        expiration: {
-          maxEntries: 60,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:js|css)$/i,
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: 'static-resources',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
-        },
-      },
-    },
-  ],
-})(nextConfig);
+export default nextConfig;

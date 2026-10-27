@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { FileCode, ChevronRight, ArrowLeft, Sparkles, Menu, MessageCircle, Shield, Download, Trash2, X, GitFork, Wrench, Folder } from "lucide-react";
+import { ArrowDown, Folder, Gauge, GitFork, Layers, Network, Shield, Workflow, X } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { BotIcon } from "@/components/icons/BotIcon";
-import { UserAvatar } from "./UserAvatar";
 import { CopySquaresIcon } from "@/components/icons/CopySquaresIcon";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 
 import { scanRepositoryVulnerabilities, fetchProfile, getRemainingDeepScans, getLatestRepoScanId, createScanShareLink } from "@/app/actions";
@@ -22,22 +20,25 @@ import {
 } from "@/lib/chat-constants";
 import { copyChatMessageContent, exportChatMessages } from "@/lib/chat-message-actions";
 import { parseStreamChunk } from "@/lib/streaming-parser";
-import { shouldShowRepoSuggestions } from "@/lib/chat-ui";
 
 import { SearchModal } from "./SearchModal";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { ChatInput } from "./ChatInput";
 import { LoginModal } from "./LoginModal";
-import { ReasoningBlock } from "./ReasoningBlock";
+import { Button } from "@/components/nv/button";
+import { Notice } from "@/components/nv/notice";
 import type { ModelPreference } from "@/lib/ai-client";
-import type { RepoChatMessage } from "@/lib/chat-types";
+import type { MessageFailure, RepoChatMessage } from "@/lib/chat-types";
 
-import { MessageContent } from "./chat/MessageContent";
+import { ChatMessage } from "./chat/ChatMessage";
+import { ChatHero, type HeroSuggestion } from "./chat/ChatHero";
+import { WorkspaceToolbar } from "./chat/WorkspaceToolbar";
+import { useStickToBottom } from "./chat/use-stick-to-bottom";
+import s from "./chat/chat.module.css";
 import { useMessageSelection } from "./chat/useMessageSelection";
 import { BadgeModal } from "./chat/BadgeModal";
 import { SecurityScanModal } from "./chat/SecurityScanModal";
 import { buildSecurityScanMessage } from "./chat/security-scan-message";
-import { StreamStatus } from "./chat/StreamStatus";
 import { ToolQuotaModal } from "./chat/ToolQuotaModal";
 
 const REPO_SUGGESTIONS = [
@@ -46,6 +47,13 @@ const REPO_SUGGESTIONS = [
     "What's the tech stack?",
     ARCHITECTURE_PROMPT,
 ];
+
+interface ComposerNoticeState {
+    tone: "info" | "warning";
+    title: string;
+    body: string;
+    action?: "sign-in";
+}
 
 interface RepoFileNode {
     path: string;
@@ -174,6 +182,7 @@ function formatToolStatusLabel(name: string, detail?: string): string {
 }
 
 export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: ChatInterfaceProps) {
+    const reduceMotion = useReducedMotion();
     const { data: session, status: sessionStatus } = useSession();
     const shouldUseCloudStorage = sessionStatus !== "unauthenticated";
     const [messages, setMessages] = useState<RepoChatMessage[]>([
@@ -186,7 +195,8 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
     const [input, setInput] = useState("");
     const [taggedFiles, setTaggedFiles] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
-    const [showSuggestions, setShowSuggestions] = useState(true);
+    const [focusSignal, setFocusSignal] = useState(0);
+    const [composerNotice, setComposerNotice] = useState<ComposerNoticeState | null>(null);
     const [scanning, setScanning] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -226,7 +236,6 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 return null;
             }
             const quota = await response.json() as ToolQuotaState;
-            setToolQuota(quota);
             return quota;
         } catch {
             return null;
@@ -260,7 +269,9 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
     }, [session?.user, showSecurityModal, repoContext.owner, repoContext.repo]);
 
     useEffect(() => {
-        void refreshToolQuota();
+        void refreshToolQuota().then((quota) => {
+            if (quota) setToolQuota(quota);
+        });
     }, [refreshToolQuota, session?.user?.id]);
 
     useEffect(() => {
@@ -303,7 +314,6 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                     skipNextAutoScrollRef.current = true;
                     return saved;
                 });
-                setShowSuggestions(false);
             }
             setInitialized(true);
 
@@ -332,7 +342,6 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                 }
                                 return [...prev, { id: resumeMsgId, role: "model", content: text }];
                             });
-                            setShowSuggestions(false);
                         }
 
                         if (run.status === "RUNNING") {
@@ -410,32 +419,24 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
 
     const tokenWarningLevel = getTokenWarningLevel(totalTokens);
 
-    useEffect(() => {
-        const nextShowSuggestions = shouldShowRepoSuggestions({
-            messagesCount: messages.length,
-            input,
-            loading,
-            scanning,
-        });
-        setShowSuggestions(nextShowSuggestions);
-    }, [messages.length, input, loading, scanning]);
-
-    const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-        messagesEndRef.current?.scrollIntoView({ behavior });
-    };
-
-    useEffect(() => {
-        if (skipNextAutoScrollRef.current) {
-            skipNextAutoScrollRef.current = false;
-            return;
-        }
-        scrollToBottom();
-    }, [messages]);
+    const { atBottom, jump: jumpToLatest } = useStickToBottom(chatScrollRef, messages);
 
     const handleSuggestionClick = (suggestion: string) => {
         setInput(suggestion);
-        setShowSuggestions(false);
+        setFocusSignal((n) => n + 1);
     };
+
+    // Other parts of the workspace (file explorer, codebase map) can prefill the composer.
+    useEffect(() => {
+        const prefill = (event: Event) => {
+            const text = (event as CustomEvent<string>).detail;
+            if (typeof text !== "string" || !text) return;
+            setInput(text);
+            setFocusSignal((n) => n + 1);
+        };
+        window.addEventListener("prefill-composer", prefill);
+        return () => window.removeEventListener("prefill-composer", prefill);
+    }, []);
 
     const buildCombinedInput = (trimmedInput: string, selectedReferenceText: string) => {
         let base = trimmedInput || "Please continue.";
@@ -805,7 +806,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
             return;
         }
 
-        setShowSuggestions(false);
+        setComposerNotice(null);
 
         const combinedInput = buildCombinedInput(trimmedInput, referenceText);
 
@@ -856,11 +857,8 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
             const userFacingError = getUserFacingAnalysisError(error, errorCode);
 
             if (isAnonUsageLimit) {
-                toast.error("Repo tool calls exhausted", {
-                    description: "Anonymous repo tool budget reached. Sign in to unlock 30 calls per day.",
-                    duration: 5000,
-                });
                 removeMessageById(modelMsgId);
+                setComposerNotice({ tone: "warning", title: "Repo tool calls used up", body: "The anonymous repo tool budget is reached. Sign in to unlock 30 calls per day.", action: "sign-in" });
                 setShowToolQuotaModal(true);
             } else if (isAuthUsageLimit) {
                 replaceOrAppendModelMessage(modelMsgId, (id) => ({
@@ -870,40 +868,25 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 }));
                 setShowToolQuotaModal(true);
             } else if (isAuthError) {
-                toast.error("Sign in required", {
-                    description: "Your session has expired or is invalid. Please sign in and try again.",
-                    duration: 5000,
-                });
+                removeMessageById(modelMsgId);
+                setComposerNotice({ tone: "info", title: "Sign in to continue", body: "Your session has expired or is invalid. Sign in with GitHub and ask again.", action: "sign-in" });
                 setLoginModalCopy({
                     title: "Sign In Required",
                     description: "Please sign in with GitHub to continue repo analysis features.",
                 });
                 setShowLoginModal(true);
-                removeMessageById(modelMsgId);
-            } else if (isPayloadTooLarge) {
-                toast.error("Request too large", {
-                    description: "This repository is large. Ask about a specific folder or feature and try again.",
-                    duration: 5000,
-                });
-            } else if (isRateLimitError(error)) {
-                toast.error(getRateLimitErrorMessage(error), {
-                    description: "Please wait a few moments before trying again.",
-                    duration: 5000,
-                });
             } else {
-                toast.error("Failed to analyze code", {
-                    description: userFacingError,
-                });
-            }
-
-            if (!isAuthError && !isAnonUsageLimit && !isAuthUsageLimit) {
-                replaceOrAppendModelMessage(modelMsgId, (id) => ({
-                    id,
-                    role: "model",
-                    content: isPayloadTooLarge
-                        ? "This request was too large to process. Try a narrower question focused on a specific module or folder."
-                        : `I encountered an error while analyzing the code.\n\n${userFacingError}`,
-                }));
+                if (isPayloadTooLarge) {
+                    setComposerNotice({ tone: "warning", title: "That request was too large", body: "This repository is large. Ask about a specific folder or feature and try again." });
+                } else if (isRateLimitError(error)) {
+                    setComposerNotice({ tone: "warning", title: getRateLimitErrorMessage(error), body: "Wait a few moments before trying again." });
+                }
+                const failure: MessageFailure = {
+                    code: errorCode ?? (errorStatus ? `HTTP_${errorStatus}` : "INTERNAL"),
+                    message: isPayloadTooLarge ? "This request was too large to process. Try a narrower question focused on a specific module or folder." : userFacingError,
+                    retryable: !isPayloadTooLarge,
+                };
+                replaceOrAppendModelMessage(modelMsgId, (id) => ({ id, role: "model", content: "", failure }));
             }
         } finally {
             setLoading(false);
@@ -912,6 +895,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 window.sessionStorage.removeItem(activeRunKey);
             }
             const latestQuota = await refreshToolQuota();
+            if (latestQuota) setToolQuota(latestQuota);
             if (
                 latestQuota &&
                 previousToolQuotaRemaining !== null &&
@@ -931,6 +915,17 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
         handleSubmitRef.current = handleSubmit;
     });
 
+    /** Re-ask the question behind a failed answer: drop the failed turn, then submit the same text. */
+    const handleRetry = (failedId: string) => {
+        if (loading || isSubmittingRef.current) return;
+        const index = messages.findIndex((m) => m.id === failedId);
+        const userMessage = index > 0 ? messages[index - 1] : undefined;
+        if (!userMessage || userMessage.role !== "user") return;
+        setMessages((prev) => prev.filter((m) => m.id !== failedId && m.id !== userMessage.id));
+        setTaggedFiles(userMessage.taggedFiles ?? []);
+        window.setTimeout(() => handleSubmitRef.current?.(undefined, userMessage.content), 60);
+    };
+
     const handleClearChat = async () => {
         restoreGenerationRef.current += 1;
         if (typeof window !== "undefined") {
@@ -947,7 +942,7 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                 content: `Hello! I've analyzed **${repoContext.owner}/${repoContext.repo}**. Ask me anything about the code structure, dependencies, or specific features.`,
             },
         ]);
-        setShowSuggestions(true);
+        setComposerNotice(null);
         toast.success("Chat history cleared");
     };
 
@@ -988,320 +983,150 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
         handleSubmitRef.current?.(undefined, DEEP_SCAN_PROMPT, "deep_scan", scanAiAssist);
     };
 
+    const repoLabel = `${repoContext.owner}/${repoContext.repo}`;
+    const fileCount = repoContext.fileTree.filter((f) => f.type !== "tree").length;
+    const showHero = messages.length === 1 && messages[0]?.id === "welcome" && !loading;
+    const transcript = messages.filter((m) => m.id !== "welcome");
+    const lastId = messages[messages.length - 1]?.id;
+    const openFile = (path: string) => window.dispatchEvent(new CustomEvent("open-file-preview", { detail: path }));
+    const heroSuggestions: HeroSuggestion[] = [
+        { label: REPO_SUGGESTIONS[0], hint: "A diagram of how people move through the app", icon: <Workflow className="size-[1.1rem]" /> },
+        { label: REPO_SUGGESTIONS[1], hint: "Structure, tests, risks and where to improve", icon: <Gauge className="size-[1.1rem]" /> },
+        { label: REPO_SUGGESTIONS[2], hint: "Languages, frameworks and tooling in use", icon: <Layers className="size-[1.1rem]" /> },
+        { label: REPO_SUGGESTIONS[3], hint: "Core modules, data flow and a diagram", icon: <Network className="size-[1.1rem]" /> },
+    ];
+    const openSecurity = () => {
+        if (!session) {
+            setShowLoginModal(true);
+            return;
+        }
+        setShowSecurityModal(true);
+    };
+
     return (
-        <div className="flex flex-col h-full bg-transparent text-white relative z-10">
-            {/* Repo Header */}
-            <div className="sticky top-0 z-40 border-b border-white/15 bg-[#09090b]/45 backdrop-blur-xl shrink-0 shadow-[0_4px_30px_rgba(6,182,212,0.12)]">
-                <div className="flex items-center justify-between px-4 h-16 w-full gap-4">
-                    {/* Left Section: Breadcrumbs & Context */}
-                    <div className="flex items-center gap-3 min-w-0 shrink">
-                        {onToggleSidebar && (
-                            <button
-                                onClick={onToggleSidebar}
-                                className="md:hidden p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors text-zinc-400 hover:text-white"
-                            >
-                                <Menu className="w-5 h-5" />
-                            </button>
-                        )}
-                        <Link
-                            href="/"
-                            className="hidden md:flex p-2 -ml-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-                            title="Back to home"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </Link>
-
-                        <div className="flex items-center gap-2 min-w-0 ml-2">
-                             <h1 className="text-sm font-medium text-zinc-200 truncate flex items-center gap-1.5">
-                                 <Link href="/" className="hidden md:inline font-display font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500 hover:opacity-90 transition-opacity">novaris</Link>
-                                <span className="hidden md:inline text-zinc-700">/</span>
-                                <span className="text-zinc-100 font-semibold tracking-tight">{repoContext.owner}</span>
-                                <span className="text-zinc-700">/</span>
-                                <span className="text-white font-bold">{repoContext.repo}</span>
-                            </h1>
-                            <Link
-                                href={`/repo/${repoContext.owner}/${repoContext.repo}`}
-                                className="hidden lg:flex items-center text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:text-purple-300 transition-all border border-purple-500/20"
-                            >
-                                Profile
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* Right Section: Actions & Metrics */}
-                    <div className="flex items-center gap-3 shrink-0 overflow-x-auto no-scrollbar pr-2">
-                        <div className="hidden md:flex items-center p-1 bg-zinc-900/50 border border-white/5 rounded-xl shadow-inner gap-1">
-                            <button
-                                onClick={() => handleSubmit(undefined, ARCHITECTURE_PROMPT)}
-                                disabled={loading || scanning}
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all disabled:opacity-50"
-                            >
-                                <GitFork className="w-3.5 h-3.5" />
-                                <span className="hidden lg:inline">Architecture</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (!session) {
-                                        setShowLoginModal(true);
-                                        return;
-                                    }
-                                    setShowSecurityModal(true);
-                                }}
-                                disabled={loading || scanning}
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
-                            >
-                                <Shield className="w-3.5 h-3.5" />
-                                <span className="hidden lg:inline">Security</span>
-                            </button>
-                        </div>
-
-
-
-                        {/* Tokens */}
-                        <div className={cn(
-                            "hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border shadow-inner shrink-0 transition-colors",
-                            tokenWarningLevel === 'danger' ? "bg-red-500/5 text-red-400 border-red-500/20" :
-                                tokenWarningLevel === 'warning' ? "bg-yellow-500/5 text-yellow-400 border-yellow-500/20" :
-                                    "bg-zinc-900 text-zinc-400 border-white/5"
-                        )}>
-                            <MessageCircle className="w-3.5 h-3.5" />
-                            <span>{formatTokenCount(totalTokens)} / <span className="opacity-50">{formatTokenCount(MAX_TOKENS)}</span></span>
-                        </div>
-
-                        {toolQuota && (
-                            <button
-                                type="button"
-                                onClick={() => setShowToolQuotaModal(true)}
-                                className={cn(
-                                    "hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border shadow-inner shrink-0 transition-colors",
-                                    isToolQuotaExhausted
-                                        ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                                        : "bg-zinc-900 text-zinc-400 border-white/5 hover:text-white hover:border-white/15"
-                                )}
-                                title="Open tool quota details"
-                            >
-                                <Wrench className="w-3.5 h-3.5" />
-                                <span>{toolQuota.remaining} / {toolQuota.limit}</span>
-                            </button>
-                        )}
-
-                        {/* Utility Bar */}
-                        <div className="flex items-center gap-0.5 pl-3 border-l border-white/10 shrink-0">
-                            <SearchModal
-                                repoContext={repoContext}
-                                onSendMessage={(role, content) => {
-                                    setMessages(prev => [...prev, { id: Date.now().toString(), role, content }]);
-                                }}
-                            />
-                            <button
-                                onClick={handleExportChat}
-                                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors group relative"
-                                title="Export Chat"
-                            >
-                                <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
-                            </button>
-                            <button
-                                onClick={() => setShowClearConfirm(true)}
-                                className="p-2 text-zinc-200 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors group relative"
-                                title="Clear Chat"
-                            >
-                                <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div
-                ref={chatScrollRef}
-                onMouseUp={handleSelection}
-                className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-6 relative isolate z-0 selection:bg-blue-500/50 selection:text-white [&_*::selection]:bg-blue-500/50 [&_*::selection]:text-white"
-            >
-                {connectionLost && (
-                    <div className="max-w-4xl mx-auto">
-                        <div className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-                            Connection lost. We&apos;ll keep saving the response and reconnect when possible.
-                        </div>
-                    </div>
-                )}
-                {selectionAnchor && (
-                    <button
-                        onClick={handleAskFromSelection}
-                        onMouseDown={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }}
-                        onMouseUp={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }}
-                        className="absolute z-20 -translate-y-full -mt-2 px-3 py-1 bg-white text-black text-xs rounded-full shadow-lg border border-black/10 transition-transform transition-shadow duration-150 ease-out hover:-translate-y-[110%] hover:scale-105 hover:shadow-xl"
-                        style={{ left: selectionAnchor.x, top: selectionAnchor.y }}
-                    >
-                        Ask NovarisAI
+        <div className={cn("nv-workspace relative z-10 flex h-full min-h-0 flex-col text-nv-ivory-50", s.stage)} data-slot="chat">
+            <WorkspaceToolbar
+                lead={onToggleSidebar ? (
+                    <button type="button" onClick={onToggleSidebar} aria-label="Open file explorer" className="inline-flex min-h-11 touch-manipulation items-center gap-2 rounded-nv-sm px-2.5 text-nv-small font-medium text-nv-ivory-200 hover:bg-nv-graphite-850 md:hidden">
+                        <Folder aria-hidden className="size-4" /> Files
                     </button>
-                )}
-                {messages.map((msg) => {
-                        const isLatestMessage = msg.id === messages[messages.length - 1]?.id;
-                        const isStreamingScanPlaceholder =
-                            msg.role === "model" &&
-                            Boolean(msg.scanStatus) &&
-                            loading &&
-                            scanning &&
-                            isLatestMessage;
-                        const isActiveModelStreamState =
-                            msg.role === "model" &&
-                            loading &&
-                            isLatestMessage &&
-                            (Boolean(msg.scanStatus) || Boolean(msg.streamStatus) || msg.modelUsed === "thinking");
-                        const shouldHideStaleModelRow =
-                            msg.role === "model" && !msg.content && !isActiveModelStreamState;
+                ) : undefined}
+                segments={[
+                    { id: "architecture", label: "Architecture", icon: <GitFork className="size-3.5" />, onClick: () => handleSubmit(undefined, ARCHITECTURE_PROMPT), disabled: loading || scanning, hint: "Explain the architecture with a diagram" },
+                    { id: "security", label: "Security", icon: <Shield className="size-3.5" />, onClick: openSecurity, disabled: loading || scanning, hint: session ? "Scan for vulnerabilities" : "Sign in to run a security scan" },
+                ]}
+                meters={{
+                    tokens: { used: formatTokenCount(totalTokens), max: formatTokenCount(MAX_TOKENS), fill: totalTokens / MAX_TOKENS, level: tokenWarningLevel },
+                    quota: toolQuota ? { remaining: toolQuota.remaining, limit: toolQuota.limit, exhausted: isToolQuotaExhausted, onClick: () => setShowToolQuotaModal(true) } : undefined,
+                }}
+                onExport={handleExportChat}
+                onClear={() => setShowClearConfirm(true)}
+                extra={
+                    <SearchModal
+                        repoContext={repoContext}
+                        onSendMessage={(role, content) => {
+                            setMessages(prev => [...prev, { id: Date.now().toString(), role, content }]);
+                        }}
+                    />
+                }
+            />
 
-                        if (shouldHideStaleModelRow) {
-                            return null;
-                        }
+            <div className="relative min-h-0 flex-1">
+                <div
+                    ref={chatScrollRef}
+                    onMouseUp={handleSelection}
+                    data-hero={showHero || undefined}
+                    role="region"
+                    aria-label="Conversation"
+                    tabIndex={-1}
+                    className="relative h-full overflow-y-auto overscroll-contain scroll-smooth selection:bg-nv-copper-400/20 [&_*::selection]:bg-nv-copper-400/20"
+                >
+                    {connectionLost && (
+                        <div className="mx-auto w-full max-w-[46rem] px-4 pt-4 sm:px-6">
+                            <Notice tone="info" title="Connection lost">We will keep saving the response and reconnect when possible.</Notice>
+                        </div>
+                    )}
+                    {selectionAnchor && (
+                        <button
+                            onClick={handleAskFromSelection}
+                            onMouseDown={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }}
+                            onMouseUp={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }}
+                            className="absolute z-20 -mt-2 -translate-y-full rounded-full bg-nv-ivory-100 px-3.5 py-1.5 text-xs font-medium text-white shadow-nv-popover transition-transform duration-150 ease-out hover:scale-105"
+                            style={{ left: selectionAnchor.x, top: selectionAnchor.y }}
+                        >
+                            Ask Novaris about this
+                        </button>
+                    )}
 
-                        return (
-                            <div
-                                key={msg.id}
-                                className={cn(
-                                    "flex gap-4 max-w-4xl mx-auto",
-                                    msg.role === "user" ? "flex-row-reverse" : "flex-row"
-                                )}
-                            >
-                                <div className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden",
-                                    msg.role === "model"
-                                        ? "bg-zinc-950 ring-2 ring-purple-500/60"
-                                        : "bg-zinc-800 ring-2 ring-blue-500/50"
-                                )}>
-                                    {msg.role === "model" ? (
-                                        <BotIcon className="w-full h-full" />
-                                    ) : (
-                                        <UserAvatar className="w-full h-full" />
-                                    )}
-                                </div>
+                    {showHero ? (
+                        <ChatHero
+                            eyebrow="Repository workspace"
+                            lead="Ask anything about"
+                            accent={repoLabel}
+                            facts={[`${fileCount.toLocaleString()} files indexed`, ownerProfile?.name ? `Owned by ${ownerProfile.name}` : `Owned by ${repoContext.owner}`]}
+                            suggestions={heroSuggestions}
+                            onPick={handleSuggestionClick}
+                        />
+                    ) : (
+                        <div className="mx-auto flex w-full max-w-[46rem] flex-col gap-10 px-4 pb-12 pt-8 sm:px-6">
+                            {transcript.map((msg) => {
+                                const isLatestMessage = msg.id === lastId;
+                                const isStreamingScanPlaceholder = msg.role === "model" && Boolean(msg.scanStatus) && loading && scanning && isLatestMessage;
+                                const isActiveModelStreamState =
+                                    msg.role === "model" && loading && isLatestMessage && (Boolean(msg.scanStatus) || Boolean(msg.streamStatus) || msg.modelUsed === "thinking");
+                                if (msg.role === "model" && !msg.content && !msg.failure && !isActiveModelStreamState) return null;
+                                const streaming = loading && isLatestMessage && msg.role === "model" && !msg.scanStatus;
 
-                                <div className={cn(
-                                    "flex flex-col gap-2",
-                                    msg.role === "user" ? "items-end max-w-[85%] md:max-w-[80%]" : "items-start max-w-full md:max-w-full w-full min-w-0"
-                                )}>
-                                    {msg.role === "model" && msg.modelUsed !== "thinking" && (
-                                        <StreamStatus
-                                            message={msg.streamStatus}
-                                            isStreaming={loading && msg.id === messages[messages.length - 1]?.id}
-                                        />
-                                    )}
-                                    {/* ── REASONING: outside bubble, no background ── */}
-                                    {msg.role === "model" && msg.modelUsed === "thinking" && loading && msg.id === messages[messages.length - 1]?.id && (
-                                        <ReasoningBlock
-                                            steps={msg.reasoningSteps || []}
-                                            isStreaming={true}
-                                        />
-                                    )}
-                                    {msg.role === "model" && msg.modelUsed === "thinking" && (!loading || msg.id !== messages[messages.length - 1]?.id) && msg.reasoningSteps && msg.reasoningSteps.length > 0 && (
-                                        <ReasoningBlock
-                                            steps={msg.reasoningSteps}
-                                            isStreaming={false}
-                                        />
-                                    )}
-
-                                    {/* ── CONTENT BUBBLE: only when content exists OR flash model loading ── */}
-                                    {(msg.role === "user" || msg.content || isStreamingScanPlaceholder) && (
-                                        <div className={cn(
-                                            "relative px-4 py-2.5 rounded-2xl overflow-hidden w-full min-w-0",
-                                            msg.role === "user"
-                                                ? "bg-blue-600 text-white rounded-tr-none"
-                                                : "bg-zinc-900 border border-white/10 rounded-tl-none"
-                                        )}
-                                            data-message-role={msg.role}
+                                return (
+                                    <motion.div
+                                        key={msg.id}
+                                        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ type: "spring", duration: 0.45, bounce: 0 }}
+                                        className="min-w-0"
+                                    >
+                                        <ChatMessage
+                                            message={msg}
+                                            allMessages={messages}
+                                            streaming={streaming}
+                                            currentOwner={repoContext.owner}
+                                            currentRepo={repoContext.repo}
+                                            fileTree={repoContext.fileTree}
+                                            onCopy={handleCopyMessage}
+                                            copied={copiedMessageId === msg.id}
+                                            onRetry={handleRetry}
+                                            onOpenFile={(path) => {
+                                                if (repoContext.fileTree.find((f) => f.path === path)?.type === "tree") {
+                                                    window.dispatchEvent(new CustomEvent("reveal-folder", { detail: path }));
+                                                } else {
+                                                    openFile(path);
+                                                }
+                                            }}
                                         >
-                                            {msg.role === "model" && msg.content && (
-                                                <button
-                                                    onClick={() => handleCopyMessage(msg)}
-                                                    className="absolute top-2 right-2 p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                                                    title="Copy response"
-                                                >
-                                                    <CopySquaresIcon
-                                                        className={cn(
-                                                            "w-4 h-4",
-                                                            copiedMessageId === msg.id && "text-emerald-400"
-                                                        )}
-                                                    />
-                                                </button>
+                                            {isStreamingScanPlaceholder && (
+                                                <div role="status" className="flex items-center gap-3 py-1 text-nv-small font-medium text-nv-ivory-200">
+                                                    <span aria-hidden className="inline-block size-5 rounded-full border-2 border-nv-copper-700 border-t-nv-copper-400 nv-spin" />
+                                                    <span>{msg.scanStatus === "deep_running" ? "Deep scan running" : "Quick scan running"}</span>
+                                                </div>
                                             )}
-                                            <div className="prose prose-invert prose-sm max-w-none leading-relaxed break-words [overflow-wrap:anywhere] overflow-x-hidden w-full min-w-0">
-                                                {isStreamingScanPlaceholder && (
-                                                    <div className="not-prose flex items-center gap-2 py-1 text-sm font-medium text-zinc-300">
-                                                        <span>{msg.scanStatus === "deep_running" ? "Deep Scan Running" : "Quick Scan Running"}</span>
-                                                        <span className="flex gap-1 items-center">
-                                                            {[0, 1, 2].map((i) => (
-                                                                <span
-                                                                    key={i}
-                                                                    className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse"
-                                                                    style={{ animationDelay: `${i * 0.2}s` }}
-                                                                />
-                                                            ))}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {msg.role === "user" && msg.taggedFiles && msg.taggedFiles.length > 0 && (
-                                                    <div className="flex flex-wrap gap-1.5 mb-2 not-prose">
-                                                        {msg.taggedFiles.map(file => {
-                                                            const isFolder = repoContext.fileTree.find(f => f.path === file)?.type === "tree";
-                                                            return (
-                                                                <button
-                                                                    key={file}
-                                                                    onClick={() => {
-                                                                        if (isFolder) {
-                                                                            window.dispatchEvent(new CustomEvent("reveal-folder", { detail: file }));
-                                                                        } else {
-                                                                            window.dispatchEvent(new CustomEvent("open-file-preview", { detail: file }));
-                                                                        }
-                                                                    }}
-                                                                    className={cn(
-                                                                        "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors outline-none",
-                                                                        isFolder 
-                                                                            ? "bg-orange-500/20 text-orange-200 hover:bg-orange-500/30"
-                                                                            : "bg-white/20 text-white hover:bg-white/30"
-                                                                    )}
-                                                                >
-                                                                    {isFolder ? (
-                                                                        <Folder className="w-3 h-3 shrink-0" />
-                                                                    ) : (
-                                                                        <FileCode className="w-3 h-3 shrink-0" />
-                                                                    )}
-                                                                    <span className="truncate max-w-[200px]">{file}</span>
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-                                                {msg.content && (
-                                                <MessageContent
-                                                    content={msg.content + (loading && isLatestMessage && !msg.scanStatus ? "▋" : "")}
-                                                    messageId={msg.id}
-                                                    messages={messages}
-                                                    currentOwner={repoContext.owner}
-                                                    currentRepo={repoContext.repo}
-                                                    isStreaming={loading && isLatestMessage && !msg.scanStatus}
-                                                    fileTree={repoContext.fileTree}
-                                                />
-                                            )}
-                                            </div>
                                             {msg.scanId && (
-                                                <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-3">
+                                                <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-nv-graphite-700 pt-4">
                                                     <Link
                                                         href={`/report/${msg.scanId}`}
                                                         target="_blank"
-                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors shadow-sm"
+                                                        className="inline-flex min-h-11 items-center gap-2 rounded-nv-sm bg-nv-copper-500 px-4 text-nv-small font-medium text-white shadow-nv-accent transition-colors hover:bg-nv-copper-300"
                                                     >
-                                                        <Shield className="w-3.5 h-3.5" />
-                                                        View Full Report
+                                                        <Shield aria-hidden className="size-4" />
+                                                        View full report
                                                     </Link>
                                                     <button
+                                                        type="button"
                                                         onClick={async () => {
                                                             try {
                                                                 const link = await createScanShareLink(msg.scanId!);
@@ -1314,156 +1139,117 @@ export function ChatInterface({ repoContext, onToggleSidebar, initialPrompt }: C
                                                                 toast.error("Failed to share report", { description: message });
                                                             }
                                                         }}
-                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded-lg transition-colors shadow-sm"
+                                                        className="inline-flex min-h-11 items-center gap-2 rounded-nv-sm border border-nv-graphite-600 bg-white px-4 text-nv-small font-medium text-nv-ivory-100 transition-colors hover:border-nv-graphite-500"
                                                     >
-                                                        <CopySquaresIcon className="w-3.5 h-3.5" />
-                                                        Share Report
+                                                        <CopySquaresIcon className="size-4" />
+                                                        Share report
                                                     </button>
                                                 </div>
                                             )}
                                             {msg.isQuickSecurityScan && (
-                                                <div className="mt-4 pt-4 border-t border-white/10">
-                                                    <p className="text-sm text-zinc-200 mb-3">Want a more thorough analysis?</p>
+                                                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-nv-lg border border-nv-graphite-700 bg-white/70 p-4">
+                                                    <p className="m-0 text-nv-small text-nv-ivory-200">Want a more thorough analysis?</p>
                                                     <button
+                                                        type="button"
                                                         onClick={() => handleSubmit(undefined, DEEP_SCAN_PROMPT, "deep_scan")}
                                                         disabled={loading || scanning}
-                                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded-xl transition-all disabled:opacity-50 group"
+                                                        className="inline-flex min-h-11 items-center gap-2 rounded-nv-sm border border-nv-graphite-600 bg-white px-4 text-nv-small font-medium text-nv-ivory-50 transition-colors hover:border-nv-danger-edge hover:text-nv-danger disabled:opacity-50"
                                                     >
-                                                        <Shield className="w-4 h-4 text-red-400 group-hover:scale-110 transition-transform" />
-                                                        Run Deep Scan
+                                                        <Shield aria-hidden className="size-4" />
+                                                        Run deep scan
                                                     </button>
                                                 </div>
                                             )}
-                                        </div>
-                                    )}
-                                    {msg.role === "model" && (msg.commitFreshnessLabel || (msg.toolsUsed && msg.toolsUsed.length > 0) || msg.sourceScope || (msg.processingSummary && msg.processingSummary.length > 0)) && (
-                                        <div className="hidden md:block text-[11px] text-zinc-300 pl-1">
-                                            {msg.sourceScope && <span>Scope: {msg.sourceScope}</span>}
-                                            {msg.commitFreshnessLabel && <span>{msg.commitFreshnessLabel}</span>}
-                                            {msg.toolsUsed && msg.toolsUsed.length > 0 && (
-                                                <span className={cn((msg.commitFreshnessLabel || msg.sourceScope) && "ml-2")}>
-                                                    Tools used: {msg.toolsUsed.join(", ")}
-                                                </span>
-                                            )}
-                                            {msg.processingSummary && msg.processingSummary.length > 0 && (
-                                                <span className={cn((msg.commitFreshnessLabel || msg.toolsUsed?.length || msg.sourceScope) && "ml-2")}>
-                                                    {msg.processingSummary.join(" | ")}
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
+                                        </ChatMessage>
+                                    </motion.div>
+                                );
+                            })}
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )}
+                </div>
 
-                                    {msg.relevantFiles && msg.relevantFiles.length > 0 && !(loading && msg.id === messages[messages.length - 1]?.id) && (
-                                        <details className="group mt-1">
-                                            <summary className="flex items-center gap-2 text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 transition-colors select-none">
-                                                <FileCode className="w-3 h-3" />
-                                                <span>{msg.relevantFiles.length} files analyzed</span>
-                                                <ChevronRight className="w-3 h-3 group-open:rotate-90 transition-transform" />
-                                            </summary>
-                                            <ul className="mt-2 space-y-1 text-xs text-zinc-600 pl-4">
-                                                {msg.relevantFiles.map((file, i) => (
-                                                    <li key={i} className="font-mono">{file}</li>
-                                                ))}
-                                            </ul>
-                                        </details>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-
-
-                <div ref={messagesEndRef} />
+                {!atBottom && !showHero && (
+                    <button
+                        type="button"
+                        onClick={() => jumpToLatest()}
+                        className="nv-fade absolute bottom-4 left-1/2 z-20 inline-flex min-h-11 -translate-x-1/2 items-center gap-2 rounded-full border border-nv-graphite-600 bg-white px-4 text-nv-small font-medium text-nv-ivory-100 shadow-nv-popover transition-colors hover:border-nv-copper-600 hover:text-nv-copper-300"
+                    >
+                        <ArrowDown aria-hidden className="size-4" />
+                        {loading ? "Jump to live answer" : "Latest"}
+                    </button>
+                )}
             </div>
 
-            <div className="relative z-40 p-4 border-t border-white/15 bg-[#09090b]/45 backdrop-blur-xl shadow-[0_-4px_30px_rgba(6,182,212,0.12)] space-y-3">
-                {referenceText && (
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex items-center gap-2 bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-300">
-                            <span className="text-zinc-200">Ask NovarisAI</span>
-                            <span className="truncate">{referenceText}</span>
-                            <button
-                                onClick={clearReference}
-                                className="ml-auto p-1 text-zinc-400 hover:text-white hover:bg-white/10 rounded"
-                                title="Clear reference"
-                            >
-                                <X className="w-3.5 h-3.5" />
+            <div className="relative z-30 shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1 sm:px-6 sm:pb-5">
+                <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-nv-graphite-950 to-transparent" />
+                <div className="mx-auto w-full max-w-[46rem] space-y-3">
+                    {composerNotice && (
+                        <Notice
+                            tone={composerNotice.tone}
+                            title={composerNotice.title}
+                            action={
+                                composerNotice.action === "sign-in" ? (
+                                    <Button variant="primary" onClick={() => setShowLoginModal(true)}>Sign in</Button>
+                                ) : (
+                                    <Button variant="ghost" onClick={() => setComposerNotice(null)} aria-label="Dismiss notice"><X aria-hidden className="size-4" /></Button>
+                                )
+                            }
+                        >
+                            {composerNotice.body}
+                        </Notice>
+                    )}
+                    {isToolQuotaExhausted && !composerNotice && (
+                        <p role="status" className="m-0 flex flex-wrap items-center gap-x-2 rounded-full border border-nv-warning-edge bg-nv-warning-wash px-4 py-1.5 text-nv-small text-nv-warning">
+                            <span className="font-medium">Tool calls paused.</span>
+                            <span>Live lookups resume in <span className="nv-num">{quotaResetLabel}</span>.</span>
+                            <button type="button" onClick={() => setShowToolQuotaModal(true)} className="ml-auto min-h-8 font-medium underline underline-offset-2">Details</button>
+                        </p>
+                    )}
+                    {referenceText && (
+                        <div className="flex items-center gap-3 rounded-nv-md border border-nv-copper-700 bg-nv-copper-wash px-3 py-2 text-nv-small text-nv-ivory-200">
+                            <span className="nv-eyebrow shrink-0 !text-nv-copper-400">Quoting</span>
+                            <span className="min-w-0 flex-1 truncate">{referenceText}</span>
+                            <button type="button" onClick={clearReference} className="grid size-11 shrink-0 place-items-center rounded-nv-sm text-nv-ivory-300 hover:bg-white hover:text-nv-ivory-50" aria-label="Remove quoted text">
+                                <X aria-hidden className="size-4" />
                             </button>
                         </div>
-                    </div>
-                )}
-                {/* Suggestions */}
-                {showSuggestions && messages.length === 1 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="max-w-4xl mx-auto"
-                    >
-                        <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-purple-400" />
-                            <span className="text-sm text-zinc-200">Try asking:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {REPO_SUGGESTIONS.map((suggestion, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handleSuggestionClick(suggestion)}
-                                    className="text-sm px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-white/10 hover:border-purple-600/50 rounded-full text-zinc-300 hover:text-white transition-all"
-                                >
-                                    {suggestion}
-                                </button>
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
+                    )}
 
-                <form id="chat-form" onSubmit={handleSubmit} className="max-w-4xl mx-auto relative">
-                    <ChatInput
-                        quotaNode={toolQuota && (
-                            <button
-                                type="button"
-                                onClick={() => setShowToolQuotaModal(true)}
-                                className={cn(
-                                    "flex md:hidden items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold border transition-all",
-                                    isToolQuotaExhausted
-                                        ? "bg-amber-900/20 text-amber-300 border-amber-500/30 hover:bg-amber-900/30"
-                                        : "bg-zinc-800/50 text-zinc-400 border-white/5 hover:bg-zinc-800 hover:text-zinc-300"
-                                )}
-                                title="Open tool quota details"
-                            >
-                                <Wrench className="w-3 h-3" />
-                                <span className="uppercase tracking-wider">
-                                    {toolQuota.remaining} / {toolQuota.limit}
-                                </span>
-                            </button>
-                        )}
-                        value={input}
-                        onChange={setInput}
-                        onSubmit={handleSubmit}
-                        placeholder={
-                            totalTokens >= MAX_TOKENS
-                                ? "Conversation limit reached. Please clear chat."
-                                : isToolQuotaExhausted
-                                    ? "Repo tool calls are paused for this window. You can still ask in no-tool mode."
-                                    : "Ask anything about this repository (use @ or drop to tag)..."
-                        }
-                        disabled={totalTokens >= MAX_TOKENS}
-                        loading={loading}
-                        allowEmptySubmit={Boolean(referenceText) || taggedFiles.length > 0}
-                        repositoryFiles={repoContext.fileTree.map(f => ({ path: f.path, type: f.type || "blob" }))}
-                        taggedFiles={taggedFiles}
-                        onTaggedFilesChange={setTaggedFiles}
-                        modelPreference={modelPreference}
-                        setModelPreference={setModelPreference}
-                        onRequireAuth={() => {
-                            setLoginModalCopy({
-                                title: "Login Required For Thinking Mode",
-                                description: "Sign in to use Thinking Mode and higher repo-tool limits.",
-                            });
-                            setShowLoginModal(true);
-                        }}
-                    />
-                </form>
+                    <form id="chat-form" onSubmit={handleSubmit} className="relative">
+                        <ChatInput
+                            focusSignal={focusSignal}
+                            quotaNode={undefined}
+                            value={input}
+                            onChange={setInput}
+                            onSubmit={handleSubmit}
+                            placeholder={
+                                totalTokens >= MAX_TOKENS
+                                    ? "Conversation limit reached. Please clear chat."
+                                    : isToolQuotaExhausted
+                                        ? "Tool calls are paused. You can still ask in no-tool mode."
+                                        : `Ask anything about ${repoContext.repo} (use @ or drop to tag)...`
+                            }
+                            disabled={totalTokens >= MAX_TOKENS}
+                            disabledReason={totalTokens >= MAX_TOKENS ? "This conversation is at its length limit. Clear the chat to start a new one." : undefined}
+                            loading={loading}
+                            allowEmptySubmit={Boolean(referenceText) || taggedFiles.length > 0}
+                            repositoryFiles={repoContext.fileTree.map(f => ({ path: f.path, type: f.type || "blob" }))}
+                            taggedFiles={taggedFiles}
+                            onTaggedFilesChange={setTaggedFiles}
+                            modelPreference={modelPreference}
+                            setModelPreference={setModelPreference}
+                            onRequireAuth={() => {
+                                setLoginModalCopy({
+                                    title: "Login Required For Thinking Mode",
+                                    description: "Sign in to use Thinking Mode and higher repo-tool limits.",
+                                });
+                                setShowLoginModal(true);
+                            }}
+                        />
+                    </form>
+                    <p className="m-0 text-center text-nv-micro text-nv-ivory-300">Answers come from the repository files and GitHub data. Check the cited files before relying on them.</p>
+                </div>
             </div>
 
             <ConfirmDialog

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { buttonClasses } from "@/components/nv/button-styles";
+import { ErrorState } from "@/components/nv/states";
 
 interface ReportExpiredStateProps {
     owner?: string;
@@ -10,42 +12,31 @@ function formatExpiration(expiresAt?: Date | number | string): string | null {
     if (!expiresAt) return null;
     const date = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
     if (Number.isNaN(date.getTime())) return null;
-    return date.toLocaleString();
+    return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function ReportExpiredState({ owner, repo, expiresAt }: ReportExpiredStateProps) {
     const formattedExpiry = formatExpiration(expiresAt);
-    const rerunHref = owner && repo
-        ? `/chat?q=${encodeURIComponent(`${owner}/${repo}`)}`
-        : "/";
+    const rerunHref = owner && repo ? `/chat?q=${encodeURIComponent(`${owner}/${repo}`)}` : "/";
 
     return (
-        <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-            <div className="max-w-lg w-full rounded-2xl border border-white/10 bg-zinc-900 p-8 space-y-4">
-                <h1 className="text-2xl font-semibold">Report Outdated</h1>
-                <p className="text-zinc-300">
-                    This report is no longer current. Security reports expire after 7 days. Run a fresh scan in Repo Chat to regenerate it.
-                </p>
-                {formattedExpiry && (
-                    <p className="text-sm text-zinc-300">
-                        Expired at: {formattedExpiry}
-                    </p>
-                )}
-                <div className="flex items-center gap-2">
-                    <Link
-                        href={rerunHref}
-                        className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors text-sm font-medium"
-                    >
-                        Rescan in Repo Chat
-                    </Link>
-                    <Link
-                        href="/"
-                        className="inline-flex items-center px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors text-sm"
-                    >
-                        Back to Home
-                    </Link>
-                </div>
-            </div>
-        </div>
+        <main id="nv-main" className="min-h-dvh">
+            <ErrorState
+                title="This report has expired"
+                detail={formattedExpiry ? `expired ${formattedExpiry}` : "expired"}
+                action={
+                    <>
+                        <Link href={rerunHref} className={buttonClasses("primary")}>
+                            Rescan in repo chat
+                        </Link>
+                        <Link href="/" className={buttonClasses("secondary")}>
+                            Back to search
+                        </Link>
+                    </>
+                }
+            >
+                <p>Security reports are kept for 7 days. Run a fresh scan to regenerate it.</p>
+            </ErrorState>
+        </main>
     );
 }

@@ -1,10 +1,33 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, Home, LayoutDashboard, TrendingUp, HelpCircle, FileText, ShieldAlert, LogOut, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { Search, Home, LayoutDashboard, TrendingUp, HelpCircle, FileText, ShieldAlert, LogOut, BookOpen, Compass, Layers, Info, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { Dialog } from "@/components/nv/dialog";
+import { cn } from "@/components/nv/cn";
+
+interface CommandOption {
+    label: string;
+    href: string;
+    icon: LucideIcon;
+    category: string;
+}
+
+// Every href is an existing route; "signout" is handled separately.
+const NAVIGATION: CommandOption[] = [
+    { label: "Home and search", href: "/", icon: Home, category: "Navigation" },
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, category: "Navigation" },
+    { label: "Trending repositories", href: "/trending", icon: TrendingUp, category: "Navigation" },
+    { label: "Explore pages", href: "/explore", icon: Compass, category: "Navigation" },
+    { label: "Solutions", href: "/solutions", icon: Layers, category: "Information" },
+    { label: "Insights (blog)", href: "/blog", icon: BookOpen, category: "Information" },
+    { label: "FAQ", href: "/faq", icon: HelpCircle, category: "Information" },
+    { label: "About", href: "/about", icon: Info, category: "Information" },
+    { label: "Terms of Service", href: "/terms", icon: FileText, category: "Legal" },
+    { label: "Privacy Policy", href: "/privacy", icon: ShieldAlert, category: "Legal" },
+];
+const SIGN_OUT: CommandOption = { label: "Sign out", href: "signout", icon: LogOut, category: "Account" };
 
 export default function CommandPalette() {
     const [isOpen, setIsOpen] = useState(false);
@@ -13,33 +36,15 @@ export default function CommandPalette() {
     const router = useRouter();
     const { data: session } = useSession();
     const inputRef = useRef<HTMLInputElement>(null);
+    const uid = useId();
 
-    // Command options
-    const allOptions = [
-        { label: "Go to Home", href: "/", icon: Home, category: "Navigation" },
-        { label: "Go to Dashboard", href: "/dashboard", icon: LayoutDashboard, category: "Navigation" },
-        { label: "Explore Trending", href: "/trending", icon: TrendingUp, category: "Navigation" },
-        { label: "FAQ & Solutions", href: "/faq", icon: HelpCircle, category: "Information" },
-        { label: "Terms of Service", href: "/terms", icon: FileText, category: "Legal" },
-        { label: "Privacy Policy", href: "/privacy", icon: ShieldAlert, category: "Legal" },
-    ];
-
-    // Add Sign Out if session active
-    if (session) {
-        allOptions.push({
-            label: "Sign Out",
-            href: "signout",
-            icon: LogOut,
-            category: "Account"
-        });
-    }
-
-    const filteredOptions = allOptions.filter((opt) =>
-        opt.label.toLowerCase().includes(search.toLowerCase()) ||
-        opt.category.toLowerCase().includes(search.toLowerCase())
+    const allOptions = session ? [...NAVIGATION, SIGN_OUT] : NAVIGATION;
+    const needle = search.trim().toLowerCase();
+    const filteredOptions = allOptions.filter(
+        (opt) => opt.label.toLowerCase().includes(needle) || opt.category.toLowerCase().includes(needle),
     );
+    const active = filteredOptions[selectedIndex];
 
-    // Listen for ⌘K or Ctrl+K
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -47,21 +52,24 @@ export default function CommandPalette() {
                 setIsOpen((prev) => !prev);
             }
         };
-
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
-    // Handle selection and focus
-    useEffect(() => {
+    // Reset search state each time the palette opens
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    if (prevIsOpen !== isOpen) {
+        setPrevIsOpen(isOpen);
         if (isOpen) {
             setSearch("");
             setSelectedIndex(0);
-            setTimeout(() => inputRef.current?.focus(), 50);
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
         }
+    }
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const frame = requestAnimationFrame(() => inputRef.current?.focus());
+        return () => cancelAnimationFrame(frame);
     }, [isOpen]);
 
     const handleAction = (href: string) => {
@@ -76,110 +84,70 @@ export default function CommandPalette() {
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === "ArrowDown") {
             e.preventDefault();
-            setSelectedIndex((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
+            setSelectedIndex((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : 0));
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+            setSelectedIndex((prev) => (prev > 0 ? prev - 1 : Math.max(filteredOptions.length - 1, 0)));
         } else if (e.key === "Enter") {
             e.preventDefault();
-            if (filteredOptions[selectedIndex]) {
-                handleAction(filteredOptions[selectedIndex].href);
-            }
-        } else if (e.key === "Escape") {
-            setIsOpen(false);
+            if (active) handleAction(active.href);
         }
     };
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-                    {/* Backdrop click close */}
-                    <div className="absolute inset-0" onClick={() => setIsOpen(false)} />
-
-                    {/* Dialog Container */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 220 }}
-                        className="relative w-full max-w-lg bg-[#0a0a0c]/90 border border-white/10 rounded-2xl overflow-hidden flex flex-col max-h-[80vh] shadow-2xl backdrop-blur-xl"
-                    >
-                        {/* Search Input block */}
-                        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-white/[0.02]">
-                            <Search className="w-5 h-5 text-zinc-200 shrink-0" />
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                value={search}
-                                onChange={(e) => {
-                                    setSearch(e.target.value);
-                                    setSelectedIndex(0);
-                                }}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Search commands or pages... (Type and press Enter)"
-                                className="w-full bg-transparent outline-none border-none text-white text-sm md:text-base placeholder-zinc-500 py-1"
-                            />
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="p-1 hover:bg-white/5 rounded text-zinc-400 hover:text-white transition-colors"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {/* Options List */}
-                        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                            {filteredOptions.length === 0 ? (
-                                <div className="p-8 text-center text-sm text-zinc-300">
-                                    No results found matching &ldquo;{search}&rdquo;
-                                </div>
-                            ) : (
-                                filteredOptions.map((opt, idx) => {
-                                    const isSelected = idx === selectedIndex;
-                                    return (
-                                        <button
-                                            key={opt.label}
-                                            onClick={() => handleAction(opt.href)}
-                                            onMouseEnter={() => setSelectedIndex(idx)}
-                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left text-sm font-medium ${
-                                                isSelected
-                                                    ? "bg-purple-600/15 border border-purple-500/20 text-white"
-                                                    : "border border-transparent text-zinc-400 hover:text-white"
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <opt.icon className={`w-4 h-4 ${isSelected ? "text-purple-400" : "text-zinc-500"}`} />
-                                                <span>{opt.label}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] text-zinc-300 uppercase tracking-widest px-1.5 py-0.5 rounded bg-white/5">
-                                                    {opt.category}
-                                                </span>
-                                                {isSelected && (
-                                                    <span className="text-[10px] text-purple-400 font-mono">
-                                                        Enter
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </button>
-                                    );
-                                })
+        <Dialog open={isOpen} onClose={() => setIsOpen(false)} title="Quick navigation" description="Jump to a page. Press Escape to close.">
+            <div className="flex items-center gap-3 rounded-nv-md border border-nv-graphite-500/70 bg-nv-graphite-850 px-4 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] transition-[background-color,border-color,box-shadow] focus-within:border-nv-copper-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgb(47_84_255/0.14)]">
+                <Search aria-hidden className="size-4 shrink-0 text-nv-ivory-300" />
+                <input
+                    ref={inputRef}
+                    type="text"
+                    role="combobox"
+                    aria-expanded="true"
+                    aria-controls={`${uid}-list`}
+                    aria-activedescendant={active ? `${uid}-opt-${selectedIndex}` : undefined}
+                    aria-autocomplete="list"
+                    aria-label="Search pages or commands"
+                    value={search}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                        setSelectedIndex(0);
+                    }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search pages or commands"
+                    autoComplete="off"
+                    className="min-h-11 w-full border-0 bg-transparent text-nv-body text-nv-ivory-50 outline-none placeholder:text-nv-graphite-400 focus-visible:!shadow-none focus-visible:!outline-none"
+                />
+            </div>
+            <ul id={`${uid}-list`} role="listbox" aria-label="Pages" className="m-0 mt-4 max-h-[50dvh] list-none space-y-1 overflow-y-auto p-0">
+                {filteredOptions.map((opt, idx) => {
+                    const selected = idx === selectedIndex;
+                    return (
+                        <li
+                            key={opt.label}
+                            id={`${uid}-opt-${idx}`}
+                            role="option"
+                            aria-selected={selected}
+                            onClick={() => handleAction(opt.href)}
+                            onMouseEnter={() => setSelectedIndex(idx)}
+                            className={cn(
+                                "flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-nv-md px-3 text-nv-body transition-colors duration-150",
+                                selected ? "bg-nv-copper-wash text-nv-ivory-50 shadow-[inset_0_0_0_1px_rgb(47_84_255/0.14)]" : "text-nv-ivory-200",
                             )}
-                        </div>
-
-                        {/* Footer Help */}
-                        <div className="px-4 py-2 border-t border-white/5 bg-white/[0.01] flex items-center justify-between text-[10px] text-zinc-300">
-                            <div className="flex items-center gap-3">
-                                <span>↑↓ Navigate</span>
-                                <span>↵ Select</span>
-                                <span>esc Close</span>
-                            </div>
-                            <span>Command Menu</span>
-                        </div>
-                    </motion.div>
-                </div>
+                        >
+                            <span className="flex items-center gap-3">
+                                <opt.icon aria-hidden className="size-4 text-nv-ivory-300" />
+                                {opt.label}
+                            </span>
+                            <span className="nv-eyebrow">{opt.category}</span>
+                        </li>
+                    );
+                })}
+            </ul>
+            {filteredOptions.length === 0 && (
+                <p role="status" className="mt-3 text-nv-small text-nv-ivory-300">
+                    No page matches &ldquo;{search}&rdquo;.
+                </p>
             )}
-        </AnimatePresence>
+        </Dialog>
     );
 }

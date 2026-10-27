@@ -1,23 +1,28 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, FileCode } from "lucide-react";
+import { useState, useEffect, useReducer, useRef, useSyncExternalStore } from "react";
+import { ArrowLeft } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const ProfileChatInterface = dynamic(() => import("./ProfileChatInterface").then((mod) => mod.ProfileChatInterface), {
     ssr: false,
 });
-import { UserIcon } from "@/components/icons/UserIcon";
 import { fetchProfile, fetchProfileReadme, fetchRecentProfileCommitSnapshot, fetchUserRepos } from "@/app/actions";
 import type { GitHubProfile } from "@/lib/github";
-
-interface LoadingStep {
-    id: string;
-    message: string;
-    status: "loading" | "complete" | "error";
-}
+import { JourneyStage } from "@/components/journey/JourneyStage";
+import { ProfileWorkspace } from "@/components/journey/ProfileWorkspace";
+import {
+    PROFILE_STAGE_LABELS,
+    buildProfileScene,
+    classifyFailure,
+    initialStages,
+    stagesReducer,
+    summarizeLanguages,
+    type JourneyFailure,
+    type ProfileFacts,
+    type SceneModel,
+    type StageEvent,
+} from "@/components/journey/model";
 
 interface ProfileLoaderProps {
     username: string;
@@ -45,6 +50,7 @@ interface ProfileLoaderData {
 }
 
 const PROFILE_LOADER_CACHE_TTL_MS = 15 * 60 * 1000;
+const COMMITS_SOFT_TIMEOUT_MS = 12_000;
 
 function getProfileLoaderCacheKey(username: string): string {
     return `novaris_profile_loader:${username.toLowerCase()}`;
@@ -93,166 +99,223 @@ function getErrorMessage(error: unknown): string {
     return "Failed to load profile";
 }
 
-export function ProfileLoader({ username }: ProfileLoaderProps) {
-    const [steps, setSteps] = useState<LoadingStep[]>([]);
-    const [profileData, setProfileData] = useState<ProfileLoaderData | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    const updateStep = (id: string, status: "loading" | "complete" | "error", message?: string) => {
-        setSteps((prev) => {
-            const existing = prev.find((s) => s.id === id);
-            if (existing) {
-                return prev.map((s) =>
-                    s.id === id ? { ...s, status, message: message || s.message } : s
-                );
-            }
-            return [...prev, { id, message: message || "", status }];
-        });
+/** Facts for a stage that completed from stored data rather than a live request. */
+function factsFromData(data: ProfileLoaderData): { [K in keyof ProfileFacts]: ProfileFacts[K] } {
+    const langs = summarizeLanguages(data.repoReadmes);
+    return {
+        profile: { publicRepos: data.profile.public_repos, followers: data.profile.followers, following: data.profile.following },
+        readme: { found: Boolean(data.profileReadme) },
+        repos: { count: data.repoReadmes.length, languages: langs.length, topLanguage: langs[0]?.language ?? null, stars: data.repoReadmes.reduce((a, r) => a + r.stars, 0) },
+        commits: { count: data.recentCommits.length, freshness: data.recentCommitFreshnessLabel, available: data.recentCommits.length > 0 },
     };
+}
 
-    const loadProfile = useCallback(async () => {
-        try {
-            const cached = readCachedProfileLoaderData(username);
-            if (cached) {
-                setProfileData(cached);
-                return;
-            }
+function reposFacts(repos: ProfileLoaderData["repoReadmes"]): ProfileFacts["repos"] {
+    const langs = summarizeLanguages(repos);
+    return { count: repos.length, languages: langs.length, topLanguage: langs[0]?.language ?? null, stars: repos.reduce((a, r) => a + r.stars, 0) };
+}
 
-            // Step 1: Fetch profile
-            updateStep("profile", "loading", `Fetching @${username}'s profile...`);
-            const profile = await fetchProfile(username);
-            updateStep("profile", "complete", `Profile loaded`);
+type View = "insights" | "chat";
+const CHAT_HASH = "#chat";
+const subscribeHash = (cb: () => void) => {
+    window.addEventListener("popstate", cb);
+    window.addEventListener("hashchange", cb);
+    return () => {
+        window.removeEventListener("popstate", cb);
+        window.removeEventListener("hashchange", cb);
+    };
+};
+function useReducedMotionPref(): boolean {
+    return useSyncExternalStore(
+        (cb) => {
+            const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+            mq.addEventListener("change", cb);
+            return () => mq.removeEventListener("change", cb);
+        },
+        () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        () => false,
+    );
+}
 
-            // Step 2: Fetch profile README
-            updateStep("readme", "loading", "Reading profile README...");
-            let profileReadme = null;
-            try {
-                profileReadme = await fetchProfileReadme(username);
-                updateStep("readme", "complete", "Profile README found");
-            } catch {
-                updateStep("readme", "complete", "No profile README");
-            }
-
-            // Step 3: Fetch repositories
-            updateStep("repos", "loading", `Found ${profile.public_repos} repositories`);
-            const repoReadmes = await fetchUserRepos(username);
-            updateStep("repos", "complete", `Analyzed ${repoReadmes.length} repositories`);
-
-            // Individual repo updates
-            repoReadmes.slice(0, 5).forEach((repo, index: number) => {
-                updateStep(`repo-${index}`, "complete", `✓ ${repo.repo}`);
-            });
-
-            if (repoReadmes.length > 5) {
-                updateStep("repos-more", "complete", `+ ${repoReadmes.length - 5} more repositories`);
-            }
-
-            // Step 4: Prefetch latest commits snapshot
-            updateStep("commits", "loading", "Fetching latest commits snapshot...");
-            const commitSnapshot = await fetchRecentProfileCommitSnapshot(username);
-            let recentCommits: ProfileLoaderData["recentCommits"] = [];
-            let freshnessLabel = "GitHub API Unavailable";
-            
-            if (commitSnapshot.success) {
-                recentCommits = commitSnapshot.data.commits;
-                freshnessLabel = commitSnapshot.data.freshness.label;
-                updateStep("commits", "complete", `Loaded ${recentCommits.length} recent commits`);
-            } else {
-                updateStep("commits", "complete", `No recent commits loaded (API error)`);
-            }
-
-            // All done
-            const nextData = {
-                profile,
-                profileReadme,
-                repoReadmes,
-                recentCommits,
-                recentCommitFreshnessLabel: freshnessLabel,
-            };
-            setProfileData(nextData);
-            writeCachedProfileLoaderData(username, nextData);
-        } catch (err: unknown) {
-            console.error(err);
-            setError(getErrorMessage(err));
-            updateStep("error", "error", "Failed to load profile");
-        }
-    }, [username]);
+export function ProfileLoader({ username }: ProfileLoaderProps) {
+    const [stages, dispatch] = useReducer(stagesReducer<ProfileFacts>, undefined, () => initialStages<ProfileFacts>(PROFILE_STAGE_LABELS));
+    const [profileData, setProfileData] = useState<ProfileLoaderData | null>(null);
+    const [model, setModel] = useState<SceneModel | null>(null);
+    const [failure, setFailure] = useState<JourneyFailure | null>(null);
+    const [cached, setCached] = useState(false);
+    const [attempt, setAttempt] = useState(0);
+    const [handoff, setHandoff] = useState<"running" | "fading" | "gone">("running");
+    const [chatMounted, setChatMounted] = useState(false);
+    const reducedMotion = useReducedMotionPref();
+    // The URL hash is the source of truth for insights vs chat, so back and forward move between them.
+    const hashIsChat = useSyncExternalStore(subscribeHash, () => window.location.hash === CHAT_HASH, () => false);
+    const view: View = hashIsChat ? "chat" : "insights";
+    const chatEverShown = chatMounted || hashIsChat;
+    const pushedRef = useRef(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            void loadProfile();
-        }, 0);
+        let cancelled = false;
+        const send = (ev: StageEvent<ProfileFacts>) => {
+            if (!cancelled) dispatch(ev);
+        };
+        const inflight = new Set<keyof ProfileFacts>();
+        const run = async () => {
+            const stored = readCachedProfileLoaderData(username);
+            if (stored) {
+                const facts = factsFromData(stored);
+                (Object.keys(facts) as (keyof ProfileFacts)[]).forEach((id) => send({ type: "done", id, facts: facts[id] } as StageEvent<ProfileFacts>));
+                setCached(true);
+                setModel(buildProfileScene(stored.profile, stored.repoReadmes, stored.recentCommits));
+                setProfileData(stored);
+                return;
+            }
+            try {
+                inflight.add("profile");
+                send({ type: "start", id: "profile" });
+                const profile = await fetchProfile(username);
+                inflight.delete("profile");
+                send({ type: "done", id: "profile", facts: { publicRepos: profile.public_repos, followers: profile.followers, following: profile.following } });
 
-        return () => clearTimeout(timer);
-    }, [loadProfile]);
+                // The remaining requests are independent; each milestone lands when its own request resolves.
+                (["readme", "repos", "commits"] as const).forEach((id) => {
+                    inflight.add(id);
+                    send({ type: "start", id });
+                });
+                const readmeP = fetchProfileReadme(username).then(
+                    (readme) => {
+                        inflight.delete("readme");
+                        send({ type: "done", id: "readme", facts: { found: Boolean(readme) } });
+                        return readme;
+                    },
+                    () => {
+                        inflight.delete("readme");
+                        send({ type: "done", id: "readme", facts: { found: false } });
+                        return null;
+                    },
+                );
+                const reposP = fetchUserRepos(username).then((repos) => {
+                    inflight.delete("repos");
+                    send({ type: "done", id: "repos", facts: reposFacts(repos) });
+                    if (!cancelled) setModel(buildProfileScene(profile, repos, []));
+                    return repos;
+                });
+                // Commits are optional context: a slow GitHub response must never hold back a finished analysis.
+                const commitsSettled = Promise.race([
+                    fetchRecentProfileCommitSnapshot(username),
+                    new Promise<null>((resolve) => setTimeout(() => resolve(null), COMMITS_SOFT_TIMEOUT_MS)),
+                ]);
+                const commitsP = commitsSettled.then((snapshot) => {
+                    inflight.delete("commits");
+                    const ok = snapshot?.success === true;
+                    const commits = ok ? snapshot.data.commits : [];
+                    const freshness = ok ? snapshot.data.freshness.label : "GitHub API Unavailable";
+                    send({ type: "done", id: "commits", facts: { count: commits.length, freshness, available: ok } });
+                    return { commits, freshness };
+                });
+                const [profileReadme, repoReadmes, commitInfo] = await Promise.all([readmeP, reposP, commitsP]);
+                if (cancelled) return;
+                const nextData: ProfileLoaderData = {
+                    profile,
+                    profileReadme,
+                    repoReadmes,
+                    recentCommits: commitInfo.commits,
+                    recentCommitFreshnessLabel: commitInfo.freshness,
+                };
+                setModel(buildProfileScene(profile, repoReadmes, commitInfo.commits));
+                setProfileData(nextData);
+                writeCachedProfileLoaderData(username, nextData);
+            } catch (err: unknown) {
+                console.warn("Profile analysis failed:", err);
+                inflight.forEach((id) => send({ type: "fail", id }));
+                if (!cancelled) setFailure(classifyFailure(getErrorMessage(err)));
+            }
+        };
+        const timer = setTimeout(() => void run(), 0);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [username, attempt]);
 
-    if (error) {
-        return (
-            <div className="flex flex-col items-center justify-center h-screen bg-black text-white gap-4">
-                <UserIcon className="w-16 h-16 text-red-500" />
-                <h1 className="text-2xl font-bold">Error Loading Profile</h1>
-                <p className="text-zinc-200">{error}</p>
-            </div>
-        );
-    }
+    const retry = () => {
+        dispatch({ type: "reset" });
+        setFailure(null);
+        setProfileData(null);
+        setModel(null);
+        setCached(false);
+        setAttempt((n) => n + 1);
+    };
 
-    if (!profileData) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-transparent text-white relative z-10">
-                <div className="max-w-md w-full p-8">
-                    <div className="mb-8 text-center">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="mb-4 inline-block"
-                        >
-                            <Image
-                                src={`https://github.com/${username}.png`}
-                                alt={username}
-                                width={96}
-                                height={96}
-                                className="w-24 h-24 rounded-2xl border-2 border-cyan-400/50 shadow-[0_0_35px_rgba(6,182,212,0.3)]"
-                                unoptimized
-                            />
-                        </motion.div>
-                        <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-white via-cyan-100 to-zinc-400 bg-clip-text text-transparent">Loading @{username}</h2>
-                        <p className="text-sm text-zinc-200">Analyzing profile and repositories...</p>
-                    </div>
+    const openChat = () => {
+        setChatMounted(true);
+        pushedRef.current = true;
+        window.history.pushState(null, "", CHAT_HASH);
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+    };
+    const openInsights = () => {
+        if (pushedRef.current) window.history.back();
+        else {
+            window.history.replaceState(null, "", window.location.pathname + window.location.search);
+            window.dispatchEvent(new HashChangeEvent("hashchange"));
+        }
+    };
 
-                    <div className="space-y-3">
-                        {steps.map((step, index) => (
-                            <motion.div
-                                key={step.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="flex items-center gap-3 p-3.5 bg-[#09090b]/55 backdrop-blur-xl border border-white/15 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.15)]"
-                            >
-                                {step.status === "loading" && (
-                                    <Loader2 className="w-5 h-5 text-purple-400 animate-spin shrink-0" />
-                                )}
-                                {step.status === "complete" && (
-                                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                                )}
-                                {step.status === "error" && (
-                                    <FileCode className="w-5 h-5 text-red-500 shrink-0" />
-                                )}
-                                <span className="text-sm text-zinc-300">{step.message}</span>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    const onDone = () => {
+        setHandoff("fading");
+        window.setTimeout(() => setHandoff("gone"), 700);
+    };
 
+    const showWorkspace = profileData && handoff !== "running";
     return (
-        <ProfileChatInterface
-            profile={profileData.profile}
-            profileReadme={profileData.profileReadme}
-            repoReadmes={profileData.repoReadmes}
-            recentCommits={profileData.recentCommits}
-            recentCommitFreshnessLabel={profileData.recentCommitFreshnessLabel}
-        />
+        <>
+            {showWorkspace && (
+                <>
+                    <div hidden={view !== "insights"}>
+                        <ProfileWorkspace
+                            profile={profileData.profile}
+                            repos={profileData.repoReadmes}
+                            commits={profileData.recentCommits}
+                            freshness={profileData.recentCommitFreshnessLabel}
+                            reducedMotion={reducedMotion}
+                            onAsk={openChat}
+                        />
+                    </div>
+                    {chatEverShown && (
+                        <div hidden={view !== "chat"}>
+                            <ProfileChatInterface
+                                profile={profileData.profile}
+                                profileReadme={profileData.profileReadme}
+                                repoReadmes={profileData.repoReadmes}
+                                recentCommits={profileData.recentCommits}
+                                recentCommitFreshnessLabel={profileData.recentCommitFreshnessLabel}
+                            />
+                            {view === "chat" && (
+                                <button
+                                    type="button"
+                                    onClick={openInsights}
+                                    className="fixed bottom-4 left-4 z-20 inline-flex min-h-11 items-center gap-2 rounded-full border border-nv-graphite-600 bg-nv-graphite-900 px-4 text-nv-small font-medium text-nv-ivory-100 shadow-nv-lift hover:border-nv-copper-400"
+                                >
+                                    <ArrowLeft className="size-4" aria-hidden /> Back to insights
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
+            )}
+            {handoff !== "gone" && (
+                <JourneyStage
+                    kind="profile"
+                    subject={username}
+                    stages={stages}
+                    model={model}
+                    ready={profileData !== null}
+                    failure={failure}
+                    cached={cached}
+                    exiting={handoff === "fading"}
+                    onDone={onDone}
+                    onRetry={retry}
+                />
+            )}
+        </>
     );
 }

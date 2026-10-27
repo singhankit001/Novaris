@@ -93,7 +93,7 @@ export function InstallPWA() {
         if (isIOS) {
             toast.info("To install on iOS: tap 'Share' then 'Add to Home Screen'", {
                 duration: 5000,
-                icon: <Download className="w-4 h-4" />
+                icon: <Download className="size-4" />
             });
             return;
         }
@@ -107,10 +107,7 @@ export function InstallPWA() {
         const choiceResult = await deferredPrompt.userChoice;
 
         if (choiceResult.outcome === "accepted") {
-            console.log("User accepted the install prompt");
             setDeferredPrompt(null);
-        } else {
-            console.log("User dismissed the install prompt");
         }
     };
 
@@ -118,14 +115,15 @@ export function InstallPWA() {
 
     return (
         <button
+            type="button"
             onClick={handleInstallClick}
             aria-label="Install app"
             title="Install app"
-            className={`fixed bottom-6 right-6 z-50 md:hidden flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/55 text-white shadow-lg shadow-black/40 backdrop-blur-md transition-all duration-500 ease-out active:scale-95 ${
-                visible ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-3 scale-90 opacity-0"
+            className={`fixed bottom-4 right-4 z-20 flex size-12 touch-manipulation items-center justify-center rounded-full border border-nv-copper-400 bg-nv-copper-400 text-white shadow-nv-popover transition-[opacity,transform,background-color] duration-200 hover:bg-nv-copper-300 motion-safe:active:scale-95 md:hidden ${
+                visible ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
         >
-            <Download className="h-5 w-5 text-blue-300" />
+            <Download aria-hidden className="size-5" />
         </button>
     );
 }

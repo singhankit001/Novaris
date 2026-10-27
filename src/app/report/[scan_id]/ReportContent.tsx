@@ -1,203 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ReportFalsePositiveReason } from "@prisma/client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { ChevronDown, Copy, Download, MessageCircle, Printer, Search, Wrench } from "lucide-react";
 import type { StoredScan } from "@/lib/services/scan-storage";
 import type { PriorScanDiff, ReportFindingView } from "@/lib/services/report-service";
 import { getCanonicalSiteUrl } from "@/lib/site-url";
-import {
-    submitReportFalsePositive,
-    trackReportConversion,
-} from "@/app/actions";
+import { submitReportFalsePositive, trackReportConversion } from "@/app/actions";
 import { DEEP_SCAN_PROMPT } from "@/lib/chat-constants";
-import { CodeBlock } from "@/components/CodeBlock";
-import {
-    AlertCircle,
-    AlertTriangle,
-    CheckCircle,
-    ChevronDown,
-    Copy,
-    Flame,
-    Info,
-    MessageCircle,
-    Shield,
-    ShieldAlert,
-} from "lucide-react";
-import { toast } from "sonner";
 import { formatReportCountdown, getReportExpiryState } from "@/app/report/report-expiry";
-import ShareButton from "./ShareButton";
-import { ExportButtons } from "./components/ExportButtons";
-
-const severityConfig = {
-    critical: { color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20", icon: Flame },
-    high: { color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20", icon: AlertTriangle },
-    medium: { color: "text-yellow-500", bg: "bg-yellow-500/10", border: "border-yellow-500/20", icon: AlertCircle },
-    low: { color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20", icon: Info },
-    info: { color: "text-zinc-400", bg: "bg-zinc-500/10", border: "border-zinc-500/20", icon: CheckCircle },
-} as const;
-
-const confidenceConfig = {
-    high: { label: "High Confidence", className: "text-emerald-300 border-emerald-500/30 bg-emerald-500/10" },
-    medium: { label: "Medium Confidence", className: "text-yellow-300 border-yellow-500/30 bg-yellow-500/10" },
-    low: { label: "Low Confidence", className: "text-zinc-300 border-zinc-500/30 bg-zinc-500/10" },
-} as const;
-
-const verificationConfig = {
-    AUTO_VERIFIED_TRUE: { label: "Verified True", className: "text-emerald-300 border-emerald-500/30 bg-emerald-500/10" },
-    OPEN: { label: "Open", className: "text-emerald-300 border-emerald-500/30 bg-emerald-500/10" },
-    CLOSED: { label: "Closed", className: "text-zinc-300 border-zinc-600 bg-zinc-700/30" },
-    AUTO_REJECTED_FALSE: { label: "Auto Rejected", className: "text-rose-300 border-rose-500/30 bg-rose-500/10" },
-    INCONCLUSIVE_HIDDEN: { label: "Inconclusive", className: "text-amber-300 border-amber-500/30 bg-amber-500/10" },
-    DETECTED: { label: "Detected", className: "text-indigo-300 border-indigo-500/30 bg-indigo-500/10" },
-} as const;
-
-const exploitabilityConfig = {
-    high: { label: "High Exploitability", className: "text-red-300 border-red-500/30 bg-red-500/10" },
-    medium: { label: "Medium Exploitability", className: "text-orange-300 border-orange-500/30 bg-orange-500/10" },
-    low: { label: "Low Exploitability", className: "text-blue-300 border-blue-500/30 bg-blue-500/10" },
-    unknown: { label: "Unknown Exploitability", className: "text-zinc-300 border-zinc-500/30 bg-zinc-500/10" },
-} as const;
-
-const evidenceTypeConfig = {
-    source: { label: "Source", className: "border-blue-500/25 bg-blue-500/10 text-blue-100", iconClass: "text-blue-300" },
-    sink: { label: "Sink", className: "border-red-500/25 bg-red-500/10 text-red-100", iconClass: "text-red-300" },
-    sanitizer: { label: "Sanitizer", className: "border-emerald-500/25 bg-emerald-500/10 text-emerald-100", iconClass: "text-emerald-300" },
-    context: { label: "Context", className: "border-zinc-500/25 bg-zinc-500/10 text-zinc-100", iconClass: "text-zinc-300" },
-} as const;
-
-const traceTypeConfig = {
-    source: { label: "Trace Source", className: "border-indigo-500/25 bg-indigo-500/10 text-indigo-100" },
-    flow: { label: "Trace Flow", className: "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-100" },
-    sink: { label: "Trace Sink", className: "border-rose-500/25 bg-rose-500/10 text-rose-100" },
-} as const;
-
-const falsePositiveReasonOptions: Array<{
-    value: ReportFalsePositiveReason;
-    label: string;
-    description: string;
-}> = [
-    {
-        value: "NOT_A_VULNERABILITY",
-        label: "Not a vulnerability",
-        description: "The finding is technically incorrect for this code path.",
-    },
-    {
-        value: "TEST_OR_FIXTURE",
-        label: "Test or fixture only",
-        description: "The finding points to non-production code or seeded test data.",
-    },
-    {
-        value: "FALSE_DATAFLOW",
-        label: "False dataflow",
-        description: "The scanner connected source and sink incorrectly.",
-    },
-    {
-        value: "INTENDED_BEHAVIOR",
-        label: "Intended behavior",
-        description: "The flagged pattern is deliberate and already protected by surrounding controls.",
-    },
-    {
-        value: "OTHER",
-        label: "Other",
-        description: "Use this when none of the standard categories fit.",
-    },
-];
-
-function SeverityBadge({ severity }: { severity: keyof typeof severityConfig }) {
-    const config = severityConfig[severity] || severityConfig.info;
-    const Icon = config.icon;
-
-    return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.color} border ${config.border}`}>
-            <Icon className="w-3.5 h-3.5" />
-            <span className="uppercase tracking-wider">{severity}</span>
-        </span>
-    );
-}
-
-function ConfidenceBadge({ confidence }: { confidence?: ReportFindingView["finding"]["confidence"] }) {
-    if (!confidence) {
-        return (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-zinc-700 bg-zinc-800 text-zinc-300">
-                Confidence: Not Scored
-            </span>
-        );
-    }
-
-    const config = confidenceConfig[confidence];
-    return (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${config.className}`}>
-            {config.label}
-        </span>
-    );
-}
-
-function VerificationBadge({ status }: { status?: ReportFindingView["finding"]["verificationStatus"] }) {
-    if (!status) {
-        return (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-zinc-700 bg-zinc-800 text-zinc-300">
-                Legacy Finding
-            </span>
-        );
-    }
-
-    const config = verificationConfig[status] ?? verificationConfig.DETECTED;
-    return (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${config.className}`}>
-            {config.label}
-        </span>
-    );
-}
-
-function clampScore(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(max, value));
-}
-
-function computeSecurityHealthScore(input: {
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    newFindings: number;
-    resolvedFindings: number;
-    exploitabilityHigh: number;
-}): {
-    score: number;
-    grade: "A" | "B" | "C" | "D" | "F";
-    label: string;
-    trend: "improving" | "stable" | "degrading";
-} {
-    const base = 100;
-    const penalty =
-        input.critical * 28 +
-        input.high * 16 +
-        input.medium * 8 +
-        input.low * 3 +
-        input.exploitabilityHigh * 4 +
-        input.newFindings * 2;
-    const recovery = input.resolvedFindings * 3;
-    const score = clampScore(Math.round(base - penalty + recovery), 0, 100);
-
-    const grade: "A" | "B" | "C" | "D" | "F" =
-        score >= 90 ? "A" :
-            score >= 80 ? "B" :
-                score >= 65 ? "C" :
-                    score >= 45 ? "D" : "F";
-
-    const label =
-        grade === "A" ? "Hardened posture" :
-            grade === "B" ? "Strong posture" :
-                grade === "C" ? "Needs improvement" :
-                    grade === "D" ? "Elevated risk" : "Critical attention needed";
-
-    const trendScore = input.resolvedFindings - input.newFindings;
-    const trend: "improving" | "stable" | "degrading" =
-        trendScore > 0 ? "improving" :
-            trendScore < 0 ? "degrading" : "stable";
-
-    return { score, grade, label, trend };
-}
+import { StatusPill } from "@/components/nv/badge";
+import { Button } from "@/components/nv/button";
+import { buttonClasses } from "@/components/nv/button-styles";
+import { RingChart, type StackedSegment } from "@/components/nv/charts";
+import { Metric, MetricGroup, MetricStrip } from "@/components/nv/data";
+import { Dialog } from "@/components/nv/dialog";
+import { EvidencePanel, type EvidenceScope } from "@/components/nv/evidence";
+import { Input, Textarea } from "@/components/nv/field";
+import { Notice, type NoticeTone } from "@/components/nv/notice";
+import { EmptyState } from "@/components/nv/states";
+import { SeverityFilter, type SeverityChoice } from "@/components/app-fx/SeverityFilter";
+import FindingCard from "./FindingCard";
+import ShareControls from "./ShareControls";
+import { SEVERITIES, falsePositiveReasonOptions, severityLabel, severityStatus, type Severity } from "./finding-meta";
+import { downloadMarkdownReport, openPrintDialog } from "./export-report";
 
 interface ReportContentProps {
     scan: StoredScan;
@@ -208,10 +36,38 @@ interface ReportContentProps {
     globalChatHref: string;
     hasPreviousScan: boolean;
     isSharedView: boolean;
+    /** Share token of the shared view; the server checks it before accepting feedback. */
+    shareToken?: string;
     canShareReport: boolean;
     canGenerateOutreach: boolean;
     shareMode: "canonical" | "copy-current-url";
     reportExpiresAt: number;
+}
+
+interface Feedback {
+    tone: NoticeTone;
+    title: string;
+    text?: string;
+}
+
+const segmentTone: Record<Severity, StackedSegment["tone"]> = {
+    critical: "danger",
+    high: "warning",
+    medium: "copper",
+    low: "ion",
+    info: "graphite",
+};
+
+const fmtDateTime = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+async function copyText(value: string): Promise<boolean> {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return false;
+    try {
+        await navigator.clipboard.writeText(value);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 export function ReportContent({
@@ -222,1008 +78,458 @@ export function ReportContent({
     globalFixPrompt,
     hasPreviousScan,
     isSharedView,
+    shareToken,
     canShareReport,
     canGenerateOutreach,
     shareMode,
     reportExpiresAt,
 }: ReportContentProps) {
+    const router = useRouter();
     const baseUrl = getCanonicalSiteUrl();
     const defaultReportUrl = `${baseUrl}/report/${scan.id}`;
-    const date = new Date(scan.timestamp);
     const [now, setNow] = useState(() => Date.now());
-    const [showFixPromptModal, setShowFixPromptModal] = useState(false);
-    const [isCopyingFixPrompt, setIsCopyingFixPrompt] = useState(false);
-    const [pendingFalsePositives, setPendingFalsePositives] = useState<Record<string, boolean>>({});
-    const [activeFalsePositiveKey, setActiveFalsePositiveKey] = useState<string | null>(null);
-    const [falsePositiveReason, setFalsePositiveReason] = useState<ReportFalsePositiveReason>("NOT_A_VULNERABILITY");
-    const [falsePositiveDetails, setFalsePositiveDetails] = useState("");
-    const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false);
-    const [showDeepScanRepoModal, setShowDeepScanRepoModal] = useState(false);
-    const [deepScanRepoInput, setDeepScanRepoInput] = useState("");
-    const [shareableUrl, setShareableUrl] = useState(defaultReportUrl);
+    const [groupBy, setGroupBy] = useState<"severity" | "file">("severity");
+    const [sevFilter, setSevFilter] = useState<SeverityChoice>("all");
+    const [feedback, setFeedback] = useState<Feedback | null>(null);
+    const [showFixPrompt, setShowFixPrompt] = useState(false);
+    const [showDeepScan, setShowDeepScan] = useState(false);
+    const [deepScanInput, setDeepScanInput] = useState("");
+    const [deepScanError, setDeepScanError] = useState<string | null>(null);
+    const [fpStatus, setFpStatus] = useState<Record<string, "pending" | "submitted">>({});
+    const [fpKey, setFpKey] = useState<string | null>(null);
+    const [fpReason, setFpReason] = useState<ReportFalsePositiveReason>("NOT_A_VULNERABILITY");
+    const [fpDetails, setFpDetails] = useState("");
+    const [fpError, setFpError] = useState<string | null>(null);
+    const shareableUrl = useSyncExternalStore(
+        () => () => {},
+        () => window.location.href || defaultReportUrl,
+        () => defaultReportUrl,
+    );
 
     useEffect(() => {
-        const intervalId = window.setInterval(() => {
-            setNow(Date.now());
-        }, 60_000);
-
-        return () => window.clearInterval(intervalId);
+        const id = window.setInterval(() => setNow(Date.now()), 60_000);
+        return () => window.clearInterval(id);
     }, []);
 
-    useEffect(() => {
-        if (typeof window !== "undefined" && window.location.href) {
-            setShareableUrl(window.location.href);
-        }
-    }, [defaultReportUrl]);
-
-    const expiryState = useMemo(
-        () => getReportExpiryState(reportExpiresAt, now),
-        [reportExpiresAt, now]
-    );
-    const isOutdated = expiryState.isExpired;
-    const expiryLabel = formatReportCountdown(reportExpiresAt, now);
+    const isOutdated = getReportExpiryState(reportExpiresAt, now).isExpired;
+    const countdown = formatReportCountdown(reportExpiresAt, now);
     const repoChatHref = `/chat?q=${encodeURIComponent(`${scan.owner}/${scan.repo}`)}`;
     const repoProfileHref = `/repo/${scan.owner}/${scan.repo}`;
+    const scanned = new Date(scan.timestamp);
 
-    const topFixesByFingerprint = useMemo(() => {
-        const fpSet = new Set(topFixes.map((item) => item.fingerprint));
-        return findingViews.filter((view) => fpSet.has(view.fingerprint)).slice(0, 3);
-    }, [findingViews, topFixes]);
-    const exploitabilityHighCount = useMemo(
-        () => findingViews.filter((view) => view.finding.exploitabilityTag === "high").length,
-        [findingViews]
-    );
-    const verifiedSeverityTotals = useMemo(() => {
-        return findingViews.reduce(
-            (acc, view) => {
-                const severity = view.finding.severity;
-                if (severity in acc) {
-                    acc[severity as keyof typeof acc] += 1;
-                }
-                return acc;
-            },
-            { critical: 0, high: 0, medium: 0, low: 0, info: 0 }
-        );
-    }, [findingViews]);
-    const healthScore = useMemo(
-        () => computeSecurityHealthScore({
-            critical: verifiedSeverityTotals.critical,
-            high: verifiedSeverityTotals.high,
-            medium: verifiedSeverityTotals.medium,
-            low: verifiedSeverityTotals.low,
-            newFindings: priorScanDiff.new,
-            resolvedFindings: priorScanDiff.resolved,
-            exploitabilityHigh: exploitabilityHighCount,
-        }),
-        [
-            exploitabilityHighCount,
-            priorScanDiff.new,
-            priorScanDiff.resolved,
-            verifiedSeverityTotals.critical,
-            verifiedSeverityTotals.high,
-            verifiedSeverityTotals.low,
-            verifiedSeverityTotals.medium,
-        ]
-    );
-    const verifiedBadgeSnippet = useMemo(
-        () =>
-            `[![Novaris Verified Security Scan](https://img.shields.io/badge/Novaris-Verified%20Security%20Scan-22c55e?style=for-the-badge)](${shareableUrl})`,
-        [shareableUrl]
-    );
-    const verifiedReportSnippet = useMemo(
-        () =>
-            `Novaris verified security report for ${scan.owner}/${scan.repo}: ${verifiedSeverityTotals.critical} critical, ${verifiedSeverityTotals.high} high, ${verifiedSeverityTotals.medium} medium, ${verifiedSeverityTotals.low} low. Security Health Score ${healthScore.score}/100 (${healthScore.grade}). ${shareableUrl}`,
-        [
-            healthScore.grade,
-            healthScore.score,
-            scan.owner,
-            scan.repo,
-            shareableUrl,
-            verifiedSeverityTotals.critical,
-            verifiedSeverityTotals.high,
-            verifiedSeverityTotals.low,
-            verifiedSeverityTotals.medium,
-        ]
-    );
+    const counts = SEVERITIES.map((s) => ({ severity: s, count: scan.summary[s] || 0 }));
+    const segments: StackedSegment[] = counts.filter((c) => c.count > 0).map((c) => ({ label: severityLabel[c.severity], value: c.count, tone: segmentTone[c.severity] }));
+    const grouped = SEVERITIES.map((s) => ({ severity: s, views: findingViews.filter((v) => v.finding.severity === s) })).filter((g) => g.views.length > 0);
+    const shownCounts = Object.fromEntries(SEVERITIES.map((s) => [s, findingViews.filter((v) => v.finding.severity === s).length])) as Record<Severity, number>;
+    const visibleGroups = sevFilter === "all" ? grouped : grouped.filter((g) => g.severity === sevFilter);
+    const filteredViews = sevFilter === "all" ? findingViews : findingViews.filter((v) => v.finding.severity === sevFilter);
+    // Plain grouping: Map.groupBy is missing on Node 20 and Safari before 17.4.
+    const byFile = new Map<string, typeof filteredViews>();
+    for (const v of filteredViews) byFile.set(v.finding.file, [...(byFile.get(v.finding.file) ?? []), v]);
+    const fileGroups = [...byFile].map(([file, views]) => ({ file, views })).sort((x, y) => y.views.length - x.views.length || x.file.localeCompare(y.file));
+    const shownTotal = findingViews.length;
+    const recordedTotal = scan.summary.total;
+    const hiddenCount = Math.max(0, recordedTotal - shownTotal);
+    const dbg = scan.summary.debug;
 
-    const openFixPromptModal = () => {
-        if (isOutdated || findingViews.length === 0) return;
-        setShowFixPromptModal(true);
+    const scope: EvidenceScope = {
+        identity: `${scan.owner}/${scan.repo}`,
+        repos: { included: 1, total: 1 },
+        dateRange: `Single scan, ${fmtDateTime(scan.timestamp)}`,
+        freshness: isOutdated ? `Outdated. Expired ${fmtDateTime(reportExpiresAt)}` : `Scanned ${fmtDateTime(scan.timestamp)}. Expires ${fmtDateTime(reportExpiresAt)}`,
+        limits: [
+            scan.depth === "deep" ? "Deep scan" : "Quick scan: fewer checks than a deep scan",
+            dbg ? `${dbg.filesSuccessfullyFetched} of ${dbg.filesReceived} candidate files fetched` : "File coverage was not recorded for this scan",
+            hiddenCount > 0 ? `${hiddenCount} recorded finding${hiddenCount === 1 ? "" : "s"} hidden because verification did not confirm them` : "Findings failing verification are hidden",
+        ],
+        measured: ["Findings matched by scanner rules at the cited file and line", "Severity counts as stored with the scan"],
+        inferred: ["Impact statements", "Exploitability tags", "Findings not confirmed by the verifier"],
+        uncertainty: "Automated scanning produces false positives and misses issues. Use Report false positive when a finding is wrong.",
     };
 
-    const closeFixPromptModal = () => {
-        if (isCopyingFixPrompt) return;
-        setShowFixPromptModal(false);
-    };
+    const snippet = `Novaris security report for ${scan.owner}/${scan.repo}, scanned ${scanned.toLocaleDateString()}: ${counts.map((c) => `${c.count} ${c.severity}`).join(", ")}. ${shareableUrl}`;
 
-    const handleCopyFixPrompt = async () => {
-        if (isOutdated || findingViews.length === 0) return;
+    async function copyWithFeedback(value: string, what: string, event?: "report_fix_prompt_copied") {
+        const ok = await copyText(value);
+        if (ok && event) void trackReportConversion(event, scan.id);
+        setFeedback(ok ? { tone: "success", title: `${what} copied` } : { tone: "warning", title: "Clipboard is blocked", text: "Select the text and copy it manually." });
+        return ok;
+    }
 
-        setIsCopyingFixPrompt(true);
-        try {
-            await navigator.clipboard.writeText(globalFixPrompt);
-            void trackReportConversion("report_fix_prompt_copied", scan.id);
-            toast.success("AI remediation prompt copied. Paste it in Repo Chat to fix vulnerabilities.");
-            setShowFixPromptModal(false);
-        } catch {
-            toast.error("Failed to copy prompt");
-        } finally {
-            setIsCopyingFixPrompt(false);
-        }
-    };
-
-    const activeFalsePositiveView = useMemo(() => {
-        if (!activeFalsePositiveKey) return null;
-        return findingViews.find((view) => `${view.fingerprint}:${view.index}` === activeFalsePositiveKey) ?? null;
-    }, [activeFalsePositiveKey, findingViews]);
-    const isActiveFalsePositivePending = activeFalsePositiveKey
-        ? Boolean(pendingFalsePositives[activeFalsePositiveKey])
-        : false;
-
-    const closeFalsePositiveModal = () => {
-        setActiveFalsePositiveKey(null);
-        setFalsePositiveReason("NOT_A_VULNERABILITY");
-        setFalsePositiveDetails("");
-    };
-
-    const openFalsePositiveModal = (view: ReportFindingView) => {
-        setActiveFalsePositiveKey(`${view.fingerprint}:${view.index}`);
-        setFalsePositiveReason("NOT_A_VULNERABILITY");
-        setFalsePositiveDetails("");
-    };
-
-    const handleFalsePositiveSubmit = async () => {
-        if (!activeFalsePositiveView) return;
-
-        const key = `${activeFalsePositiveView.fingerprint}:${activeFalsePositiveView.index}`;
-        setPendingFalsePositives((current) => ({ ...current, [key]: true }));
-
-        try {
-            await submitReportFalsePositive({
-                scanId: scan.id,
-                findingIndex: activeFalsePositiveView.index,
-                findingFingerprint: activeFalsePositiveView.fingerprint,
-                isSharedView,
-                reason: falsePositiveReason,
-                details: falsePositiveDetails,
-            });
-            toast.success("False positive submitted");
-            closeFalsePositiveModal();
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "Failed to submit false positive";
-            toast.error(message);
-        } finally {
-            setPendingFalsePositives((current) => {
-                const next = { ...current };
-                delete next[key];
-                return next;
-            });
-        }
-    };
-
-    const tryCopyToClipboard = async (value: string): Promise<boolean> => {
-        if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-            return false;
-        }
-        try {
-            await navigator.clipboard.writeText(value);
-            return true;
-        } catch {
-            return false;
-        }
-    };
-
-    const handleCopyVerifiedBadge = async () => {
-        const copied = await tryCopyToClipboard(verifiedBadgeSnippet);
-        if (!copied) {
-            toast.error("Unable to access clipboard");
-            return;
-        }
-        toast.success("Verified badge snippet copied");
-    };
-
-    const handleCopyVerifiedReportSnippet = async () => {
-        const copied = await tryCopyToClipboard(verifiedReportSnippet);
-        if (!copied) {
-            toast.error("Unable to access clipboard");
-            return;
-        }
-        toast.success("Report snippet copied");
-    };
-
-    const handleLaunchDeepScanAnotherRepo = () => {
-        const normalized = deepScanRepoInput
+    function launchDeepScan() {
+        const normalized = deepScanInput
             .trim()
             .replace(/^https?:\/\/github\.com\//i, "")
             .replace(/\/+$/, "")
             .replace(/\.git$/i, "");
-
         if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(normalized)) {
-            toast.error("Use repository format owner/repo");
+            setDeepScanError("Use the format owner/repo or a github.com URL.");
             return;
         }
+        router.push(`/chat?q=${encodeURIComponent(normalized)}&prompt=${encodeURIComponent(DEEP_SCAN_PROMPT)}`);
+    }
 
-        const href = `/chat?q=${encodeURIComponent(normalized)}&prompt=${encodeURIComponent(DEEP_SCAN_PROMPT)}`;
-        setShowDeepScanRepoModal(false);
-        setDeepScanRepoInput("");
-        if (typeof window !== "undefined") {
-            window.location.href = href;
+    const activeView = fpKey ? findingViews.find((v) => `${v.fingerprint}:${v.index}` === fpKey) ?? null : null;
+    const fpPending = fpKey ? fpStatus[fpKey] === "pending" : false;
+
+    function closeFp() {
+        setFpKey(null);
+        setFpReason("NOT_A_VULNERABILITY");
+        setFpDetails("");
+        setFpError(null);
+    }
+
+    async function submitFp() {
+        if (!activeView || !fpKey) return;
+        const key = fpKey;
+        setFpError(null);
+        setFpStatus((s) => ({ ...s, [key]: "pending" }));
+        try {
+            await submitReportFalsePositive({
+                scanId: scan.id,
+                findingIndex: activeView.index,
+                findingFingerprint: activeView.fingerprint,
+                shareToken: isSharedView ? shareToken : undefined,
+                reason: fpReason,
+                details: fpDetails,
+            });
+            setFpStatus((s) => ({ ...s, [key]: "submitted" }));
+            closeFp();
+            setFeedback({ tone: "success", title: "False positive submitted", text: "A reviewer will look at it. The finding stays in this report." });
+        } catch (error) {
+            setFpStatus((s) => {
+                const next = { ...s };
+                delete next[key];
+                return next;
+            });
+            setFpError(error instanceof Error ? error.message : "Failed to submit the false positive.");
         }
-    };
+    }
+
+    function renderCards(views: ReportFindingView[]) {
+        return (
+            <ul className="m-0 list-none space-y-3 p-0">
+                {views.map((view) => {
+                    const key = `${view.fingerprint}:${view.index}`;
+                    return (
+                        <FindingCard
+                            key={key}
+                            view={view}
+                            owner={scan.owner}
+                            repo={scan.repo}
+                            falsePositive={fpStatus[key] ?? "idle"}
+                            onReportFalsePositive={() => {
+                                setFpKey(key);
+                                setFpError(null);
+                            }}
+                        />
+                    );
+                })}
+            </ul>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-black text-white p-4 md:p-8 selection:bg-indigo-500/30">
-            <div className="max-w-4xl mx-auto space-y-8">
-                <div data-testid="report-actions-navbar" className="print:hidden">
-                    <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-4 shadow-lg md:hidden">
-                        <div className="flex items-center justify-between gap-3">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
-                                <Shield className="w-3.5 h-3.5" />
-                                Report Actions
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setIsMobileActionsOpen((current) => !current)}
-                                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-zinc-900 p-2 text-zinc-300 transition-colors hover:bg-zinc-800"
-                                aria-expanded={isMobileActionsOpen}
-                                aria-controls="report-actions-mobile-menu"
-                            >
-                                <ChevronDown className={`h-4 w-4 transition-transform ${isMobileActionsOpen ? "rotate-180" : ""}`} />
-                                <span className="sr-only">{isMobileActionsOpen ? "Collapse report actions" : "Expand report actions"}</span>
-                            </button>
-                        </div>
-
-                        {isMobileActionsOpen && (
-                            <div id="report-actions-mobile-menu" className="mt-3 flex flex-col gap-2">
-                                {isOutdated ? (
-                                    <Link
-                                        href={repoChatHref}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-indigo-500"
-                                    >
-                                        <MessageCircle className="w-4 h-4" />
-                                        Rescan in Repo Chat
-                                    </Link>
-                                ) : (
-                                    <>
-                                        <Link
-                                            href={repoChatHref}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-800 px-3.5 py-2 text-sm font-medium text-white transition-all hover:bg-zinc-700"
-                                        >
-                                            <MessageCircle className="w-4 h-4" />
-                                            Talk to the Codebase
-                                        </Link>
-                                        {canShareReport && (
-                                            <ShareButton
-                                                scanId={scan.id}
-                                                canGenerateOutreach={canGenerateOutreach}
-                                                shareMode={shareMode}
-                                                reportExpiresAt={reportExpiresAt}
-                                            />
-                                        )}
-                                        <button
-                                            onClick={openFixPromptModal}
-                                            disabled={findingViews.length === 0}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                            Remediate with AI
-                                        </button>
-                                        <button
-                                            onClick={() => { void handleCopyVerifiedReportSnippet(); }}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                            Copy Report Snippet
-                                        </button>
-                                        <button
-                                            onClick={() => { void handleCopyVerifiedBadge(); }}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                            Copy Verified Badge
-                                        </button>
-                                        <button
-                                            onClick={() => setShowDeepScanRepoModal(true)}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-600/15 px-3.5 py-2 text-sm font-medium text-indigo-200 transition-all hover:bg-indigo-600/25"
-                                        >
-                                            <Shield className="w-4 h-4" />
-                                            Deep Scan Another Repo
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        )}
+        <div className="min-h-dvh bg-nv-graphite-950 nv-aurora">
+            <main id="nv-main" tabIndex={-1} className="mx-auto w-full max-w-[var(--nv-page-max)] space-y-8 px-[var(--nv-gutter)] py-6 sm:py-10">
+                <header className="nv-card relative space-y-5 overflow-hidden p-5 sm:p-8">
+                    <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-[var(--nv-gradient-dusk)]" />
+                    <div className="flex flex-wrap items-center gap-2">
+                        <p className="nv-eyebrow">Security report{isSharedView ? " · shared view, read only" : ""}</p>
+                        <StatusPill status={isOutdated ? "danger" : "warning"}>{isOutdated ? "Outdated" : `Expires in ${countdown}`}</StatusPill>
                     </div>
-
-                    <div className="hidden md:block sticky top-0 z-50 rounded-2xl border border-white/10 bg-zinc-950/80 p-4 md:p-5 backdrop-blur-xl shadow-lg">
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
-                                        <Shield className="w-3.5 h-3.5" />
-                                        Report Actions
-                                    </span>
-                                    {isSharedView && (
-                                        <span className="inline-flex items-center rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-300">
-                                            Shared Link
-                                        </span>
-                                    )}
-                                </div>
-                                {isOutdated && (
-                                    <Link
-                                        href={repoChatHref}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-indigo-500"
-                                    >
-                                        <MessageCircle className="w-4 h-4" />
-                                        Rescan in Repo Chat
-                                    </Link>
-                                )}
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-2">
-                                {!isOutdated && (
-                                    <Link
-                                        href={repoChatHref}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-800 px-3.5 py-2 text-sm font-medium text-white transition-all hover:bg-zinc-700"
-                                    >
-                                        <MessageCircle className="w-4 h-4" />
-                                        Talk to the Codebase
-                                    </Link>
-                                )}
-                                {!isOutdated && canShareReport && (
-                                    <ShareButton
-                                        scanId={scan.id}
-                                        canGenerateOutreach={canGenerateOutreach}
-                                        shareMode={shareMode}
-                                        reportExpiresAt={reportExpiresAt}
-                                    />
-                                )}
-                                {!isOutdated && (
-                                    <button
-                                        onClick={openFixPromptModal}
-                                        disabled={findingViews.length === 0}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                        Remediate with AI
-                                    </button>
-                                )}
-                                {!isOutdated && (
-                                    <button
-                                        onClick={() => { void handleCopyVerifiedReportSnippet(); }}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                        Copy Report Snippet
-                                    </button>
-                                )}
-                                {!isOutdated && (
-                                    <button
-                                        onClick={() => { void handleCopyVerifiedBadge(); }}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                        Copy Verified Badge
-                                    </button>
-                                )}
-                                {!isOutdated && (
-                                    <button
-                                        onClick={() => setShowDeepScanRepoModal(true)}
-                                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-600/15 px-3.5 py-2 text-sm font-medium text-indigo-200 transition-all hover:bg-indigo-600/25"
-                                    >
-                                        <Shield className="w-4 h-4" />
-                                        Deep Scan Another Repo
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-xl">
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-indigo-400">
-                                <Shield className="w-5 h-5" />
-                                <span className="text-sm font-medium tracking-wide uppercase">
-                                    NOVARIS SECURITY REPORT
-                                </span>
-                            </div>
-                            <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
-                                <span className="font-normal text-zinc-300">{scan.owner} / </span>
-                                {scan.repo}
-                            </h1>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-200">
-                                <span>Scanned on {date.toLocaleDateString()} at {date.toLocaleTimeString()}</span>
-                                <span className="hidden sm:inline">•</span>
-                                <span className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-xs">
-                                    {scan.depth === "deep" ? "Deep Analysis" : "Quick Scan"}
-                                </span>
-                                <span className={`rounded-md border px-2 py-0.5 text-xs ${isOutdated ? "border-red-500/20 bg-red-500/10 text-red-300" : "border-amber-500/20 bg-amber-500/10 text-amber-300"}`}>
-                                    {isOutdated ? "Outdated" : `Expires in ${expiryLabel}`}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="print:hidden flex flex-col gap-3 lg:items-end">
-                            <Link
-                                href={repoProfileHref}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-500/50 bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-500"
-                            >
-                                <Shield className="w-4 h-4" />
-                                Repository Profile
-                            </Link>
-                            <ExportButtons scan={scan} />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <h3 className="text-lg font-medium text-zinc-100">Security Health Score</h3>
-                            <p className="mt-1 text-sm text-zinc-200">
-                                Posture score based on verified severity mix, high-exploitability signals, and scan trend.
-                            </p>
-                        </div>
-                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                            healthScore.trend === "improving"
-                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                                : healthScore.trend === "degrading"
-                                    ? "border-red-500/30 bg-red-500/10 text-red-300"
-                                    : "border-zinc-500/30 bg-zinc-500/10 text-zinc-300"
-                        }`}>
-                            Trend: {healthScore.trend}
-                        </span>
-                    </div>
-                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
-                        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-4 sm:col-span-2">
-                            <p className="text-xs uppercase tracking-wider text-indigo-300">Score</p>
-                            <div className="mt-2 flex items-baseline gap-2">
-                                <p className="text-4xl font-bold text-white">{healthScore.score}</p>
-                                <p className="text-sm text-zinc-300">/ 100</p>
-                                <p className="rounded-md border border-white/10 bg-zinc-900/70 px-2 py-0.5 text-xs font-semibold text-zinc-200">
-                                    Grade {healthScore.grade}
-                                </p>
-                            </div>
-                            <p className="mt-2 text-sm text-zinc-300">{healthScore.label}</p>
-                        </div>
-                        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-                            <p className="text-xs uppercase tracking-wider text-red-300">Critical + High</p>
-                            <p className="mt-1 text-2xl font-bold text-white">{verifiedSeverityTotals.critical + verifiedSeverityTotals.high}</p>
-                        </div>
-                        <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 p-4">
-                            <p className="text-xs uppercase tracking-wider text-orange-300">High Exploitability</p>
-                            <p className="mt-1 text-2xl font-bold text-white">{exploitabilityHighCount}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-6 space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h3 className="text-lg font-medium text-zinc-100">Shareable Verified Snippets</h3>
-                        <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200">
-                            For README, issues, and team updates
-                        </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            onClick={() => { void handleCopyVerifiedBadge(); }}
-                            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700"
-                        >
-                            <Copy className="w-4 h-4" />
-                            Copy Verified Badge
-                        </button>
-                        <button
-                            onClick={() => { void handleCopyVerifiedReportSnippet(); }}
-                            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-zinc-800 px-3.5 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-700"
-                        >
-                            <Copy className="w-4 h-4" />
-                            Copy Report Snippet
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-200">Badge Markdown</p>
-                            <pre className="overflow-auto rounded-xl border border-white/10 bg-zinc-950/70 p-4 text-xs text-zinc-300 whitespace-pre-wrap">
-                                {verifiedBadgeSnippet}
-                            </pre>
-                        </div>
-                        <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-200">Report Summary Snippet</p>
-                            <pre className="overflow-auto rounded-xl border border-white/10 bg-zinc-950/70 p-4 text-xs text-zinc-300 whitespace-pre-wrap">
-                                {verifiedReportSnippet}
-                            </pre>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-                    {(Object.keys(severityConfig) as Array<keyof typeof severityConfig>).map((sev) => {
-                        const count = scan.summary[sev] || 0;
-                        const config = severityConfig[sev];
-                        const Icon = config.icon;
-
-                        return (
-                            <div key={sev} className={`flex flex-col items-center justify-center rounded-xl border p-4 text-center ${count > 0 ? config.border : "border-white/5"} ${count > 0 ? config.bg : "bg-zinc-900/50"}`}>
-                                <div className="mb-2 flex items-center gap-2">
-                                    <Icon className={`w-4 h-4 ${count > 0 ? config.color : "text-zinc-600"}`} />
-                                    <span className={`text-xs font-semibold uppercase tracking-wider ${count > 0 ? config.color : "text-zinc-500"}`}>{sev}</span>
-                                </div>
-                                <span className={`text-3xl font-bold ${count > 0 ? "text-white" : "text-zinc-700"}`}>{count}</span>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-zinc-900/70 p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h3 className="text-lg font-medium text-zinc-100">What Changed Since Last Scan</h3>
-                        <span className="rounded-full border border-white/10 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-200">
-                            {hasPreviousScan ? "Compared to previous scan" : "Baseline scan"}
-                        </span>
-                    </div>
-                    <p className="mt-2 text-sm text-zinc-200">
-                        {hasPreviousScan
-                            ? "Use this delta to prioritize newly introduced risk, then resolve historical findings."
-                            : "No earlier scan found for this repository yet. This report is your baseline for future change tracking."}
+                    <h1 className="nv-display text-nv-display-md text-balance text-nv-ivory-50">
+                        <span className="text-nv-ivory-300">{scan.owner} / </span>
+                        {scan.repo}
+                    </h1>
+                    <p className="m-0 text-nv-body text-nv-ivory-200">
+                        {scan.depth === "deep" ? "Deep scan" : "Quick scan"} on {fmtDateTime(scan.timestamp)}. Reports are kept for 7 days after a scan.
                     </p>
-                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-                            <p className="text-xs uppercase tracking-wider text-red-300">New</p>
-                            <p className="mt-1 text-2xl font-bold text-white">{priorScanDiff.new}</p>
-                        </div>
-                        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-                            <p className="text-xs uppercase tracking-wider text-emerald-300">Resolved</p>
-                            <p className="mt-1 text-2xl font-bold text-white">{priorScanDiff.resolved}</p>
-                        </div>
-                        <div className="rounded-xl border border-zinc-500/20 bg-zinc-500/10 p-4">
-                            <p className="text-xs uppercase tracking-wider text-zinc-300">Unchanged</p>
-                            <p className="mt-1 text-2xl font-bold text-white">{priorScanDiff.unchanged}</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div className="space-y-6">
-                    <div className="rounded-2xl border border-white/10 bg-zinc-900 p-6 space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <h3 className="text-lg font-medium text-zinc-100">Fix These First</h3>
-                            <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-zinc-200">
-                                Ranked by impact, confidence, and exploitability
-                            </span>
+                    <div data-testid="report-actions" className="space-y-3 print:hidden">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Link href={repoChatHref} className={buttonClasses(isOutdated ? "primary" : "secondary")}>
+                                <MessageCircle aria-hidden className="size-4" />
+                                {isOutdated ? "Rescan in repo chat" : "Talk to the codebase"}
+                            </Link>
+                            <Link href={repoProfileHref} className={buttonClasses("secondary")}>
+                                Repository profile
+                            </Link>
+                            {!isOutdated && (
+                                <>
+                                    <Button leading={<Wrench aria-hidden className="size-4" />} disabled={findingViews.length === 0} onClick={() => setShowFixPrompt(true)}>
+                                        Remediate with AI
+                                    </Button>
+                                    <Button leading={<Copy aria-hidden className="size-4" />} onClick={() => void copyWithFeedback(snippet, "Report summary")}>
+                                        Copy summary
+                                    </Button>
+                                    <Button
+                                        leading={<Download aria-hidden className="size-4" />}
+                                        onClick={() => {
+                                            const r = downloadMarkdownReport(scan);
+                                            setFeedback({ tone: r.ok ? "success" : "danger", title: r.message });
+                                        }}
+                                    >
+                                        Download Markdown
+                                    </Button>
+                                    <Button
+                                        leading={<Printer aria-hidden className="size-4" />}
+                                        onClick={() => {
+                                            const r = openPrintDialog();
+                                            if (!r.ok) setFeedback({ tone: "danger", title: r.message });
+                                        }}
+                                    >
+                                        Print or save as PDF
+                                    </Button>
+                                    <Button leading={<Search aria-hidden className="size-4" />} onClick={() => setShowDeepScan(true)}>
+                                        Deep scan another repo
+                                    </Button>
+                                </>
+                            )}
                         </div>
-                        {topFixesByFingerprint.length === 0 ? (
-                            <div className="rounded-xl border border-white/5 bg-zinc-950/60 p-4 text-sm text-zinc-200">
-                                No vulnerabilities to prioritize in this scan.
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {topFixesByFingerprint.map((view, rank) => (
-                                    <div key={`${view.fingerprint}:${rank}`} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-zinc-950/50 p-4">
-                                        <div className="space-y-2">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-1 text-xs font-semibold text-indigo-300">
-                                                    Priority #{rank + 1}
-                                                </span>
-                                                <SeverityBadge severity={view.finding.severity as keyof typeof severityConfig} />
-                                                <ConfidenceBadge confidence={view.finding.confidence} />
-                                                <VerificationBadge status={view.finding.verificationStatus} />
-                                            </div>
-                                            <p className="text-sm font-medium text-zinc-100">{view.finding.title}</p>
-                                            <p className="text-xs text-zinc-200">
-                                                {view.finding.file}{view.finding.line ? `:${view.finding.line}` : ""} • Triage score {view.triageScore}
-                                            </p>
-                                            {view.finding.exploitabilityTag && (
-                                                <p className="text-xs text-zinc-200">Exploitability: {view.finding.exploitabilityTag}</p>
-                                            )}
-                                            <p className="text-sm text-zinc-300">{view.impact}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                        {!isOutdated && canShareReport && (
+                            <ShareControls scanId={scan.id} canGenerateOutreach={canGenerateOutreach} shareMode={shareMode} reportExpiresAt={reportExpiresAt} />
+                        )}
+                        {feedback && (
+                            <Notice tone={feedback.tone} title={feedback.title}>
+                                {feedback.text}
+                            </Notice>
                         )}
                     </div>
+                </header>
 
-                    <h3 className="border-b border-white/10 pb-2 text-lg font-medium">Detailed Findings ({findingViews.length})</h3>
+                {isOutdated && (
+                    <Notice tone="warning" title="This report is outdated" action={<Link href={repoChatHref} className={buttonClasses("primary")}>Rescan</Link>}>
+                        The repository may have changed since {fmtDateTime(scan.timestamp)}. Treat the findings as historical.
+                    </Notice>
+                )}
 
-                    {findingViews.length === 0 ? (
-                        <div className="rounded-xl border border-white/5 bg-zinc-900/50 p-8 text-center">
-                            <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500 opacity-50" />
-                            <h4 className="mb-1 font-medium text-zinc-300">No vulnerabilities found</h4>
-                            <p className="text-sm text-zinc-300">This repository looks clean based on the scan configuration.</p>
-                        </div>
-                    ) : (
-                        findingViews.map((view) => {
-                            const key = `${view.fingerprint}:${view.index}`;
-                            const exploitabilityTag = view.finding.exploitabilityTag ?? "unknown";
-                            const exploitabilityBadge = exploitabilityConfig[exploitabilityTag];
-                            const evidenceItems = (view.finding.evidence ?? []).slice(0, 6);
-                            const verificationSignalItems = (view.finding.verificationSignals ?? []).slice(0, 6);
-                            const traceItems = (view.finding.trace ?? []).slice(0, 6);
-                            const hasStructuredEvidence =
-                                evidenceItems.length > 0 || verificationSignalItems.length > 0 || traceItems.length > 0;
+                <MetricStrip
+                    label="Severity summary"
+                    items={counts.slice(0, 4).map((c) => ({ label: `${severityLabel[c.severity]} severity findings`, value: c.count, note: "Recorded by the scanner" }))}
+                />
 
-                            return (
-                                <div key={key} className="overflow-hidden rounded-xl border border-white/10 bg-zinc-900 shadow-lg" style={{ pageBreakInside: "avoid" }}>
-                                    <div className="flex flex-col gap-4 border-b border-white/5 bg-zinc-950/50 p-5 sm:flex-row sm:items-start sm:justify-between">
-                                        <div className="space-y-2">
-                                            <div className="flex flex-wrap items-center gap-3">
-                                                <SeverityBadge severity={view.finding.severity as keyof typeof severityConfig} />
-                                                <span className="rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs font-mono text-zinc-300">
-                                                    {view.finding.type}
-                                                </span>
-                                                <ConfidenceBadge confidence={view.finding.confidence} />
-                                                <VerificationBadge status={view.finding.verificationStatus} />
-                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${exploitabilityBadge.className}`}>
-                                                    {exploitabilityBadge.label}
-                                                </span>
-                                                {(view.finding.cwe || view.finding.cvss) && (
-                                                    <span className="flex items-center gap-2 text-xs text-zinc-300">
-                                                        {view.finding.cwe && <span>{view.finding.cwe}</span>}
-                                                        {view.finding.cvss && <span>CVSS: {view.finding.cvss}</span>}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <h4 className="text-lg font-medium text-zinc-100">{view.finding.title}</h4>
-                                        </div>
-                                        <div className="print:hidden flex items-center gap-2">
-                                            <button
-                                                onClick={() => openFalsePositiveModal(view)}
-                                                disabled={Boolean(pendingFalsePositives[key])}
-                                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3.5 py-2 text-sm font-semibold text-zinc-300 transition-all hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                            >
-                                                <ShieldAlert className="w-4 h-4" />
-                                                {pendingFalsePositives[key] ? "Submitting..." : "False Positive"}
-                                            </button>
-                                        </div>
+                <EvidencePanel scope={scope} />
+
+                <div className="grid gap-8 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+                    <aside aria-label="Report summary" className="space-y-6 xl:sticky xl:top-20 xl:self-start">
+                        <section aria-labelledby="sev-h" className="space-y-4 nv-card p-5">
+                            <h2 id="sev-h" className="nv-display text-nv-title text-nv-ivory-50">
+                                Severity counts
+                            </h2>
+                            {segments.length > 0 ? (
+                                <RingChart caption={`${recordedTotal} findings recorded by the scanner`} segments={segments} total={recordedTotal} centreLabel="findings" />
+                            ) : (
+                                <p className="m-0 text-nv-body text-nv-ivory-200">No findings were recorded for this scan configuration.</p>
+                            )}
+                            {hiddenCount > 0 && (
+                                <p className="m-0 text-nv-small text-nv-ivory-300">
+                                    Counts include {hiddenCount} finding{hiddenCount === 1 ? "" : "s"} the verifier did not confirm, so the list shows fewer.
+                                </p>
+                            )}
+                        </section>
+
+                        <section aria-labelledby="diff-h" className="space-y-4 nv-card p-5">
+                            <h2 id="diff-h" className="nv-display text-nv-title text-nv-ivory-50">
+                                Change since the previous scan
+                            </h2>
+                            {hasPreviousScan ? (
+                                <MetricGroup className="md:grid-cols-3">
+                                    <Metric label="New" value={priorScanDiff.new} source="vs previous scan" />
+                                    <Metric label="Resolved" value={priorScanDiff.resolved} source="vs previous scan" />
+                                    <Metric label="Unchanged" value={priorScanDiff.unchanged} source="vs previous scan" />
+                                </MetricGroup>
+                            ) : (
+                                <p className="m-0 text-nv-body text-nv-ivory-200">No earlier scan of this repository exists. This report is the baseline.</p>
+                            )}
+                        </section>
+
+                        {topFixes.length > 0 && (
+                            <section aria-labelledby="first-h" className="space-y-4 nv-card p-5">
+                                <h2 id="first-h" className="nv-display text-nv-title text-nv-ivory-50">
+                                    Fix first
+                                </h2>
+                                <p className="m-0 text-nv-small text-nv-ivory-300">Ordered by severity, confidence and exploitability tag (inferred).</p>
+                                <ol className="m-0 list-decimal space-y-2 pl-5 text-nv-small text-nv-ivory-100 marker:text-nv-copper-400">
+                                    {topFixes.slice(0, 3).map((v) => (
+                                        <li key={`${v.fingerprint}:${v.index}`}>
+                                            {v.finding.title}
+                                            <span className="block font-nv-mono text-nv-micro text-nv-ivory-300">
+                                                {v.finding.file}
+                                                {v.finding.line ? `:${v.finding.line}` : ""}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </section>
+                        )}
+                    </aside>
+
+                    <section aria-labelledby="findings-h" className="min-w-0 space-y-6">
+                        <h2 id="findings-h" className="nv-display text-nv-title text-nv-ivory-50">
+                            Findings <span className="nv-num text-nv-ivory-300">({shownTotal})</span>
+                        </h2>
+                        {shownTotal > 1 && <SeverityFilter counts={shownCounts} value={sevFilter} onChange={setSevFilter} groupBy={groupBy} onGroupByChange={setGroupBy} />}
+                        {shownTotal === 0 ? (
+                            <EmptyState title="No verified findings">
+                                <p>The scanner reported nothing it could verify. That is not proof the code is safe; see the limits above.</p>
+                            </EmptyState>
+                        ) : (
+                            groupBy === "severity" ? (
+                                visibleGroups.map((g) => (
+                                    <div key={g.severity} className="space-y-3">
+                                        <h3 className="flex items-center gap-2 text-nv-body font-medium text-nv-ivory-100">
+                                            <StatusPill status={severityStatus[g.severity]}>{severityLabel[g.severity]}</StatusPill>
+                                            <span className="nv-num text-nv-ivory-300">{g.views.length}</span>
+                                        </h3>
+                                        {renderCards(g.views)}
                                     </div>
+                                ))
+                            ) : (
+                                fileGroups.map((g) => (
+                                    <details key={g.file} open className="group/file space-y-3">
+                                        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-nv-body font-medium text-nv-ivory-100 focus-visible:outline-2 focus-visible:outline-nv-copper-400 [&::-webkit-details-marker]:hidden">
+                                            <ChevronDown aria-hidden className="size-4 shrink-0 text-nv-ivory-300 transition-transform duration-150 motion-reduce:transition-none -rotate-90 group-open/file:rotate-0" />
+                                            <span className="min-w-0 break-all font-nv-mono text-nv-small">{g.file}</span>
+                                            <span className="nv-num text-nv-ivory-300">{g.views.length}</span>
+                                            {SEVERITIES.filter((sv) => g.views.some((v) => v.finding.severity === sv)).map((sv) => (
+                                                <StatusPill key={sv} status={severityStatus[sv]}>
+                                                    {severityLabel[sv]} {g.views.filter((v) => v.finding.severity === sv).length}
+                                                </StatusPill>
+                                            ))}
+                                        </summary>
+                                        {renderCards(g.views)}
+                                    </details>
+                                ))
+                            )
+                        )}
+                    </section>
+                </div>
 
-                                    <div className="space-y-6 p-5">
-                                        <div className="space-y-3">
-                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Evidence</h5>
-                                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                                {evidenceItems.map((evidence, evidenceIndex) => {
-                                                    const style = evidenceTypeConfig[evidence.type] ?? evidenceTypeConfig.context;
-                                                    return (
-                                                        <div
-                                                            key={`evidence:${key}:${evidenceIndex}`}
-                                                            className={`rounded-xl border p-3 ${style.className}`}
-                                                        >
-                                                            <p className={`text-[11px] font-semibold uppercase tracking-wider ${style.iconClass}`}>
-                                                                {style.label}
-                                                            </p>
-                                                            <p className="mt-2 text-sm leading-relaxed">
-                                                                {evidence.message}
-                                                            </p>
-                                                            <p className="mt-2 text-xs text-zinc-300">
-                                                                {typeof evidence.line === "number" ? `Line ${evidence.line}` : "Line not provided"}
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                })}
-                                                {verificationSignalItems.map((signal, signalIndex) => (
-                                                    <div
-                                                        key={`signal:${key}:${signalIndex}`}
-                                                        className={`rounded-xl border p-3 ${
-                                                            signal.passed
-                                                                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
-                                                                : "border-amber-500/25 bg-amber-500/10 text-amber-100"
-                                                        }`}
-                                                    >
-                                                        <p className="text-[11px] font-semibold uppercase tracking-wider">
-                                                            Verifier Signal
-                                                        </p>
-                                                        <p className="mt-2 text-sm">
-                                                            {signal.name}: {signal.passed ? "pass" : "fail"}
-                                                        </p>
-                                                        <p className="mt-2 text-xs text-zinc-200">
-                                                            {signal.detail}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                                {traceItems.map((trace, traceIndex) => {
-                                                    const style = traceTypeConfig[trace.type] ?? traceTypeConfig.flow;
-                                                    return (
-                                                        <div
-                                                            key={`trace:${key}:${traceIndex}`}
-                                                            className={`rounded-xl border p-3 ${style.className}`}
-                                                        >
-                                                            <p className="text-[11px] font-semibold uppercase tracking-wider">
-                                                                {style.label}
-                                                            </p>
-                                                            <p className="mt-2 text-sm">
-                                                                {trace.detail}
-                                                            </p>
-                                                            <p className="mt-2 text-xs text-zinc-300">
-                                                                {typeof trace.line === "number" ? `Line ${trace.line}` : "Line not provided"}
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                })}
-                                                {!hasStructuredEvidence && (
-                                                    <div className="rounded-xl border border-white/10 bg-zinc-950/70 p-4 text-sm text-zinc-300 md:col-span-2">
-                                                        No structured evidence cards were generated for this finding. See proof summary below.
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="space-y-2 rounded-lg border border-white/10 bg-zinc-950/70 p-4">
-                                                <h6 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">Proof Summary</h6>
-                                                <pre className="whitespace-pre-wrap text-sm text-zinc-300">{view.proof}</pre>
-                                            </div>
-                                            <p className="text-xs text-zinc-300">{view.confidenceRationale}</p>
-                                            {view.finding.verificationRationale && (
-                                                <p className="text-xs text-zinc-300">
-                                                    Verification: {view.finding.verificationRationale}
-                                                </p>
-                                            )}
-                                            {view.finding.exploitabilityTag && (
-                                                <p className="text-xs text-zinc-300">
-                                                    Exploitability tag: {view.finding.exploitabilityTag}
-                                                </p>
-                                            )}
-                                        </div>
+                <p className="no-export m-0 border-t border-nv-graphite-700 pt-6 text-nv-small text-nv-ivory-300">
+                    Generated by{" "}
+                    <a href={baseUrl} className="text-nv-copper-400 underline underline-offset-2">
+                        Novaris
+                    </a>
+                    .
+                </p>
+            </main>
 
-                                        <div className="space-y-2">
-                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Impact</h5>
-                                            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">
-                                                {view.impact}
-                                            </div>
-                                        </div>
+            <Dialog
+                open={showFixPrompt}
+                onClose={() => setShowFixPrompt(false)}
+                title="Remediate with AI"
+                description="Review the prompt, then copy it into repo chat to work through the findings."
+                footer={
+                    <>
+                        <Button onClick={() => setShowFixPrompt(false)}>Close</Button>
+                        <Button
+                            variant="primary"
+                            leading={<Copy aria-hidden className="size-4" />}
+                            onClick={async () => {
+                                if (await copyWithFeedback(globalFixPrompt, "Remediation prompt", "report_fix_prompt_copied")) setShowFixPrompt(false);
+                            }}
+                        >
+                            Copy prompt
+                        </Button>
+                    </>
+                }
+            >
+                <pre className="m-0 max-h-[50dvh] overflow-auto whitespace-pre-wrap rounded-nv-sm bg-nv-graphite-850 p-3 font-nv-mono text-nv-micro text-nv-ivory-200">{globalFixPrompt}</pre>
+            </Dialog>
 
-                                        <div className="flex flex-col space-y-2">
-                                            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Recommendation</h5>
-                                            <div className="rounded-lg border border-indigo-500/10 bg-indigo-500/5 p-4">
-                                                <p className="text-sm text-indigo-200">{view.finding.recommendation}</p>
-                                            </div>
-                                        </div>
+            <Dialog
+                open={showDeepScan}
+                onClose={() => {
+                    setShowDeepScan(false);
+                    setDeepScanError(null);
+                }}
+                title="Deep scan another repository"
+                description="Opens repo chat and starts the deep scan prompt for that repository."
+                footer={
+                    <>
+                        <Button onClick={() => setShowDeepScan(false)}>Cancel</Button>
+                        <Button variant="primary" disabled={deepScanInput.trim().length === 0} onClick={launchDeepScan}>
+                            Launch deep scan
+                        </Button>
+                    </>
+                }
+            >
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        launchDeepScan();
+                    }}
+                >
+                    <Input
+                        label="Repository"
+                        hint="owner/repo or https://github.com/owner/repo"
+                        value={deepScanInput}
+                        error={deepScanError}
+                        onChange={(e) => {
+                            setDeepScanInput(e.target.value);
+                            setDeepScanError(null);
+                        }}
+                        autoComplete="off"
+                    />
+                </form>
+            </Dialog>
 
-                                        {view.finding.snippet && (
-                                            <div className="space-y-2 pt-2">
-                                                <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Context Snippet</h5>
-                                                <CodeBlock
-                                                    language={view.finding.file.split(".").pop() || "text"}
-                                                    value={view.finding.snippet}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })
+            <Dialog
+                open={Boolean(activeView)}
+                onClose={() => !fpPending && closeFp()}
+                title="Report a false positive"
+                description={activeView ? `${activeView.finding.title} (${activeView.finding.file}${activeView.finding.line ? `:${activeView.finding.line}` : ""})` : undefined}
+                footer={
+                    <>
+                        <Button onClick={closeFp} disabled={fpPending}>
+                            Cancel
+                        </Button>
+                        <Button variant="primary" loading={fpPending} disabled={fpDetails.trim().length === 0} onClick={() => void submitFp()}>
+                            Submit
+                        </Button>
+                    </>
+                }
+            >
+                <form
+                    className="space-y-4"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        void submitFp();
+                    }}
+                >
+                    <div className="flex flex-col gap-1.5">
+                        <label htmlFor="fp-reason" className="text-nv-small font-medium text-nv-ivory-200">
+                            Why is this a false positive?
+                        </label>
+                        <select
+                            id="fp-reason"
+                            value={fpReason}
+                            onChange={(e) => setFpReason(e.target.value as ReportFalsePositiveReason)}
+                            className="min-h-11 w-full rounded-nv-sm border border-nv-graphite-500/70 bg-nv-graphite-850 px-3 text-nv-body text-nv-ivory-100 shadow-[inset_0_1px_2px_rgb(21_23_29/0.06)] focus:border-nv-copper-400 focus:bg-white"
+                        >
+                            {falsePositiveReasonOptions.map((o) => (
+                                <option key={o.value} value={o.value}>
+                                    {o.label}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="m-0 text-nv-micro text-nv-ivory-300">{falsePositiveReasonOptions.find((o) => o.value === fpReason)?.description}</p>
+                    </div>
+                    <Textarea
+                        label="Details (required)"
+                        hint="What controls exist, and what should the reviewer check?"
+                        value={fpDetails}
+                        maxLength={2000}
+                        onChange={(e) => setFpDetails(e.target.value)}
+                    />
+                    {fpError && (
+                        <Notice tone="danger" title="Not submitted">
+                            {fpError}
+                        </Notice>
                     )}
-                </div>
-
-                <div className="no-export pt-8 text-center text-sm text-zinc-600">
-                    <p>Generated by <a href={baseUrl} className="font-semibold text-zinc-300 transition-colors hover:text-indigo-400">Novaris</a> — The AI developer sidekick.</p>
-                </div>
-            </div>
-
-            {showFixPromptModal && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                        onClick={closeFixPromptModal}
-                    />
-                    <div className="relative w-full max-w-3xl rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl">
-                        <div className="space-y-4 p-6">
-                            <div className="space-y-2">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
-                                    <Copy className="w-3.5 h-3.5" />
-                                    AI Remediation
-                                </div>
-                                <h3 className="text-xl font-semibold text-white">Remediate with AI</h3>
-                                <p className="text-sm text-zinc-200">
-                                    Review the remediation prompt, then copy it to continue fixing vulnerabilities in chat.
-                                </p>
-                            </div>
-
-                            <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-zinc-900 p-4 text-sm text-zinc-200">
-                                {globalFixPrompt}
-                            </pre>
-
-                            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={closeFixPromptModal}
-                                    disabled={isCopyingFixPrompt}
-                                    className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    Close
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        void handleCopyFixPrompt();
-                                    }}
-                                    disabled={isCopyingFixPrompt}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                    {isCopyingFixPrompt ? "Copying..." : "Copy Prompt"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showDeepScanRepoModal && (
-                <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                        onClick={() => {
-                            setShowDeepScanRepoModal(false);
-                            setDeepScanRepoInput("");
-                        }}
-                    />
-                    <div className="relative w-full max-w-xl rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl">
-                        <form
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                handleLaunchDeepScanAnotherRepo();
-                            }}
-                            className="space-y-5 p-6"
-                        >
-                            <div className="space-y-2">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
-                                    <Shield className="w-3.5 h-3.5" />
-                                    Deep Scan
-                                </div>
-                                <h3 className="text-xl font-semibold text-white">Scan Another Repository</h3>
-                                <p className="text-sm text-zinc-200">
-                                    Enter any GitHub repository and launch a deep verified scan flow in chat.
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label htmlFor="deep-scan-repo" className="text-sm font-medium text-zinc-200">
-                                    Repository
-                                </label>
-                                <input
-                                    id="deep-scan-repo"
-                                    value={deepScanRepoInput}
-                                    onChange={(event) => setDeepScanRepoInput(event.target.value)}
-                                    placeholder="owner/repo or https://github.com/owner/repo"
-                                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-300 focus:border-indigo-500/50 focus:outline-none"
-                                    autoFocus
-                                />
-                                <p className="text-xs text-zinc-300">
-                                    We normalize GitHub URLs automatically and start the deep scan prompt for that repository.
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-300">Try examples</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {["vercel/next.js", "supabase/supabase", "langchain-ai/langchainjs"].map((exampleRepo) => (
-                                        <button
-                                            key={exampleRepo}
-                                            type="button"
-                                            onClick={() => setDeepScanRepoInput(exampleRepo)}
-                                            className="rounded-full border border-white/10 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-800"
-                                        >
-                                            {exampleRepo}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowDeepScanRepoModal(false);
-                                        setDeepScanRepoInput("");
-                                    }}
-                                    className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={deepScanRepoInput.trim().length === 0}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    <Shield className="w-4 h-4" />
-                                    Launch Deep Scan
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {activeFalsePositiveView && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                        onClick={() => {
-                            if (!isActiveFalsePositivePending) {
-                                closeFalsePositiveModal();
-                            }
-                        }}
-                    />
-                    <div className="relative w-full max-w-2xl rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl">
-                        <form
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                void handleFalsePositiveSubmit();
-                            }}
-                            className="space-y-5 p-6"
-                        >
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-amber-300">
-                                    <ShieldAlert className="w-4 h-4" />
-                                    <span className="text-xs font-semibold uppercase tracking-[0.2em]">False Positive Report</span>
-                                </div>
-                                <h3 className="text-xl font-semibold text-white">{activeFalsePositiveView.finding.title}</h3>
-                                <p className="text-sm text-zinc-200">
-                                    {activeFalsePositiveView.finding.file}
-                                    {activeFalsePositiveView.finding.line ? `:${activeFalsePositiveView.finding.line}` : ""}
-                                    {" • "}
-                                    {activeFalsePositiveView.finding.severity.toUpperCase()}
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label htmlFor="false-positive-reason" className="text-sm font-medium text-zinc-200">
-                                    Why is this a false positive?
-                                </label>
-                                <select
-                                    id="false-positive-reason"
-                                    value={falsePositiveReason}
-                                    onChange={(event) => setFalsePositiveReason(event.target.value as ReportFalsePositiveReason)}
-                                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 focus:border-indigo-500/50 focus:outline-none"
-                                >
-                                    {falsePositiveReasonOptions.map((option) => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className="text-xs text-zinc-300">
-                                    {falsePositiveReasonOptions.find((option) => option.value === falsePositiveReason)?.description}
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label htmlFor="false-positive-details" className="text-sm font-medium text-zinc-200">
-                                    Full details
-                                </label>
-                                <textarea
-                                    id="false-positive-details"
-                                    value={falsePositiveDetails}
-                                    onChange={(event) => setFalsePositiveDetails(event.target.value)}
-                                    rows={5}
-                                    placeholder="Explain why this finding is incorrect, what controls already exist, and anything the reviewer should verify."
-                                    className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-300 focus:border-indigo-500/50 focus:outline-none"
-                                />
-                                <p className="text-xs text-zinc-300">
-                                    Include enough context for review. This field is required.
-                                </p>
-                            </div>
-
-                            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                                <button
-                                    type="button"
-                                    onClick={closeFalsePositiveModal}
-                                    disabled={isActiveFalsePositivePending}
-                                    className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isActiveFalsePositivePending || falsePositiveDetails.trim().length === 0}
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    <ShieldAlert className="w-4 h-4" />
-                                    {isActiveFalsePositivePending ? "Submitting..." : "Submit False Positive"}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                </form>
+            </Dialog>
         </div>
     );
 }

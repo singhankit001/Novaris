@@ -4,7 +4,6 @@ import { savePost, deletePost as deletePostFromDb, type SavePostInput } from "@/
 import { auth } from "@/lib/auth";
 import { isAdminUser } from "@/lib/admin-auth";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 async function checkAdmin() {
   const session = await auth();

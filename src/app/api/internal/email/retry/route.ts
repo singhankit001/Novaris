@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { processTransactionalEmailRetries } from "@/lib/emails/delivery-service";
 
@@ -19,7 +20,10 @@ function isAuthorized(request: NextRequest, allowedSecrets: string[]): boolean {
     const headerToken = request.headers.get("x-job-secret");
     const token = bearerToken || headerToken;
 
-    return !!token && allowedSecrets.includes(token);
+    if (!token) return false;
+    // Compare fixed-length digests so the check does not leak the secret through timing.
+    const digest = createHash("sha256").update(token).digest();
+    return allowedSecrets.some((secret) => timingSafeEqual(digest, createHash("sha256").update(secret).digest()));
 }
 
 async function handleRetry(request: NextRequest) {

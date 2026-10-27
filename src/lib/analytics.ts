@@ -849,21 +849,26 @@ export async function resetReportConversionMetrics(): Promise<void> {
  * Fetch aggregated analytics data for the dashboard
  */
 
-async function getManualAnalyticsAdjustments(): Promise<{ visitors: number; queries: number }> {
+// Throws on KV failure so callers with last-known-good fallbacks can tell a failed read from a zero.
+async function readManualAnalyticsAdjustments(): Promise<{ visitors: number; queries: number }> {
     if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
         return { visitors: 0, queries: 0 };
     }
-    
-    try {
-        const [visitorsAdjustment, queriesAdjustment] = await Promise.all([
-            kv.get<number>("stats:adjustment:visitors"),
-            kv.get<number>("stats:adjustment:queries"),
-        ]);
 
-        return {
-            visitors: Number(visitorsAdjustment || 0),
-            queries: Number(queriesAdjustment || 0),
-        };
+    const [visitorsAdjustment, queriesAdjustment] = await Promise.all([
+        kv.get<number>("stats:adjustment:visitors"),
+        kv.get<number>("stats:adjustment:queries"),
+    ]);
+
+    return {
+        visitors: Number(visitorsAdjustment || 0),
+        queries: Number(queriesAdjustment || 0),
+    };
+}
+
+async function getManualAnalyticsAdjustments(): Promise<{ visitors: number; queries: number }> {
+    try {
+        return await readManualAnalyticsAdjustments();
     } catch (error) {
         console.warn("Failed to fetch manual analytics adjustments:", error);
         return { visitors: 0, queries: 0 };
@@ -1580,6 +1585,10 @@ const PUBLIC_STATS_READ_RETRY_DELAY_MS = 120;
 
 let inMemoryLastKnownPublicStats: PublicStatsData | null = null;
 
+// Local dev often runs without KV or Postgres; skip those reads instead of logging errors.
+const isKvConfigured = () => Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+const isDatabaseConfigured = () => Boolean(process.env.DATABASE_URL);
+
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -1602,7 +1611,8 @@ async function readWithRetry<T>(label: string, reader: () => Promise<T>): Promis
     throw lastError;
 }
 
-async function readWithFallback<T>(label: string, reader: () => Promise<T>, fallback: T): Promise<ReadWithFallbackResult<T>> {
+async function readWithFallback<T>(label: string, reader: () => Promise<T>, fallback: T, enabled = true): Promise<ReadWithFallbackResult<T>> {
+    if (!enabled) return { value: fallback, failed: false };
     try {
         const value = await readWithRetry(label, reader);
         return { value, failed: false };
@@ -1634,6 +1644,7 @@ function isValidPublicStats(candidate: unknown): candidate is PublicStatsData {
 
 async function persistLastKnownPublicStats(stats: PublicStatsData): Promise<void> {
     inMemoryLastKnownPublicStats = stats;
+    if (!isKvConfigured()) return;
 
     try {
         await kv.set(PUBLIC_STATS_LAST_GOOD_KEY, { ...stats, updatedAt: Date.now() }, {
@@ -1648,6 +1659,7 @@ async function getLastKnownPublicStats(): Promise<PublicStatsData | null> {
     if (inMemoryLastKnownPublicStats) {
         return inMemoryLastKnownPublicStats;
     }
+    if (!isKvConfigured()) return null;
 
     try {
         const snapshot = await kv.get<unknown>(PUBLIC_STATS_LAST_GOOD_KEY);
@@ -1670,11 +1682,13 @@ const getCachedPublicStats = unstable_cache(
     async () => {
         try {
             const adminUsername = process.env.ADMIN_GITHUB_USERNAME?.trim();
+            const kvReady = isKvConfigured();
+            const dbReady = isDatabaseConfigured();
 
             const [anonVisitorCountRaw, totalAnonQueriesRaw, manualAdjustments, totalScans, loggedInUserCount, authQueryTotal] = await Promise.all([
-                readWithFallback("kv.scard(visitors)", () => kv.scard("visitors"), 0),
-                readWithFallback("kv.get(queries:total)", () => kv.get<number>("queries:total"), 0),
-                readWithFallback("manual analytics adjustments", () => getManualAnalyticsAdjustments(), { visitors: 0, queries: 0 }),
+                readWithFallback("kv.scard(visitors)", () => kv.scard("visitors"), 0, kvReady),
+                readWithFallback("kv.get(queries:total)", () => kv.get<number>("queries:total"), 0, kvReady),
+                readWithFallback("manual analytics adjustments", () => readManualAnalyticsAdjustments(),{ visitors: 0, queries: 0 }),
                 readWithFallback(
                     "prisma.repoScan.count(public stats)",
                     () => prisma.repoScan.count({
@@ -1686,7 +1700,8 @@ const getCachedPublicStats = unstable_cache(
                             ]
                         } : {}
                     }),
-                    0
+                    0,
+                    dbReady
                 ),
                 readWithFallback(
                     "prisma.user.count(public stats)",
@@ -1698,7 +1713,8 @@ const getCachedPublicStats = unstable_cache(
                             ]
                         } : {}
                     }),
-                    0
+                    0,
+                    dbReady
                 ),
                 readWithFallback(
                     "prisma.user.aggregate(public stats)",
@@ -1715,7 +1731,8 @@ const getCachedPublicStats = unstable_cache(
 
                         return Number(aggregate._sum.queryCount || 0);
                     },
-                    0
+                    0,
+                    dbReady
                 ),
             ]);
 

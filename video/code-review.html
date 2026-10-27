@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=1020, height=600" />
+<title>code-review</title>
+<script src="shared/gsap.min.js"></script>
+<link rel="stylesheet" href="shared/ui.css" />
+<style>
+  .stage { padding: 32px 36px; gap: 16px; }
+  .card { padding: 0; border-radius: 18px; overflow: hidden; }
+  .main { display: grid; grid-template-columns: 1fr 380px; gap: 18px; flex: 1; min-height: 0; }
+  .hd { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--hair); background: #fafbfc; font-family: var(--mono); font-size: 16px; color: var(--ink2); }
+  .ln { display: flex; font-family: var(--mono); font-size: 18px; line-height: 1; padding: 9px 18px 9px 0; color: var(--ink2); white-space: pre; }
+  .ln u { text-decoration: none; width: 54px; text-align: right; padding-right: 18px; color: #9aa0ae; flex: none; }
+  .ln.del { background: #fff0ee; color: #8f2a24; } .ln.add { background: #ebf7f0; color: #0e5b3a; }
+  .ln.sel { box-shadow: inset 4px 0 0 var(--blue); }
+  .note { padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid var(--hair); box-shadow: var(--shadow); font-size: 19px; line-height: 1.4; }
+  .badge { font-size: 15px; padding: 3px 12px; } .cite { font-size: 15px; padding: 4px 12px 4px 9px; } .cite svg { width: 16px; height: 16px; }
+  .sug { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--well); font-family: var(--mono); font-size: 16px; color: var(--ink); white-space: pre; }
+</style></head>
+<body>
+<div id="root" data-composition-id="code-review" data-start="0" data-width="1020" data-height="600" data-duration="7.2">
+  <div class="stage">
+    <div class="row"><span class="chip on"><svg width="18" height="18"><use href="#i-branch"/></svg>fix/token-check</span><span class="muted" style="font-size:19px">Review for acme/payments-api</span></div>
+    <div class="main">
+      <div class="card"><div class="hd"><svg width="18" height="18"><use href="#i-code"/></svg>src/lib/auth.ts</div>
+        <div class="ln"><u>10</u>export function verify(req: Request) {</div>
+        <div class="ln"><u>11</u>  const token = readToken(req);</div>
+        <div class="ln del" id="del"><u>12</u>  if (token == SECRET) {</div>
+        <div class="ln add d" id="add"><u>12</u>  if (safeEqual(token, SECRET)) {</div>
+        <div class="ln"><u>13</u>    return allow(req);</div>
+        <div class="ln"><u>14</u>  }</div>
+        <div class="ln"><u>15</u>  return deny(req);</div>
+        <div class="ln"><u>16</u>}</div>
+        <div class="ln"><u>17</u></div>
+        <div class="ln"><u>18</u>export const config = { runtime: "edge" };</div>
+      </div>
+      <div class="col" style="gap:14px">
+        <div class="note d" id="n1"><div class="row" style="gap:10px;margin-bottom:8px"><span class="badge warn">Inferred</span><span style="font-weight:600">Plain comparison of a secret</span></div>The token is compared with ==, which can leak timing. Use a constant-time check.<div class="row" style="margin-top:10px"><span class="cite"><svg><use href="#i-code"/></svg>src/lib/auth.ts#L12</span></div></div>
+        <div class="note d" id="n2"><div class="row" style="gap:10px;margin-bottom:6px"><span class="badge ok">Measured</span><span style="font-weight:600">Suggested change</span></div><div class="sug">- token == SECRET
++ safeEqual(token, SECRET)</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="dyn" class="abs" style="inset:0;pointer-events:none"><svg id="cursor" class="d" viewBox="0 0 24 24" fill="#14161d" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><path d="M4 3l7 17 2.5-7L20.5 10.5z"/></svg><div class="ripple"></div></div>
+</div>
+<script src="shared/lib.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const T = 7.2, tl = gsap.timeline({ paused: true });
+  gsap.set(".d", { opacity: 0 }); gsap.set(".ripple", { opacity: 0 }); gsap.set("#cursor", { x: 700, y: 420 });
+  gsap.set("#del", { boxShadow: "inset 4px 0 0 rgba(47,84,255,0)" });
+  tl.to("#cursor", { opacity: 1, duration: 0.3 }, 0.4);
+  NV.cursor(tl, [330, 222], 0.4, 0.9);
+  NV.click(tl, 336, 216, 1.35);
+  tl.to("#n1", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 1.6);
+  tl.to("#del", { boxShadow: "inset 4px 0 0 rgba(47,84,255,1)", duration: 0.3 }, 1.5);
+  NV.cursor(tl, [760, 380], 2.4, 0.8);
+  NV.click(tl, 766, 374, 3.25);
+  tl.to("#n2", { opacity: 1, duration: 0.5 }, 3.5);
+  tl.to("#add", { opacity: 1, duration: 0.5 }, 4.3);
+  tl.to("#del", { opacity: 0.35, duration: 0.5 }, 4.3);
+  tl.to(".d", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, T - 0.6);
+  tl.to("#del", { opacity: 1, boxShadow: "inset 4px 0 0 rgba(47,84,255,0)", duration: 0.5 }, T - 0.6);
+  tl.to({}, { duration: 0.01 }, T);
+  window.__timelines["code-review"] = tl;
+</script>
+</body></html>

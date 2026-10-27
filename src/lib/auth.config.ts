@@ -22,7 +22,7 @@ const authConfig: NextAuthConfig = {
         async jwt({ token, profile, account, user }) {
             const candidateUserId = user?.id ?? token.id ?? token.sub;
             token.id = typeof candidateUserId === "string" ? candidateUserId : undefined;
-            if (profile?.login) {
+            if (typeof profile?.login === "string") {
                 token.username = profile.login;
             }
             if (account?.access_token) {
@@ -46,12 +46,8 @@ const authConfig: NextAuthConfig = {
             if (typeof token.username === "string" && session.user) {
                 session.user.username = token.username;
             }
-            if (typeof token.accessToken === "string") {
-                session.accessToken = token.accessToken;
-            }
-            if (typeof token.oauthScope === "string") {
-                session.oauthScope = token.oauthScope;
-            }
+            // token.accessToken stays in the encrypted JWT; server code reads it with
+            // getSessionGitHubToken(). Copying it here would expose it to the browser.
             if (!resolvedUserId) {
                 session.error = INVALID_SESSION_ERROR_CODE;
             }

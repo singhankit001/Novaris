@@ -1,0 +1,391 @@
+/*
+ * Novaris design foundation: luminous ivory-white, silver surfaces, electric blue and violet, holographic light.
+ * Import AFTER `@import "tailwindcss"` (root globals.css).
+ * Raw tokens are --nv-*. Tailwind utilities carry the `nv-` prefix.
+ *
+ * Token families (legacy names kept so every existing utility re-themes):
+ *   graphite-*  neutral surfaces and lines (950 = page canvas, 900 = card, 850 = sunken well)
+ *   ivory-*     ink text ramp (50 = strongest, 300 = tertiary)
+ *   copper-*    the electric-blue brand accent (400 = links/active, 500 = solid fills)
+ *   violet-*    secondary accent and data series B
+ *   ion-*       cyan for data series C and holographic highlights
+ * Prefer role aliases (--nv-bg, --nv-text, --nv-accent, ...) in new code.
+ */
+
+:root {
+  /* Neutrals: luminous ivory-white canvas, silver surfaces */
+  --nv-graphite-950: #fafaf7; /* page canvas */
+  --nv-graphite-900: #ffffff; /* cards, panels */
+  --nv-graphite-850: #f1f2f5; /* silver wells, inputs */
+  --nv-graphite-800: #f6f7f9; /* raised hover tint */
+  --nv-graphite-700: #e6e8ee; /* hairlines */
+  --nv-graphite-600: #d5d8e0; /* borders */
+  --nv-graphite-500: #868b99; /* control boundary, >= 3:1 on white */
+  --nv-graphite-400: #626775; /* muted text, 5.6:1 on canvas */
+
+  /* Ink text */
+  --nv-ivory-50: #0b0d13;
+  --nv-ivory-100: #14161d; /* primary text */
+  --nv-ivory-200: #3a3e4a; /* secondary text */
+  --nv-ivory-300: #5a5f6e; /* tertiary text */
+
+  /* Electric blue: the brand accent */
+  --nv-copper-300: #1f3ee6; /* hover on solid */
+  --nv-copper-400: #2f54ff; /* links, active, focus (5.5:1 on white) */
+  --nv-copper-500: #2f54ff; /* solid fill, white text on top */
+  --nv-copper-600: #7d93ff; /* soft accent line */
+  --nv-copper-700: #cdd6ff; /* accent hairline */
+  --nv-copper-wash: #eef1ff;
+
+  /* Violet: secondary accent, data series B */
+  --nv-violet-400: #7a4dff; /* 4.9:1 on white */
+  --nv-violet-600: #5b2fe0;
+  --nv-violet-wash: #f3efff;
+
+  /* Ion cyan: data series C and holographic highlights; text only via 600 */
+  --nv-ion-400: #19b6e6;
+  --nv-ion-600: #0a7aa3;
+  --nv-ion-wash: #e9f8fd;
+
+  /* Legacy data series alias */
+  --nv-patina-400: var(--nv-violet-400);
+  --nv-patina-600: var(--nv-violet-600);
+
+  /* Status: distinct hues, never the brand accent */
+  --nv-success: #11744a;
+  --nv-success-wash: #ebf7f0;
+  --nv-success-edge: #a8d8bf;
+  --nv-warning: #9a5a00;
+  --nv-warning-wash: #fff6e3;
+  --nv-warning-edge: #ebcb8a;
+  --nv-danger: #c22c25;
+  --nv-danger-wash: #fff0ee;
+  --nv-danger-edge: #f0b7b1;
+  --nv-info: #1d6aae;
+  --nv-info-wash: #ecf5fd;
+  --nv-info-edge: #b2d2ee;
+
+  /* Role aliases */
+  --nv-bg: var(--nv-graphite-950);
+  --nv-surface: var(--nv-graphite-900);
+  --nv-surface-raised: var(--nv-graphite-800);
+  --nv-surface-sunken: var(--nv-graphite-850);
+  --nv-text: var(--nv-ivory-100);
+  --nv-text-2: var(--nv-ivory-200);
+  --nv-text-3: var(--nv-ivory-300);
+  --nv-text-muted: var(--nv-graphite-400);
+  --nv-hairline: var(--nv-graphite-700);
+  --nv-border: var(--nv-graphite-600);
+  --nv-border-strong: var(--nv-graphite-500);
+  --nv-accent: var(--nv-copper-400);
+  --nv-on-accent: #ffffff;
+  --nv-scrim: rgb(21 23 29 / 0.32);
+
+  /* Semantic aliases (preferred in new code). Legacy graphite/copper names stay valid. */
+  --nv-surface-canvas: var(--nv-graphite-950);
+  --nv-surface-card: var(--nv-graphite-900);
+  --nv-surface-well: var(--nv-graphite-850);
+  --nv-surface-hover: var(--nv-graphite-800);
+  --nv-text-strong: var(--nv-ivory-50);
+  --nv-border-hairline: var(--nv-graphite-700);
+  --nv-border-default: var(--nv-graphite-600);
+  --nv-border-control: var(--nv-graphite-500);
+  --nv-action: var(--nv-copper-500);
+  --nv-action-hover: var(--nv-copper-300);
+  --nv-action-text: var(--nv-copper-400);
+  --nv-action-wash: var(--nv-copper-wash);
+  --nv-data-1: var(--nv-copper-400);
+  --nv-data-2: var(--nv-violet-400);
+  --nv-data-3: var(--nv-ion-400);
+  --nv-data-4: #9aa3b8; /* silver series, "other" */
+  --nv-data-grid: var(--nv-graphite-700);
+  --nv-data-axis: var(--nv-graphite-400);
+
+  --nv-focus: var(--nv-copper-400);
+  --nv-focus-gap: var(--nv-graphite-900);
+
+  /* Gradients: atmospheric, low-saturation light. Use on hero, journey and empty states only. */
+  --nv-gradient-signal: linear-gradient(105deg, #2f54ff 0%, #7a4dff 55%, #19b6e6 100%);
+  --nv-gradient-holo: conic-gradient(from 210deg at 50% 50%, #c9d4ff, #e3d4ff, #ffd9ef, #d4f3ff, #c9d4ff);
+  --nv-gradient-silver: linear-gradient(180deg, #ffffff 0%, #f3f4f7 100%);
+  /* Dusk: violet to magenta to orange. Gradient-only (bands, ribbons, packets); never text or status. */
+  --nv-gradient-dusk: linear-gradient(115deg, #7a4dff 0%, #c04bd8 38%, #ff5e8a 66%, #ff9a3d 100%);
+  --nv-dusk-400: #ff7a45;
+  --nv-gradient-aurora:
+    radial-gradient(60% 50% at 18% 10%, rgb(47 84 255 / 0.12), transparent 70%),
+    radial-gradient(45% 40% at 84% 6%, rgb(122 77 255 / 0.12), transparent 70%),
+    radial-gradient(55% 45% at 60% 92%, rgb(25 182 230 / 0.09), transparent 70%);
+
+  /* Radius */
+  --nv-radius-xs: 6px;
+  --nv-radius-sm: 10px;
+  --nv-radius-md: 14px;
+  --nv-radius-lg: 20px;
+  --nv-radius-xl: 28px;
+
+  /* Elevation: layered, warm-tinted, soft */
+  --nv-shadow-xs: 0 1px 0 rgb(21 23 29 / 0.04), 0 1px 2px rgb(21 23 29 / 0.05);
+  --nv-shadow-card: 0 1px 0 rgb(21 23 29 / 0.03), 0 1px 3px rgb(21 23 29 / 0.05), 0 12px 32px -18px rgb(21 23 29 / 0.16);
+  --nv-shadow-lift: 0 1px 0 rgb(21 23 29 / 0.03), 0 4px 10px -2px rgb(21 23 29 / 0.06), 0 24px 48px -24px rgb(21 23 29 / 0.24);
+  --nv-shadow-popover: 0 0 0 1px rgb(21 23 29 / 0.06), 0 16px 40px -12px rgb(21 23 29 / 0.22);
+  --nv-shadow-overlay: 0 0 0 1px rgb(21 23 29 / 0.06), 0 32px 80px -24px rgb(21 23 29 / 0.32);
+  --nv-shadow-accent: 0 1px 0 rgb(255 255 255 / 0.25) inset, 0 8px 20px -8px rgb(47 84 255 / 0.5);
+
+  /* Motion */
+  --nv-dur-micro: 140ms;
+  --nv-dur-small: 220ms;
+  --nv-dur-large: 450ms;
+  --nv-dur-scene: 900ms;
+  --nv-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --nv-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --nv-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Layout */
+  --nv-gutter: 16px;
+  --nv-page-max: 1280px;
+  --nv-measure: 68ch;
+  --nv-touch: 44px;
+  --nv-header-h: 68px;
+}
+
+@media (min-width: 768px) {
+  :root { --nv-gutter: 24px; }
+}
+@media (min-width: 1280px) {
+  :root { --nv-gutter: 40px; }
+}
+
+@theme inline {
+  --color-nv-graphite-950: var(--nv-graphite-950);
+  --color-nv-graphite-900: var(--nv-graphite-900);
+  --color-nv-graphite-850: var(--nv-graphite-850);
+  --color-nv-graphite-800: var(--nv-graphite-800);
+  --color-nv-graphite-700: var(--nv-graphite-700);
+  --color-nv-graphite-600: var(--nv-graphite-600);
+  --color-nv-graphite-500: var(--nv-graphite-500);
+  --color-nv-graphite-400: var(--nv-graphite-400);
+  --color-nv-ivory-50: var(--nv-ivory-50);
+  --color-nv-ivory-100: var(--nv-ivory-100);
+  --color-nv-ivory-200: var(--nv-ivory-200);
+  --color-nv-ivory-300: var(--nv-ivory-300);
+  --color-nv-copper-300: var(--nv-copper-300);
+  --color-nv-copper-400: var(--nv-copper-400);
+  --color-nv-copper-500: var(--nv-copper-500);
+  --color-nv-copper-600: var(--nv-copper-600);
+  --color-nv-copper-700: var(--nv-copper-700);
+  --color-nv-copper-wash: var(--nv-copper-wash);
+  --color-nv-violet-400: var(--nv-violet-400);
+  --color-nv-violet-600: var(--nv-violet-600);
+  --color-nv-violet-wash: var(--nv-violet-wash);
+  --color-nv-ion-400: var(--nv-ion-400);
+  --color-nv-ion-600: var(--nv-ion-600);
+  --color-nv-ion-wash: var(--nv-ion-wash);
+  --color-nv-dusk-400: var(--nv-dusk-400);
+  --color-nv-patina-400: var(--nv-patina-400);
+  --color-nv-patina-600: var(--nv-patina-600);
+  --color-nv-success: var(--nv-success);
+  --color-nv-success-wash: var(--nv-success-wash);
+  --color-nv-success-edge: var(--nv-success-edge);
+  --color-nv-warning: var(--nv-warning);
+  --color-nv-warning-wash: var(--nv-warning-wash);
+  --color-nv-warning-edge: var(--nv-warning-edge);
+  --color-nv-danger: var(--nv-danger);
+  --color-nv-danger-wash: var(--nv-danger-wash);
+  --color-nv-danger-edge: var(--nv-danger-edge);
+  --color-nv-info: var(--nv-info);
+  --color-nv-info-wash: var(--nv-info-wash);
+  --color-nv-info-edge: var(--nv-info-edge);
+  --color-nv-on-accent: var(--nv-on-accent);
+  --color-nv-canvas: var(--nv-surface-canvas);
+  --color-nv-card: var(--nv-surface-card);
+  --color-nv-well: var(--nv-surface-well);
+  --color-nv-hover: var(--nv-surface-hover);
+  --color-nv-text: var(--nv-text);
+  --color-nv-text-2: var(--nv-text-2);
+  --color-nv-text-3: var(--nv-text-3);
+  --color-nv-text-muted: var(--nv-text-muted);
+  --color-nv-text-strong: var(--nv-text-strong);
+  --color-nv-hairline: var(--nv-border-hairline);
+  --color-nv-border: var(--nv-border-default);
+  --color-nv-border-control: var(--nv-border-control);
+  --color-nv-action: var(--nv-action);
+  --color-nv-action-hover: var(--nv-action-hover);
+  --color-nv-action-text: var(--nv-action-text);
+  --color-nv-action-wash: var(--nv-action-wash);
+  --color-nv-data-1: var(--nv-data-1);
+  --color-nv-data-2: var(--nv-data-2);
+  --color-nv-data-3: var(--nv-data-3);
+  --color-nv-data-4: var(--nv-data-4);
+
+  --font-nv-display: var(--nv-font-display);
+  --font-nv-serif: var(--nv-font-serif);
+  --font-nv-sans: var(--nv-font-sans);
+  --font-nv-mono: var(--nv-font-mono);
+
+  --radius-nv-xs: var(--nv-radius-xs);
+  --radius-nv-sm: var(--nv-radius-sm);
+  --radius-nv-md: var(--nv-radius-md);
+  --radius-nv-lg: var(--nv-radius-lg);
+  --radius-nv-xl: var(--nv-radius-xl);
+
+  --shadow-nv-xs: var(--nv-shadow-xs);
+  --shadow-nv-card: var(--nv-shadow-card);
+  --shadow-nv-lift: var(--nv-shadow-lift);
+  --shadow-nv-accent: var(--nv-shadow-accent);
+  --shadow-nv-overlay: var(--nv-shadow-overlay);
+  --shadow-nv-popover: var(--nv-shadow-popover);
+
+  --ease-nv-out: var(--nv-ease-out);
+  --ease-nv-in-out: var(--nv-ease-in-out);
+  --ease-nv-drawer: var(--nv-ease-drawer);
+
+  /* Fluid type scale */
+  --text-nv-display-xl: clamp(3rem, 1.4rem + 6.4vw, 7rem);
+  --text-nv-display-lg: clamp(2.375rem, 1.5rem + 3.6vw, 4.5rem);
+  --text-nv-display-md: clamp(1.875rem, 1.35rem + 2vw, 2.875rem);
+  --text-nv-title: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  --text-nv-lead: clamp(1.0625rem, 0.98rem + 0.4vw, 1.3125rem);
+  --text-nv-body: 0.9375rem;
+  --text-nv-small: 0.8125rem;
+  --text-nv-micro: 0.75rem;
+}
+
+/* Root scope. Font stacks resolve here, where next/font's face variables are defined on <html>. */
+[data-nv-root] {
+  --nv-font-display: var(--nv-font-sans-face), ui-sans-serif, system-ui, sans-serif;
+  --nv-font-serif: var(--nv-font-serif-face), "Iowan Old Style", Georgia, serif;
+  --nv-font-sans: var(--nv-font-sans-face), ui-sans-serif, system-ui, sans-serif;
+  --nv-font-mono: var(--nv-font-mono-face), ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--nv-bg);
+  color: var(--nv-text);
+  font-family: var(--nv-font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-size-adjust: 100%;
+  color-scheme: light;
+}
+[data-nv-root] ::selection { background: #d6dcff; color: var(--nv-ivory-50); }
+[data-nv-root] * { scrollbar-color: var(--nv-graphite-600) transparent; }
+
+/* Type helpers */
+.nv-num { font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "tnum", "lnum"; }
+.nv-eyebrow {
+  font-family: var(--nv-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nv-text-3);
+}
+/* Display: tight grotesk; wrap emphasised words in <em> for the serif italic accent. */
+.nv-display { font-family: var(--nv-font-display); letter-spacing: -0.045em; line-height: 0.98; font-weight: 600; }
+.nv-display em, .nv-serif {
+  font-family: var(--nv-font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.nv-gradient-text {
+  background: var(--nv-gradient-signal);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Surfaces */
+.nv-card {
+  background: var(--nv-surface);
+  border: 1px solid var(--nv-hairline);
+  border-radius: var(--nv-radius-lg);
+  box-shadow: var(--nv-shadow-card);
+}
+.nv-aurora { background-image: var(--nv-gradient-aurora); }
+/* Holographic hairline border: wrap content; the gradient shows through a 1px padding ring */
+.nv-holo-ring { position: relative; border-radius: inherit; }
+.nv-holo-ring::before {
+  content: ""; position: absolute; inset: 0; padding: 1px; border-radius: inherit; pointer-events: none;
+  background: var(--nv-gradient-holo);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* Fine engineering grid for hero and journey backdrops */
+.nv-grid-paper {
+  background-image:
+    linear-gradient(to right, rgb(21 23 29 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(21 23 29 / 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+}
+
+/* Focus: one ring for everything, keyboard only */
+.nv-focus:focus-visible,
+[data-nv-root] :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--nv-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--nv-focus-gap);
+}
+[data-nv-root] :where(input, textarea):focus-visible { outline-offset: 0; }
+
+/* Skeleton and indeterminate progress (no fake percentages) */
+@keyframes nv-sheen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes nv-slide { from { transform: translateX(-100%); } to { transform: translateX(350%); } }
+@keyframes nv-spin { to { transform: rotate(360deg); } }
+@keyframes nv-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes nv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nv-pulse-dot { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+.nv-skeleton {
+  background: linear-gradient(90deg, var(--nv-graphite-850) 30%, var(--nv-graphite-700) 50%, var(--nv-graphite-850) 70%);
+  background-size: 200% 100%;
+  animation: nv-sheen 1.8s linear infinite;
+}
+.nv-indeterminate::after {
+  content: ""; position: absolute; inset: 0; width: 30%;
+  background: var(--nv-gradient-signal);
+  animation: nv-slide 1.4s var(--nv-ease-in-out) infinite;
+}
+.nv-spin { animation: nv-spin 0.9s linear infinite; }
+.nv-rise { animation: nv-rise var(--nv-dur-large) var(--nv-ease-out) both; }
+.nv-fade { animation: nv-fade var(--nv-dur-small) var(--nv-ease-out) both; }
+.nv-pulse-dot { animation: nv-pulse-dot 1.2s ease-in-out infinite; }
+
+dialog.nv-dialog::backdrop { background: var(--nv-scrim); backdrop-filter: blur(4px); }
+dialog.nv-dialog[open] { animation: nv-rise var(--nv-dur-small) var(--nv-ease-out); }
+
+/* Interactive lift: hover motion gated to fine pointers */
+@media (hover: hover) and (pointer: fine) {
+  .nv-lift { transition: transform var(--nv-dur-small) var(--nv-ease-out), box-shadow var(--nv-dur-small) var(--nv-ease-out), border-color var(--nv-dur-small); }
+  .nv-lift:hover { transform: translateY(-2px); box-shadow: var(--nv-shadow-lift); border-color: var(--nv-border); }
+}
+
+/* Reduced motion: keep fades, drop movement */
+@media (prefers-reduced-motion: reduce) {
+  [data-nv-root] *, [data-nv-root] *::before, [data-nv-root] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .nv-skeleton { background: var(--nv-graphite-850); }
+  .nv-indeterminate::after { width: 100%; opacity: 0.5; transform: none; }
+  .nv-rise { animation: none; }
+  .nv-lift:hover { transform: none; }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --nv-hairline: var(--nv-graphite-500);
+    --nv-border: var(--nv-graphite-400);
+    --nv-border-strong: var(--nv-ivory-300);
+    --nv-text-2: var(--nv-ivory-100);
+    --nv-text-3: var(--nv-ivory-200);
+    --nv-text-muted: var(--nv-ivory-300);
+  }
+}
+@media (forced-colors: active) {
+  .nv-indeterminate::after { background: Highlight; }
+  .nv-gradient-text { color: CanvasText; background: none; }
+}
+
+/* Shared chrome */
+.nv-site-header { background: rgb(250 250 247 / 0.78); backdrop-filter: saturate(1.4) blur(18px); }
+@media (prefers-reduced-transparency: reduce) { .nv-site-header { background: var(--nv-bg); backdrop-filter: none; } }

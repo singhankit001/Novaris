@@ -1,71 +1,117 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
-import { ArrowRight, ChevronDown, Star, GitFork, MessageSquare, Globe, TrendingUp } from "lucide-react";
-import { getRecentSearches } from "./actions";
-import TrustedByMarquee from "@/components/TrustedByMarquee";
-import { GitHubBadge } from "@/components/GitHubBadge";
-import { CAGBadge } from "@/components/CAGBadge";
-import { WhatsNewBadge } from "@/components/WhatsNewBadge";
-import Image from "next/image";
-import PublicStats from "@/components/PublicStats";
-import AuthButton from "@/components/AuthButton";
-import { Interactive3DCard } from "@/components/Interactive3DCard";
 import dynamic from "next/dynamic";
-
-const InteractiveDemo = dynamic(() => import("@/components/InteractiveDemo"), { ssr: true });
-const BentoFeatures = dynamic(() => import("@/components/BentoFeatures"), { ssr: true });
-const CAGComparison = dynamic(() => import("@/components/CAGComparison"), { ssr: true });
-const InstallPWA = dynamic(() => import("@/components/InstallPWA").then((mod) => mod.InstallPWA), { ssr: false });
-const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
-const FeaturedIn = dynamic(() => import("@/components/FeaturedIn"), { ssr: true });
-const MediaShowcase = dynamic(() => import("@/components/MediaShowcase"), { ssr: true });
-const SecurityBanner = dynamic(() => import("@/components/SecurityBanner"), { ssr: true });
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { getRecentSearches } from "./actions";
+import RepoSearch from "@/components/RepoSearch";
+import { type PublicStatsData } from "@/components/PublicStats";
+import { WhatsNewBadge } from "@/components/WhatsNewBadge";
+import SiteChrome from "@/components/seo/SiteChrome";
+import { Notice } from "@/components/nv/notice";
+import { BasisTag } from "@/components/nv/badge";
+import { Citation } from "@/components/nv/evidence";
+import { cn } from "@/components/nv/cn";
+import { FaqList, LinkRow, Rows, btnClass } from "@/components/seo/blocks";
 import JsonLdScript from "@/components/JsonLdScript";
+import Constellation from "@/components/landing/Constellation";
+import StatStrip, { type ProductLimits } from "@/components/landing/StatStrip";
+import FileStreams from "@/components/landing/FileStreams";
+import PathChooser from "@/components/landing/PathChooser";
+import DuskBand from "@/components/landing/DuskBand";
+import ConnectGraph from "@/components/landing/ConnectGraph";
+import Reveal from "@/components/landing/Reveal";
+import DemoVideo from "@/components/media/DemoVideo";
+import s from "@/components/landing/landing.module.css";
+import { SECURITY_SCAN_FILE_LIMITS } from "@/lib/security-scan-config";
 import type { SearchHistoryItem } from "@/lib/services/history-service";
 import { INVALID_SESSION_ERROR_PARAM } from "@/lib/session-guard";
 import { BlogPost } from "@prisma/client";
 import { CatalogRepoEntry } from "@/lib/repo-catalog";
 import { FAQ_PAGE_ITEMS } from "@/lib/faq-data";
 import { normalizeGitHubInput } from "@/lib/utils";
-import RepoSearch from "@/components/RepoSearch";
 import { buildFaqStructuredData, buildSoftwareApplicationStructuredData } from "@/lib/structured-data";
 
-type PublicStatsData = {
-    totalVisitors: number;
-    totalQueries: number;
-    totalScans: number;
-};
+const InstallPWA = dynamic(() => import("@/components/InstallPWA").then((mod) => mod.InstallPWA), { ssr: false });
+
+const PORTAL_MS = 480;
+// page.tsx passes the real values; this mirrors MAX_TOKENS (lib/tokens) for callers that render the client alone.
+const FALLBACK_LIMITS: ProductLimits = { contextTokens: 200_000, deepScanFiles: SECURITY_SCAN_FILE_LIMITS.deep, quickScanFiles: SECURITY_SCAN_FILE_LIMITS.quick };
+const FAQ_TEASER = FAQ_PAGE_ITEMS.slice(0, 5);
+
+const FACTS: { term: string; detail: string }[] = [
+    { term: "What it reads", detail: "Public GitHub data through the GitHub API: the file tree, the files chosen for your question, commit and language metadata." },
+    { term: "What it sends to Gemini", detail: "Those selected files and your question, so the model can answer. Nothing else leaves GitHub's data." },
+    { term: "Limits", detail: "Each question has a file budget. Deep security scans need sign-in. Reports are kept for 7 days." },
+    { term: "What it does not do", detail: "No cloning or running code, no developer rankings or scores. Private repositories only with the access you grant." },
+];
+
+/** Small architecture diagram built from the same nodes the product draws. */
+function MiniDiagram({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 320 200" className={className} role="presentation" focusable="false" aria-hidden="true">
+            <defs>
+                <linearGradient id="miniG" x1="0" x2="1">
+                    <stop offset="0" stopColor="#2f54ff" />
+                    <stop offset="1" stopColor="#7a4dff" />
+                </linearGradient>
+            </defs>
+            <g fill="none" stroke="url(#miniG)" strokeWidth="1.4" opacity="0.7">
+                <path d="M160 40 C160 70 70 70 70 104" />
+                <path d="M160 40 C160 70 160 80 160 104" />
+                <path d="M160 40 C160 70 250 70 250 104" />
+                <path d="M70 134 C70 160 130 160 160 164" />
+                <path d="M250 134 C250 160 190 160 160 164" />
+            </g>
+            {[
+                [160, 26, "app/", true],
+                [70, 118, "lib/", false],
+                [160, 118, "components/", false],
+                [250, 118, "api/", false],
+                [160, 176, "prisma/", false],
+            ].map(([x, y, label, on]) => (
+                <g key={String(label)}>
+                    <rect x={Number(x) - 36} y={Number(y) - 14} width="72" height="28" rx="9" fill="#fff" stroke={on ? "#2f54ff" : "#d5d8e0"} />
+                    <text x={Number(x)} y={Number(y) + 4} textAnchor="middle" fontFamily="var(--nv-font-mono)" fontSize="10" fill={on ? "#1f3ee6" : "#3a3e4a"}>
+                        {String(label)}
+                    </text>
+                </g>
+            ))}
+        </svg>
+    );
+}
 
 export default function HomeClient({
     initialPosts = [],
     weeklyTrending = [],
     monthlyTrending = [],
     publicStats,
+    limits = FALLBACK_LIMITS,
 }: {
     initialPosts?: BlogPost[];
     weeklyTrending?: CatalogRepoEntry[];
     monthlyTrending?: CatalogRepoEntry[];
     publicStats: PublicStatsData;
+    limits?: ProductLimits;
 }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(null);
+    const [portal, setPortal] = useState<{ x: number; y: number } | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session } = useSession();
+    const reduce = useReducedMotion();
+    const searchRef = useRef<HTMLDivElement>(null);
     const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
-    const [visibleReposCount, setVisibleReposCount] = useState(6);
     const hasInvalidSessionError = searchParams.get("error") === INVALID_SESSION_ERROR_PARAM;
 
     const [trendingTier, setTrendingTier] = useState<"weekly" | "monthly">("weekly");
     const trendingRepos = trendingTier === "weekly" ? weeklyTrending : monthlyTrending;
-    const visibleRepos = trendingRepos.slice(0, visibleReposCount);
-    const hasMoreRepos = visibleReposCount < trendingRepos.length;
+    const visibleRepos = trendingRepos.slice(0, 6);
     const softwareSchema = buildSoftwareApplicationStructuredData({
         name: "Novaris",
         description:
@@ -78,13 +124,25 @@ export default function HomeClient({
             "Repository security scanning",
         ],
     });
-    const faqSchema = buildFaqStructuredData(FAQ_PAGE_ITEMS);
+    const faqSchema = buildFaqStructuredData(FAQ_TEASER);
 
     useEffect(() => {
         if (session) {
             getRecentSearches().then(setRecentSearches);
         }
     }, [session]);
+
+    // Coming back via the browser cache must not leave the exit overlay on screen.
+    useEffect(() => {
+        const onShow = (e: PageTransitionEvent) => {
+            if (e.persisted) {
+                setPortal(null);
+                setLoading(false);
+            }
+        };
+        window.addEventListener("pageshow", onShow);
+        return () => window.removeEventListener("pageshow", onShow);
+    }, []);
 
     const handleSearch = async (query: string) => {
         const normalizedInput = normalizeGitHubInput(query);
@@ -94,443 +152,442 @@ export default function HomeClient({
         setError("");
 
         try {
+            const rect = searchRef.current?.getBoundingClientRect();
+            setPortal({ x: rect ? rect.left + rect.width / 2 : window.innerWidth / 2, y: rect ? rect.top + rect.height / 2 : window.innerHeight / 3 });
+            await new Promise((resolve) => setTimeout(resolve, reduce ? 120 : PORTAL_MS));
             router.push(`/chat?q=${encodeURIComponent(normalizedInput)}`);
         } catch {
+            setPortal(null);
             setError("Something went wrong. Please try again.");
         } finally {
             setLoading(false);
         }
     };
+
+    const focusSearch = () => {
+        window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+        window.setTimeout(() => document.getElementById("hero-search")?.focus(), reduce ? 0 : 450);
+    };
+
     return (
-        <main className="flex flex-col bg-transparent text-white overflow-x-hidden relative min-h-screen noise-bg">
-            {/* Premium background grid and glowing lights */}
-            <div className="absolute inset-0 premium-grid opacity-15 pointer-events-none z-0" />
-            <div className="absolute inset-0 premium-radial pointer-events-none z-0" />
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-950/10 rounded-full blur-[140px] pointer-events-none z-0 animate-mesh-1" />
-            <div className="absolute bottom-1/3 right-1/4 w-[600px] h-[600px] bg-blue-950/10 rounded-full blur-[160px] pointer-events-none z-0 animate-mesh-2" />
-
-            {/* Sticky Glass Navbar */}
-            <header className="sticky top-0 z-[100] w-full border-b border-white/10 bg-[#030303]/85 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all">
-                <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-6">
-                    <div className="flex items-center gap-8">
-                        <Link href="/" className="flex items-center gap-2.5 group">
-                            <span className="font-display font-extrabold text-xl tracking-[0.25em] bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-zinc-100 to-purple-500 hover:opacity-90 transition-opacity">
-                                NOVARIS
-                            </span>
-                        </Link>
-                        <nav className="hidden md:flex items-center gap-4 text-xs font-semibold tracking-wider uppercase text-zinc-200">
-                            <Link href="/solutions" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                Solutions
-                            </Link>
-                            <Link href="/compare" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                Compare
-                            </Link>
-                            <Link href="/blog" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                Insights
-                            </Link>
-                            <Link href="/faq" className="hover:text-cyan-400 hover:bg-white/5 transition-all px-3 py-1.5 rounded-lg">
-                                FAQ
-                            </Link>
-                        </nav>
+        <SiteChrome overlayHeader>
+            <motion.div animate={portal ? { scale: reduce ? 1 : 0.985, opacity: 0 } : { scale: 1, opacity: 1 }} transition={{ duration: PORTAL_MS / 1000, ease: [0.23, 1, 0.32, 1] }}>
+                {/* ---------- Hero ---------- */}
+                <section aria-labelledby="home-h" className={s.hero}>
+                    <div aria-hidden className={cn(s.heroBg, "nv-aurora")}>
+                        <div className={cn(s.heroGrid, "nv-grid-paper")} />
                     </div>
-                    <div className="flex items-center gap-4">
-                        <GitHubBadge />
-                        <AuthButton />
-                    </div>
-                </div>
-            </header>
-
-            <section className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-16 sm:py-20 md:py-24 relative overflow-hidden z-10">
-                {/* Animated connection web background */}
-                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30">
-                    <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                        <motion.circle cx="15%" cy="20%" r="4" fill="#a855f7" opacity="0.6" animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0.8, 0.4] }} transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} />
-                        <motion.circle cx="85%" cy="30%" r="6" fill="#3b82f6" opacity="0.4" animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }} />
-                        <motion.circle cx="70%" cy="80%" r="5" fill="#10b981" opacity="0.5" animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.7, 0.4] }} transition={{ repeat: Infinity, duration: 6, ease: "easeInOut", delay: 2 }} />
-                        <motion.circle cx="25%" cy="75%" r="5" fill="#eab308" opacity="0.4" animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 3 }} />
-                        <path d="M 15% 20% L 25% 75%" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="5,5" />
-                        <path d="M 85% 30% L 70% 80%" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="1" strokeDasharray="5,5" />
-                        <path d="M 15% 20% L 85% 30%" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1.5" />
-                    </svg>
-                </div>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="z-10 flex flex-col items-center text-center max-w-4xl w-full px-4 gap-4 md:gap-5"
-                >
-                    <div className="w-full flex flex-col items-center gap-3 md:gap-4">
-                        <div className="conic-border-container neon-spin-ring rounded-full w-16 h-16 md:w-20 md:h-20 flex items-center justify-center">
-                            <Image
-                                src="/1080x1080.png"
-                                alt="Novaris Logo"
-                                width={96}
-                                height={96}
-                                className="w-full h-full object-cover rounded-full"
-                            />
-                        </div>
-                        <div className="inline-flex items-center justify-center gap-2 md:gap-3 w-full">
-                            <p className="whitespace-nowrap text-xs md:text-sm font-extrabold tracking-[0.4em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 leading-none">
-                                NOVARIS
-                            </p>
+                    <div className={s.wrap}>
+                        <div className={s.pillTop}>
+                            <span>Public repositories and profiles</span>
                             <WhatsNewBadge />
                         </div>
-                    </div>
-
-                    <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-100 to-zinc-300 relative leading-tight max-w-5xl text-balance animate-fade-in-up-blur drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                        GitHub Repository Analysis, Code Review & Security Scanning
-                    </h1>
-
-                    <CAGBadge />
-
-                    <p className="text-base sm:text-lg md:text-xl text-zinc-200 mb-4 max-w-3xl mx-auto leading-relaxed animate-fade-in-up-blur [animation-delay:200ms] font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                        Understand repositories faster with context-aware AI. Go from URL to architecture, code review, and security triage.
-                    </p>
-
-                    {hasInvalidSessionError && (
-                        <div className="w-full max-w-md mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-100">
-                            Your session could not be validated. Please sign in again.
-                        </div>
-                    )}
-
-                    <Interactive3DCard className="w-full max-w-4xl p-2" glowColor="cyan">
-                        <RepoSearch 
-                            onSearchSubmit={handleSearch}
-                            loading={loading}
-                            trendingRepos={weeklyTrending}
-                            recentSearches={recentSearches}
-                            isSessionActive={!!session}
-                        />
-                    </Interactive3DCard>
-
-                    {error && (
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="mt-5 text-red-400 text-sm"
-                        >
-                            {error}
-                        </motion.p>
-                    )}
-
-                    <PublicStats stats={publicStats} />
-                </motion.div>
-            </section>
-
-            <FeaturedIn />
-            <TrustedByMarquee trendingRepos={weeklyTrending} />
-            <InteractiveDemo />
-
-            <div className="relative z-10 w-full bg-transparent">
-                <BentoFeatures />
-                <SecurityBanner />
-            </div>
-
-            <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 gap-10 items-start">
-                        <div>
-                            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">Use Cases That Drive Decisions</h2>
-                            <p className="text-zinc-200 text-lg mb-8">
-                                Novaris helps teams reduce uncertainty before adoption, release, and remediation decisions.
-                            </p>
-                            <div className="space-y-4">
-                                <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
-                                    <h3 className="text-xl font-semibold mb-2 group-hover:text-cyan-400 transition-colors">Repository Due Diligence</h3>
-                                    <p className="text-zinc-200 text-sm mb-4">Evaluate unfamiliar repositories before adopting dependencies or onboarding teams. Get system-level snapshots for immediate clarity.</p>
-                                    <Link href="/github-repository-analysis" className="text-cyan-400 text-xs font-bold hover:text-cyan-300 transition-colors flex items-center gap-1">
-                                        Exploration Workflow <ArrowRight size={12} />
-                                    </Link>
-                                </article>
-                                <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
-                                    <h3 className="text-xl font-semibold mb-2 group-hover:text-purple-400 transition-colors">Context-Aware Code Review</h3>
-                                    <p className="text-zinc-200 text-sm mb-4">Review implementation quality with repository context, not isolated snippets. Surface logic flaws and blind spots.</p>
-                                    <Link href="/ai-code-review-tool" className="text-purple-400 text-xs font-bold hover:text-purple-300 transition-colors flex items-center gap-1">
-                                        Review Workflow <ArrowRight size={12} />
-                                    </Link>
-                                </article>
-                                <article className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 group hover:border-zinc-700 transition-colors">
-                                    <h3 className="text-xl font-semibold mb-2 group-hover:text-red-400 transition-colors">Security Prioritization</h3>
-                                    <p className="text-zinc-200 text-sm mb-4">Surface actionable risk signals and triage findings with engineering context. Get severity-framed remediation direction.</p>
-                                    <Link href="/security-scanner" className="text-red-400 text-xs font-bold hover:text-red-300 transition-colors flex items-center gap-1">
-                                        Triage Workflow <ArrowRight size={12} />
-                                    </Link>
-                                </article>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-white via-cyan-100 to-zinc-400 bg-clip-text text-transparent">How Novaris Works</h2>
-                        <p className="text-zinc-200 text-lg max-w-3xl mx-auto">
-                            Intent-first workflows for repository analysis, architecture clarity, code review, and security prioritization.
+                        <h1 id="home-h" className={cn(s.heroTitle, "nv-display")}>
+                            Read a repository. See the <em>files</em> behind every answer.
+                        </h1>
+                        <p className={s.heroLead}>
+                            Paste a GitHub URL, a username, or owner/repo. Novaris loads the relevant files and answers questions about architecture, code, and security, with the sources shown.
                         </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">1. Start with a URL</h3>
-                            <p className="text-zinc-200 text-sm">Paste a GitHub repository URL and select your goal.</p>
-                        </article>
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-purple-500/40 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">2. Build context</h3>
-                            <p className="text-zinc-200 text-sm">Agentic CAG gathers full-file context needed for reliable understanding.</p>
-                        </article>
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-blue-500/40 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">3. Analyze deeply</h3>
-                            <p className="text-zinc-200 text-sm">Map architecture, review implementation, and identify risk hotspots.</p>
-                        </article>
-                        <article className="rounded-2xl border border-white/10 bg-[#09090b]/40 backdrop-blur-xl p-6 hover:border-emerald-500/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] transition-all duration-300">
-                            <h3 className="font-semibold mb-2 text-white">4. Take action</h3>
-                            <p className="text-zinc-200 text-sm">Get outputs you can use immediately in engineering and security workflows.</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
 
-            <MediaShowcase />
+                        {hasInvalidSessionError && (
+                            <Notice tone="warning" title="Your session could not be validated" className="mx-auto mt-6 max-w-xl text-left">
+                                Sign in again to continue.
+                            </Notice>
+                        )}
 
-            <div className="relative z-10 w-full bg-transparent">
-                <CAGComparison />
-            </div>
-
-
-
-            <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                <div className="max-w-5xl mx-auto">
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-10">Frequently Asked Questions</h2>
-                    <div className="space-y-5">
-                        {FAQ_PAGE_ITEMS.map((item, index) => (
-                            <article
-                                key={item.question}
-                                className="rounded-2xl border border-zinc-800 bg-zinc-900/40"
-                            >
-                                <button
-                                    type="button"
-                                    aria-expanded={activeFaqIndex === index}
-                                    aria-controls={`homepage-faq-answer-${index}`}
-                                    onClick={() => setActiveFaqIndex((current) => (current === index ? null : index))}
-                                    className="flex w-full items-center justify-between gap-4 p-6 text-left"
-                                >
-                                    <h3 className="text-xl font-semibold text-white">{item.question}</h3>
-                                    <ChevronDown
-                                        className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform ${
-                                            activeFaqIndex === index ? "rotate-180 text-white" : ""
-                                        }`}
-                                    />
-                                </button>
-                                <motion.div
-                                    id={`homepage-faq-answer-${index}`}
-                                    aria-hidden={activeFaqIndex !== index}
-                                    initial={false}
-                                    animate={
-                                        activeFaqIndex === index
-                                            ? { height: "auto", opacity: 1 }
-                                            : { height: 0, opacity: 0 }
-                                    }
-                                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                                    className="overflow-hidden will-change-[height,opacity]"
-                                >
-                                    <div className="px-6 pb-6">
-                                        <p className="text-zinc-200 leading-relaxed">{item.answer}</p>
-                                    </div>
-                                </motion.div>
-                            </article>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-
-            {trendingRepos.length > 0 && (
-                <section id="trending-section" className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="mb-12 text-center">
-                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
-                                <TrendingUp className="inline-block text-cyan-400 mb-1 mr-2 md:mr-3" size={32} />
-                                Explore Trending <span className="bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Repositories</span>
-                            </h2>
-                            <p className="text-zinc-200 text-lg max-w-2xl mx-auto mb-8">
-                                Explore the projects getting the most heat on GitHub. Instantly analyze any of them with Novaris.
-                            </p>
-
-                            <div className="flex justify-center p-1 bg-zinc-900/60 border border-white/10 rounded-xl w-fit mx-auto backdrop-blur-md">
-                                <button
-                                    onClick={() => { setTrendingTier("weekly"); setVisibleReposCount(6); }}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                                        trendingTier === "weekly" 
-                                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]" 
-                                        : "text-zinc-500 hover:text-zinc-300"
-                                    }`}
-                                >
-                                    Weekly
-                                </button>
-                                <button
-                                    onClick={() => { setTrendingTier("monthly"); setVisibleReposCount(6); }}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                                        trendingTier === "monthly" 
-                                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]" 
-                                        : "text-zinc-500 hover:text-zinc-300"
-                                    }`}
-                                >
-                                    Monthly
-                                </button>
-                            </div>
+                        <div ref={searchRef} className={s.searchWrap}>
+                            <RepoSearch
+                                onSearchSubmit={handleSearch}
+                                loading={loading}
+                                trendingRepos={weeklyTrending}
+                                recentSearches={recentSearches}
+                                isSessionActive={!!session}
+                                activating={portal !== null}
+                                inputId="hero-search"
+                            />
+                            {error && (
+                                <p role="alert" className="mt-3 text-center text-nv-small text-nv-danger">
+                                    {error}
+                                </p>
+                            )}
                         </div>
+                    </div>
+                    <div className={s.stage}>
+                        <Constellation />
+                        <div aria-hidden className={s.stageFade} />
+                    </div>
+                    <p className={s.cCaption}>
+                        <span className="nv-eyebrow mr-2">Illustrative</span>
+                        Modules and files converge on one answer. In a real result each line links to a file and line range.
+                    </p>
+                </section>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {visibleRepos.map((repo) => (
-                                <div 
-                                    key={`${repo.owner}/${repo.repo}`}
-                                    className="bg-[#09090b]/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-cyan-500/40 hover:shadow-[0_0_35px_rgba(6,182,212,0.18)] transition-all duration-300 group flex flex-col justify-between"
-                                >
-                                    <div>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2 text-zinc-300 font-medium">
-                                                <Image 
-                                                    src={`https://github.com/${repo.owner}.png`}
-                                                    alt={`${repo.owner} avatar`}
-                                                    width={20}
-                                                    height={20}
-                                                    className="rounded-full bg-white/10"
-                                                />
-                                                <span className="truncate max-w-[150px]">{repo.owner}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-zinc-300 uppercase">
-                                                <Globe size={10} /> {repo.language || 'Code'}
-                                            </div>
-                                        </div>
-                                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
-                                            {repo.repo}
-                                        </h3>
-                                        <p className="text-zinc-300 text-sm line-clamp-2 mb-6 min-h-[40px]">
-                                            {repo.description || 'Experience high-context AI analysis for this repository.'}
-                                        </p>
-                                    </div>
+                <div className={s.wrap}>
+                    <StatStrip stats={publicStats} limits={limits} />
+                </div>
 
-                                    <div className="flex items-center justify-between mt-auto">
-                                        <div className="flex items-center gap-4 text-xs text-zinc-300">
-                                            <span className="flex items-center gap-1">
-                                                <Star size={12} className="text-yellow-500" />
-                                                {repo.stars.toLocaleString()}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <GitFork size={12} className="text-zinc-600" />
-                                                Trending
-                                            </span>
+                {/* ---------- Signal burst ---------- */}
+                <section aria-labelledby="burst-h" className={s.burst}>
+                    <div aria-hidden className={s.burstGlow} />
+                    <div className={cn(s.wrap, s.burstHead, s.center)}>
+                        <Reveal>
+                            <p className={s.kicker}>Many files in, one answer out</p>
+                            <h2 id="burst-h" className={cn(s.h2, "nv-display")}>
+                                Hundreds of files, one <em>cited</em> answer.
+                            </h2>
+                            <p className={s.sub}>
+                                A repository is a lot of files. Novaris narrows them to the ones your question needs and brings them together in a single answer that points back at each source.
+                            </p>
+                        </Reveal>
+                    </div>
+                    <FileStreams />
+                </section>
+
+                {/* ---------- How it works ---------- */}
+                <section aria-labelledby="how-h" className={s.section}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <p className={s.kicker}>How it works</p>
+                            <h2 id="how-h" className={cn(s.h2, "nv-display")}>
+                                From a URL to a <em>sourced</em> answer in three steps.
+                            </h2>
+                        </Reveal>
+                        <ol className={s.steps}>
+                            <li className={s.step}>
+                                <span aria-hidden className={s.stepNum}>01</span>
+                                <div>
+                                    <h3 className={s.stepTitle}>Point it at a repository or a person.</h3>
+                                    <p className={s.stepText}>A GitHub URL, owner/repo, or a username. Public data only, unless you grant access.</p>
+                                </div>
+                                <div className={s.frag} aria-hidden>
+                                    <div className="relative">
+                                        <div className="invisible">
+                                            <div className={cn(s.fragRow, s.fragOn)}>vercel/next.js</div>
+                                            <div className={cn(s.fragLine, "w-[70%]")} />
+                                            <div className={cn(s.fragLine, "w-[46%]")} />
                                         </div>
-                                        <Link 
-                                            href={`/chat?q=${repo.owner}/${repo.repo}`}
-                                            aria-label={`Analyze ${repo.owner}/${repo.repo} with Novaris`}
-                                            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white text-black text-xs font-bold hover:bg-zinc-200 transition-colors"
-                                        >
-                                            <MessageSquare size={12} />
-                                            Analyze
-                                        </Link>
+                                        <DemoVideo name="select" fill className="-inset-[18px] rounded-[19px] bg-white" />
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-
-                        {hasMoreRepos ? (
-                            <div className="mt-12 flex flex-col items-center gap-8">
-                                <button 
-                                    onClick={() => setVisibleReposCount(prev => prev + 6)}
-                                    className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-black font-bold hover:bg-zinc-200 transition-colors group"
-                                >
-                                    Show more repositories
-                                    <TrendingUp size={18} className="group-hover:scale-110 transition-transform" />
-                                </button>
-                                <Link 
-                                    href="/trending"
-                                    className="text-zinc-500 hover:text-white transition-colors text-sm font-medium flex items-center gap-1 group"
-                                >
-                                    Explore all trending repositories
-                                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="mt-12 text-center">
-                                <Link 
-                                    href="/trending"
-                                    className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-zinc-900 border border-white/10 text-white font-bold hover:bg-zinc-800 transition-colors group"
-                                >
-                                    Explore all trending repositories
-                                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                            </div>
-                        )}
+                            </li>
+                            <li className={s.step}>
+                                <span aria-hidden className={s.stepNum}>02</span>
+                                <div>
+                                    <h3 className={s.stepTitle}>It reads the files that matter.</h3>
+                                    <p className={s.stepText}>Novaris reads the file tree, then loads complete files chosen for your question instead of fragments.</p>
+                                </div>
+                                <div className={s.frag} aria-hidden>
+                                    <div className="relative">
+                                        <div className="invisible">
+                                            <div className={cn(s.fragRow, s.fragDim)}>README.md</div>
+                                            <div className={cn(s.fragRow, s.fragOn)}>src/lib/auth.ts</div>
+                                            <div className={cn(s.fragRow, s.fragOn)}>src/middleware.ts</div>
+                                            <div className={cn(s.fragRow, s.fragDim)}>package.json</div>
+                                        </div>
+                                        <DemoVideo name="repo-analysis" fill className="-inset-[18px] rounded-[19px] bg-white" />
+                                    </div>
+                                </div>
+                            </li>
+                            <li className={s.step}>
+                                <span aria-hidden className={s.stepNum}>03</span>
+                                <div>
+                                    <h3 className={s.stepTitle}>You get an answer with its sources.</h3>
+                                    <p className={s.stepText}>Claims link a file or are labelled inferred. Anything the data does not show is stated as unknown.</p>
+                                </div>
+                                <div className={s.frag}>
+                                    <p className="m-0 font-sans text-nv-body text-nv-ivory-100">Requests pass through a single auth middleware.</p>
+                                    <div className={s.fragBadgeRow}>
+                                        <BasisTag basis="measured" />
+                                        <Citation kind="file" target="src/middleware.ts" lines="12-40" />
+                                    </div>
+                                </div>
+                            </li>
+                        </ol>
                     </div>
                 </section>
-            )}
 
-            {initialPosts.length > 0 && (
-                <section className="relative z-10 w-full bg-transparent py-24 px-6 border-t border-white/10 backdrop-blur-sm">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="flex flex-col items-center text-center mb-12 gap-6">
-                            <div>
-                                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                                    Engineering <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">Insights</span>
+                {/* ---------- Product window ---------- */}
+                <section aria-labelledby="window-h" className={cn(s.section, "!pt-0")}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <div className={s.center}>
+                                <p className={s.kicker}>Inside the workspace</p>
+                                <h2 id="window-h" className={cn(s.h2, "nv-display")}>
+                                    Ask. Read. <em>Verify.</em>
                                 </h2>
-                                <p className="text-zinc-200 text-lg max-w-2xl mx-auto">
-                                    Latest updates from the lab on AI-driven code intelligence and security.
-                                </p>
+                                <p className={s.sub}>A sample layout of the workspace, with made-up values rather than a real result.</p>
                             </div>
-                            <Link 
-                                href="/blog" 
-                                className="inline-flex items-center gap-2 text-sm font-bold text-purple-400 hover:text-purple-300 transition-colors group px-4 py-2 rounded-xl bg-purple-500/5 border border-purple-500/10"
-                            >
-                                View all insights <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        </Reveal>
+                        <Reveal delay={0.08}>
+                            <div className={cn(s.window, "mt-14")} role="group" aria-label="Sample analysis workspace">
+                                <div className={s.winBar} aria-hidden>
+                                    <span className={s.winDot} />
+                                    <span className={s.winDot} />
+                                    <span className={s.winDot} />
+                                    <span className={s.winTitle}>novaris / owner-repo</span>
+                                </div>
+                                <div className={s.winBody}>
+                                    <div className={s.winCol}>
+                                        <p className={s.winCap}>Files in context</p>
+                                        <ul className={s.mini}>
+                                            <li className={s.miniItem}>src/</li>
+                                            <li className={cn(s.miniItem, s.indent1)}>middleware.ts</li>
+                                            <li className={cn(s.miniItem, s.miniOn, s.indent1)}>lib/auth.ts</li>
+                                            <li className={cn(s.miniItem, s.indent1)}>lib/http.ts</li>
+                                            <li className={s.miniItem}>prisma/</li>
+                                            <li className={cn(s.miniItem, s.indent1)}>schema.prisma</li>
+                                        </ul>
+                                    </div>
+                                    <div className={s.winCol}>
+                                        <p className={s.winCap}>Conversation</p>
+                                        <div className="relative">
+                                            <div className="invisible">
+                                                <p className={s.bubbleQ}>How is authentication enforced?</p>
+                                                <div className={s.answer}>
+                                                    <div className={s.claim}>
+                                                        <p className={s.claimText}>Requests pass through a single auth middleware before reaching route handlers.</p>
+                                                        <div className={s.claimMeta}>
+                                                            <BasisTag basis="measured" />
+                                                            <Citation kind="file" target="src/middleware.ts" lines="12-40" />
+                                                        </div>
+                                                    </div>
+                                                    <div className={s.claim}>
+                                                        <p className={s.claimText}>The retry policy probably protects against rate limits.</p>
+                                                        <div className={s.claimMeta}>
+                                                            <BasisTag basis="inferred" />
+                                                            <Citation kind="file" target="src/lib/http.ts" lines="55-71" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <DemoVideo name="ai-chat" fill tagCorner="top-left" label="Illustrative chat: a question, files read, and an answer with cited sources" className="hidden min-[1100px]:block rounded-2xl border border-nv-graphite-700 bg-white" />
+                                            <DemoVideo name="ai-chat-narrow" fill tagCorner="top-left" label="Illustrative chat: a question, files read, and an answer with cited sources" className="min-[1100px]:hidden rounded-2xl border border-nv-graphite-700 bg-white" />
+                                        </div>
+                                    </div>
+                                    <div className={s.winCol}>
+                                        <p className={s.winCap}>Architecture</p>
+                                        <DemoVideo name="architecture" label="Illustrative architecture map: modules appear and connect" className="rounded-xl border border-nv-graphite-700 bg-white" />
+                                    </div>
+                                </div>
+                            </div>
+                        </Reveal>
+                    </div>
+                </section>
+
+                {/* ---------- Capabilities ---------- */}
+                <section aria-labelledby="caps-h" className={cn(s.section, "!pt-0")}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <p className={s.kicker}>Capabilities</p>
+                            <h2 id="caps-h" className={cn(s.h2, "nv-display")}>
+                                One workspace for <em>three</em> kinds of questions.
+                            </h2>
+                        </Reveal>
+                        <div className={cn(s.caps, "mt-14")}>
+                            <Link href="/github-repository-analysis" className={cn(s.cap, s.capBig)}>
+                                <div aria-hidden className={cn(s.capGlow, "nv-aurora")} />
+                                <div>
+                                    <span className={s.capTag}>Architecture</span>
+                                    <h3 className={s.capTitle}>Understand a codebase before you touch it.</h3>
+                                    <p className={s.capText}>Module boundaries, dependencies and entry points, drawn from whole files and linked to the code.</p>
+                                </div>
+                                <MiniDiagram className="mx-auto w-full max-w-sm" />
+                                <span className={s.capLink}>
+                                    Repository analysis <ArrowUpRight aria-hidden className="size-4" />
+                                </span>
+                            </Link>
+                            <Link href="/ai-code-review-tool" className={s.cap}>
+                                <div>
+                                    <span className={s.capTag}>Review</span>
+                                    <h3 className={s.capTitle}>Code review with the context around the diff.</h3>
+                                    <p className={s.capText}>Imports and callers sit next to the code, so review notes point at real file paths.</p>
+                                </div>
+                                <span className={s.capLink}>
+                                    AI code review <ArrowUpRight aria-hidden className="size-4" />
+                                </span>
+                            </Link>
+                            <Link href="/security-scanner" className={s.cap}>
+                                <div>
+                                    <span className={s.capTag}>Security</span>
+                                    <h3 className={s.capTitle}>Findings with a file, a line and a reason.</h3>
+                                    <p className={s.capText}>Quick scans for everyone, deep scans when signed in. Every finding is something to verify.</p>
+                                </div>
+                                <span className={s.capLink}>
+                                    Security scanner <ArrowUpRight aria-hidden className="size-4" />
+                                </span>
                             </Link>
                         </div>
+                    </div>
+                </section>
 
-                        <div className="grid md:grid-cols-3 gap-8">
-                            {initialPosts.map((post) => (
-                                <Link 
-                                    key={post.slug} 
-                                    href={`/blog/${post.slug}`}
-                                    className="group flex flex-col h-full bg-[#09090b]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-5 hover:border-purple-500/40 hover:shadow-[0_0_35px_rgba(168,85,247,0.18)] transition-all duration-300"
-                                >
-                                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-5 border border-white/5">
-                                        <Image 
-                                            src={post.image} 
-                                            alt={post.title}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold border border-purple-500/20 uppercase">
-                                            {post.category}
-                                        </span>
-                                        <span className="text-zinc-600 text-[10px] uppercase font-bold tracking-tighter">
-                                            {post.date}
-                                        </span>
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-3 group-hover:text-purple-400 transition-colors line-clamp-2">
-                                        {post.title}
-                                    </h3>
-                                    <p className="text-zinc-200 text-sm italic opacity-80 line-clamp-2 mb-6">
-                                        {post.excerpt}
-                                    </p>
-                                    <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                                        <span className="text-xs font-bold text-zinc-300">Read insight</span>
-                                        <ArrowRight size={14} className="text-zinc-300 group-hover:text-purple-400 group-hover:translate-x-1 transition-all" />
-                                    </div>
-                                </Link>
-                            ))}
+                {/* ---------- Choose a path ---------- */}
+                <section aria-labelledby="path-h" className={cn(s.section, "!pt-0")}>
+                    <div className={s.wrap}>
+                        <Reveal className={s.gapBelow}>
+                            <p className={s.kicker}>Get started</p>
+                            <h2 id="path-h" className={cn(s.h2, "nv-display")}>
+                                Choose an analysis <em>path.</em>
+                            </h2>
+                        </Reveal>
+                        <PathChooser />
+                    </div>
+                </section>
+
+                <div className={s.wrap}>
+                    <DuskBand limits={limits} />
+                </div>
+
+                {/* ---------- Connect ---------- */}
+                <section aria-labelledby="connect-h" className={s.section}>
+                    <div className={s.wrap}>
+                        <Reveal>
+                            <div className={s.center}>
+                                <p className={s.kicker}>What it connects to</p>
+                                <h2 id="connect-h" className={cn(s.h2, "nv-display")}>
+                                    Built on the data <em>GitHub</em> already holds.
+                                </h2>
+                                <p className={s.sub}>Novaris reads repositories, files and commits through the GitHub API, then brings them into chat and the security scanner.</p>
+                            </div>
+                        </Reveal>
+                        <div className="mt-14">
+                            <ConnectGraph />
                         </div>
                     </div>
                 </section>
-            )}
 
-            <Footer />
+                {/* ---------- Facts ---------- */}
+                <section aria-labelledby="facts-h" className={cn(s.sectionTight, "!pt-0")}>
+                    <div className={cn(s.wrap, s.split)}>
+                        <Reveal>
+                            <p className={s.kicker}>Privacy and limits</p>
+                            <h2 id="facts-h" className={cn(s.h2, "nv-display")}>
+                                What happens to your <em>request.</em>
+                            </h2>
+                        </Reveal>
+                        <dl className={s.facts}>
+                            {FACTS.map((f) => (
+                                <div key={f.term} className={s.fact}>
+                                    <dt>{f.term}</dt>
+                                    <dd>{f.detail}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+                </section>
+
+                {trendingRepos.length > 0 && (
+                    <section id="trending-section" aria-labelledby="trend-h" className={s.sectionTight}>
+                        <div className={cn(s.wrap, s.split)}>
+                            <div>
+                                <p className={s.kicker}>Catalog</p>
+                                <h2 id="trend-h" className={cn(s.h2, "nv-display")}>
+                                    Trending in the <em>catalog</em>
+                                </h2>
+                                <div role="group" aria-label="Time window" className={s.seg}>
+                                    {(["weekly", "monthly"] as const).map((tier) => (
+                                        <button key={tier} type="button" aria-pressed={trendingTier === tier} onClick={() => setTrendingTier(tier)} className={s.segBtn}>
+                                            {tier}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <Rows>
+                                    {visibleRepos.map((repo) => (
+                                        <LinkRow
+                                            key={`${repo.owner}/${repo.repo}`}
+                                            href={`/chat?q=${encodeURIComponent(`${repo.owner}/${repo.repo}`)}`}
+                                            title={`${repo.owner}/${repo.repo}`}
+                                            summary={repo.description || "No description in the catalog."}
+                                            meta={`${repo.stars.toLocaleString()} stars`}
+                                        />
+                                    ))}
+                                </Rows>
+                                <Link href="/trending" className="mt-5 inline-flex min-h-11 items-center gap-1 font-medium text-nv-copper-400 hover:text-nv-copper-300">
+                                    All trending repositories <ArrowUpRight aria-hidden className="size-4" />
+                                </Link>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {initialPosts.length > 0 && (
+                    <section aria-labelledby="posts-h" className={s.sectionTight}>
+                        <div className={cn(s.wrap, s.split)}>
+                            <div>
+                                <p className={s.kicker}>Insights</p>
+                                <h2 id="posts-h" className={cn(s.h2, "nv-display")}>
+                                    Latest <em>insights</em>
+                                </h2>
+                            </div>
+                            <div>
+                                <Rows>
+                                    {initialPosts.map((post) => (
+                                        <LinkRow key={post.slug} href={`/blog/${post.slug}`} title={post.title} meta={`${post.date} · ${post.category}`} />
+                                    ))}
+                                </Rows>
+                                <Link href="/blog" className="mt-5 inline-flex min-h-11 items-center gap-1 font-medium text-nv-copper-400 hover:text-nv-copper-300">
+                                    All insights <ArrowUpRight aria-hidden className="size-4" />
+                                </Link>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {/* ---------- FAQ teaser ---------- */}
+                <section aria-labelledby="faq-h" className={s.sectionTight}>
+                    <div className={cn(s.wrap, s.split)}>
+                        <div>
+                            <p className={s.kicker}>FAQ</p>
+                            <h2 id="faq-h" className={cn(s.h2, "nv-display")}>
+                                Questions, <em>answered.</em>
+                            </h2>
+                            <Link href="/faq" className="mt-6 inline-flex min-h-11 items-center gap-1 font-medium text-nv-copper-400 hover:text-nv-copper-300">
+                                Read every answer <ArrowUpRight aria-hidden className="size-4" />
+                            </Link>
+                        </div>
+                        <FaqList items={FAQ_TEASER} />
+                    </div>
+                </section>
+
+                {/* ---------- Closing CTA ---------- */}
+                <section aria-labelledby="close-h" className={cn(s.sectionTight, "!pb-24")}>
+                    <div className={s.wrap}>
+                        <div className={s.closer}>
+                            <div aria-hidden className={cn(s.closerGlow, "nv-aurora")} />
+                            <h2 id="close-h" className={cn(s.closerH, "nv-display")}>
+                                Open a repository. <em>Read it.</em>
+                            </h2>
+                            <p className={s.closerText}>No install and no clone. Paste a link and see which files back each answer.</p>
+                            <div className={s.closerActions}>
+                                <button type="button" onClick={focusSearch} className={btnClass("primary", true)}>
+                                    Start analyzing <ArrowRight aria-hidden className="size-4" />
+                                </button>
+                                <Link href="/trending" className={btnClass("secondary", true)}>
+                                    Browse trending
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </motion.div>
+
+            <AnimatePresence>
+                {portal && (
+                    <div
+                        key="portal"
+                        aria-hidden
+                        className={s.portal}
+                        style={{ "--px": `${portal.x}px`, "--py": `${portal.y}px` } as React.CSSProperties}
+                    >
+                        <motion.div className={s.portalWash} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: PORTAL_MS / 1000, ease: [0.23, 1, 0.32, 1] }} />
+                        <motion.div className={s.portalRing} initial={{ scale: 0.02, opacity: 1 }} animate={{ scale: 1, opacity: 0.9 }} transition={{ duration: PORTAL_MS / 1000, ease: [0.23, 1, 0.32, 1] }} />
+                    </div>
+                )}
+            </AnimatePresence>
             <JsonLdScript data={softwareSchema} />
             <JsonLdScript data={faqSchema} />
             <InstallPWA />
-        </main>
+        </SiteChrome>
     );
 }

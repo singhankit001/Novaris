@@ -1,9 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Settings, User, Shield, Bell } from "lucide-react";
 import Image from "next/image";
-import { ComingSoonOverlay } from "@/components/ComingSoonOverlay";
+import { User } from "lucide-react";
+import { getSessionGitHubAuth } from "@/lib/github-api";
 import { buildInvalidSessionSignOutRedirect, getSessionAuthState } from "@/lib/session-guard";
+import MotionSettings from "@/components/Dashboard/MotionSettings";
+import PageHeader from "@/components/Dashboard/PageHeader";
+import { Badge } from "@/components/nv/badge";
+import { Panel } from "@/components/nv/panel";
 
 export default async function SettingsPage() {
     const session = await auth();
@@ -21,85 +25,71 @@ export default async function SettingsPage() {
         redirect("/");
     }
 
+    // The browser session carries no token or scope, so read them from the encrypted cookie on the server.
+    const { accessToken, scope } = await getSessionGitHubAuth();
+    const scopes = (scope ?? "").split(/[\s,]+/).filter(Boolean);
+    const hasPrivateAccess = scopes.includes("repo");
+
     return (
-        <div className="relative min-h-[calc(100vh-10rem)]">
-            <ComingSoonOverlay />
+        <div className="space-y-8">
+            <PageHeader eyebrow="Dashboard" title="Settings" description="Your GitHub connection and the display preferences Novaris can save for you." />
 
-            <div className="space-y-8 opacity-40 grayscale-[0.5] pointer-events-none select-none">
-                <div className="flex items-center gap-3">
-                    <Settings className="w-8 h-8 text-zinc-300" />
-                    <h1 className="text-3xl font-bold">Settings</h1>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2 space-y-6">
-                        {/* Profile Section */}
-                        <div className="rounded-3xl bg-zinc-900 border border-white/5 p-8 flex flex-col md:flex-row items-center gap-6">
-                            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-purple-500/20 shadow-xl">
-                                {user.image ? (
-                                    <Image
-                                        src={user.image}
-                                        alt={user.name || "User"}
-                                        width={96}
-                                        height={96}
-                                        className="object-cover"
-                                    />
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <Panel as="section" className="p-6 sm:p-8 [&>div]:p-0">
+                    <p className="nv-eyebrow">Account</p>
+                    <h2 className="mb-5 nv-display text-nv-title text-nv-ivory-50">GitHub connection</h2>
+                    <div className="flex items-center gap-4">
+                        <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-nv-md border border-nv-graphite-600 bg-nv-graphite-850">
+                            {user.image ? (
+                                <Image src={user.image} alt={`Avatar of ${user.username ?? user.name ?? "your account"}`} width={64} height={64} className="object-cover" />
+                            ) : (
+                                <User aria-hidden className="size-7 text-nv-ivory-300" />
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="truncate text-nv-title text-nv-ivory-50">{user.name ?? user.username ?? "GitHub user"}</p>
+                            {user.username && <p className="truncate font-nv-mono text-nv-small text-nv-ivory-300">@{user.username}</p>}
+                            {user.email && <p className="truncate text-nv-small text-nv-ivory-300">{user.email}</p>}
+                        </div>
+                    </div>
+                    <dl className="mt-6 space-y-5 border-t border-nv-graphite-700 pt-6">
+                        <div>
+                            <dt className="nv-eyebrow">Token in this session</dt>
+                            <dd className="m-0 mt-1 text-nv-body text-nv-ivory-100">
+                                {accessToken ? "Present. It stays on the server and is never sent to your browser." : "Not available. Grant repository access from My repositories to list your repos."}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt className="nv-eyebrow">Granted GitHub scopes</dt>
+                            <dd className="m-0 mt-2">
+                                {scopes.length > 0 ? (
+                                    <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
+                                        {scopes.map((s) => (
+                                            <li key={s}>
+                                                <Badge>{s}</Badge>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 ) : (
-                                    <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-                                        <User className="w-10 h-10 text-zinc-300" />
-                                    </div>
+                                    <span className="text-nv-body text-nv-ivory-200">None recorded for this session.</span>
                                 )}
-                            </div>
-                            <div className="text-center md:text-left flex-1">
-                                <h2 className="text-2xl font-bold mb-1">{user.name}</h2>
-                                <p className="text-zinc-300 mb-4">{user.email}</p>
-                                <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                                    <span className="px-3 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full text-xs font-medium">
-                                        GitHub Connected
-                                    </span>
-                                    <span className="px-3 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-full text-xs font-medium">
-                                        Pro Plan
-                                    </span>
-                                </div>
-                            </div>
+                            </dd>
                         </div>
+                        <div>
+                            <dt className="nv-eyebrow">Private repository access</dt>
+                            <dd className="m-0 mt-1 text-nv-body text-nv-ivory-100">
+                                {hasPrivateAccess ? "Granted (repo scope)." : "Not granted. Only public repositories are listed."}
+                            </dd>
+                        </div>
+                    </dl>
+                    <p className="mt-6 text-nv-small text-nv-ivory-300">Saved scans and their reports expire automatically 7 days after the scan.</p>
+                </Panel>
 
-                        {/* Placeholder Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors cursor-pointer group">
-                                <Shield className="w-6 h-6 text-blue-400 mb-4 group-hover:scale-110 transition-transform" />
-                                <h3 className="font-semibold mb-2">Security</h3>
-                                <p className="text-sm text-zinc-300">Manage your password and security settings.</p>
-                            </div>
-                            <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-colors cursor-pointer group">
-                                <Bell className="w-6 h-6 text-orange-400 mb-4 group-hover:scale-110 transition-transform" />
-                                <h3 className="font-semibold mb-2">Notifications</h3>
-                                <p className="text-sm text-zinc-300">Choose when and how you want to be alerted.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="rounded-2xl bg-gradient-to-br from-purple-600/10 to-blue-600/10 border border-purple-600/20 p-6">
-                            <h3 className="font-bold text-lg mb-2">Preferences</h3>
-                            <p className="text-sm text-zinc-200 mb-6">Customize your Novaris experience.</p>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-zinc-300">Dark Mode</span>
-                                    <div className="w-10 h-5 bg-purple-600 rounded-full flex items-center px-1">
-                                        <div className="w-3 h-3 bg-white rounded-full ml-auto" />
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-between opacity-50">
-                                    <span className="text-sm text-zinc-300">Email Updates</span>
-                                    <div className="w-10 h-5 bg-zinc-700 rounded-full flex items-center px-1">
-                                        <div className="w-3 h-3 bg-white rounded-full" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <Panel as="section" className="p-6 sm:p-8 [&>div]:p-0">
+                    <p className="nv-eyebrow">Preferences</p>
+                    <h2 className="mb-5 nv-display text-nv-title text-nv-ivory-50">Display</h2>
+                    <MotionSettings />
+                </Panel>
             </div>
         </div>
     );

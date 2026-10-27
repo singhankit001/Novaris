@@ -1,10 +1,7 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { getInvalidSessionApiError, getSessionAuthState, getSessionUserId } from "@/lib/session-guard";
-
-type SessionWithAccessToken = {
-    accessToken?: string;
-};
+import { getSessionGitHubAuth } from "@/lib/github-api";
 
 export async function GET() {
     const session = await auth();
@@ -21,22 +18,23 @@ export async function GET() {
         return NextResponse.json(getInvalidSessionApiError(), { status: 401 });
     }
 
-    const accessToken = (session as SessionWithAccessToken).accessToken;
-    // Fall back to the global token if the user hasn't explicitly authorized their own account token
-    // Note: The global token won't have access to the user's private repos, only public ones.
-    const tokenToUse = accessToken || process.env.GITHUB_TOKEN;
-
-    if (!tokenToUse) {
-        return NextResponse.json({ error: "No GitHub token available" }, { status: 500 });
+    // /user/repos lists the token owner's repositories, so only the caller's own token is valid here.
+    // The system token would list the Novaris service account's repositories instead.
+    const { accessToken, scope } = await getSessionGitHubAuth();
+    if (!accessToken) {
+        return NextResponse.json(
+            { error: "GitHub authorization required", code: "GITHUB_TOKEN_MISSING" },
+            { status: 401 }
+        );
     }
 
     try {
         const res = await fetch("https://api.github.com/user/repos?sort=updated&per_page=100", {
             headers: {
-                Authorization: `Bearer ${tokenToUse}`,
+                Authorization: `Bearer ${accessToken}`,
                 Accept: "application/vnd.github.v3+json",
             },
-            next: { revalidate: 60 } // Cache for 1 minute
+            cache: "no-store", // per-user response; must not enter the shared data cache
         });
 
         if (!res.ok) {
@@ -47,9 +45,8 @@ export async function GET() {
         const data: unknown = await res.json();
         const repos = Array.isArray(data) ? data : [];
 
-        // Check if the token we used was the user's specific access token (which implies we requested scopes)
-        // If they have private repos returned, or if they successfully used an access_token, we assume they have private access.
-        const hasPrivateAccess = !!accessToken && repos.length > 0;
+        // Private repositories are only listed when the user granted the `repo` OAuth scope.
+        const hasPrivateAccess = (scope ?? "").split(/[\s,]+/).includes("repo");
 
         return NextResponse.json({
             repos,

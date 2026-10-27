@@ -1,0 +1,52 @@
+/* xyflow theme: ivory canvas, silver nodes, electric-blue selection. */
+.flow {
+  height: clamp(340px, 52vh, 520px);
+  border-radius: var(--nv-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--nv-hairline);
+  background: var(--nv-gradient-aurora), var(--nv-surface);
+}
+.flow :global(.react-flow) {
+  --xy-background-color: transparent;
+  --xy-edge-stroke-default: #9aa6ff;
+  --xy-edge-stroke-width-default: 1.4;
+  --xy-node-border-radius-default: 12px;
+  font-family: var(--nv-font-sans);
+}
+.flow :global(.react-flow__node) {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nv-text);
+  background: var(--nv-gradient-silver);
+  border: 1px solid var(--nv-border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  width: auto;
+  min-width: 96px;
+  max-width: 200px;
+  text-align: left;
+  box-shadow: var(--nv-shadow-card);
+  cursor: pointer;
+}
+.flow :global(.react-flow__node:focus-visible),
+.flow :global(.react-flow__node.selected) {
+  outline: 2px solid var(--nv-copper-400);
+  outline-offset: 2px;
+  border-color: var(--nv-copper-400);
+}
+.flow :global(.react-flow__node.nv-user) {
+  background: var(--nv-gradient-signal);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+  font-size: 13px;
+}
+.flow :global(.react-flow__node.nv-lang) {
+  background: var(--nv-violet-wash);
+  border-color: #cfc0ff;
+  color: var(--nv-violet-600);
+  border-radius: 999px;
+}
+.flow :global(.react-flow__handle) { opacity: 0; pointer-events: none; }
+.flow :global(.react-flow__controls) { box-shadow: var(--nv-shadow-card); border-radius: 10px; overflow: hidden; }
+.flow :global(.react-flow__controls-button) { width: 32px; height: 32px; }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { metadata, livePages } from "./page";
+import { metadata } from "./page";
+import { livePages } from "./live-pages";
 
 describe("explore page", () => {
   it("uses discovery-focused metadata", () => {

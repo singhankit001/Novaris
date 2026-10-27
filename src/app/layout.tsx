@@ -1,31 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
+import { Instrument_Serif, JetBrains_Mono, Sora } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import JsonLd from "./components/json-ld";
 import { Providers } from "@/components/Providers";
 import { getCanonicalSiteUrl } from "@/lib/site-url";
 import CommandPalette from "@/components/CommandPalette";
-import { CursorGlow } from "@/components/CursorGlow";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
+// Novaris type system (DESIGN.md). All three families are SIL Open Font License 1.1.
+const nvSans = Sora({ subsets: ["latin"], variable: "--nv-font-sans-face", display: "swap" });
+const nvMono = JetBrains_Mono({ subsets: ["latin"], variable: "--nv-font-mono-face", display: "swap" });
+const nvSerif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--nv-font-serif-face", display: "swap" });
 
 export const viewport: Viewport = {
-  themeColor: "#09090b",
+  themeColor: "#fafaf7",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 const canonicalSiteUrl = getCanonicalSiteUrl();
@@ -62,7 +52,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "Novaris",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
   openGraph: {
     title: "Novaris",
@@ -110,27 +100,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${plusJakartaSans.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${nvSans.variable} ${nvMono.variable} ${nvSerif.variable}`} suppressHydrationWarning>
       <body
-        className="antialiased font-sans"
+        data-nv-root
+        className="antialiased font-nv-sans bg-nv-graphite-950 text-nv-ivory-100"
         suppressHydrationWarning
       >
         <JsonLd />
         <Providers>
-          <CursorGlow />
           <CommandPalette />
           {children}
         </Providers>
         <Toaster
           position="top-right"
-          theme="dark"
+          theme="light"
           richColors
           closeButton
           toastOptions={{
             style: {
-              background: '#18181b',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#fff',
+              background: 'var(--nv-surface)',
+              border: '1px solid var(--nv-hairline)',
+              boxShadow: 'var(--nv-shadow-popover)',
+              borderRadius: 'var(--nv-radius-md)',
+              color: 'var(--nv-text)',
             },
           }}
         />
