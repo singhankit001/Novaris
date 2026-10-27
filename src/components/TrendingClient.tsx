@@ -1,5 +1,6 @@
 "use client";
 
+import EcosystemDiscovery from "@/components/discovery/EcosystemDiscovery";
 import { useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
@@ -30,6 +31,7 @@ const PAGE_SIZE = 50;
 export default function TrendingClient({ initialRepos, currentTier }: TrendingClientProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+    const [repoSort, setRepoSort] = useState("catalog");
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     const languages = Array.from(new Set(initialRepos.map((r) => r.language).filter((l): l is string => Boolean(l)))).sort();
@@ -43,6 +45,7 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
             Boolean(repo.description?.toLowerCase().includes(needle));
         return matchesSearch && (!selectedLanguage || repo.language === selectedLanguage);
     });
+    filteredRepos.sort((a, b) => repoSort === "stars" ? b.stars - a.stars : repoSort === "name" ? `${a.owner}/${a.repo}`.localeCompare(`${b.owner}/${b.repo}`) : 0);
     const visibleRepos = filteredRepos.slice(0, visibleCount);
     const hasMore = visibleCount < filteredRepos.length;
     const totalStars = filteredRepos.reduce((sum, repo) => sum + repo.stars, 0);
@@ -52,9 +55,9 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
     return (
         <Page wide>
             <PageHeader
-                eyebrow={`Catalog · ${tierLabel}`}
-                title="Trending repositories"
-                lead="Find your next deep dive. Explore the repositories gaining momentum, then uncover how they work."
+                eyebrow={`Developer discovery · ${tierLabel}`}
+                title="The developer ecosystem, in focus."
+                lead="Find your next tool, explore the open-source ecosystem, and understand the code behind it."
             >
                 <nav aria-label="Time window" className={cn(s.seg, "mt-10")}>
                     {TIERS.map((tier) => (
@@ -70,6 +73,9 @@ export default function TrendingClient({ initialRepos, currentTier }: TrendingCl
                 </nav>
             </PageHeader>
 
+            <EcosystemDiscovery />
+            <h2 className="nv-display mb-6 text-nv-display-md">Trending GitHub repositories</h2>
+            <label className="mb-6 flex items-center gap-3 text-nv-small">Repository order<select className="min-h-11 rounded-lg border border-nv-border bg-white px-3" value={repoSort} onChange={e => { setRepoSort(e.target.value); setVisibleCount(PAGE_SIZE); }}><option value="catalog">Catalog order</option><option value="stars">Most stars</option><option value="name">Name A–Z</option></select></label>
             <TrendingStats repos={filteredRepos.length} stars={totalStars} languages={languageCount} />
 
             <div className={s.tools}>
