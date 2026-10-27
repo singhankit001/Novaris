@@ -41,6 +41,9 @@ describe("atomic tool budget", () => {
     beforeEach(() => {
         store.data.clear();
         store.fail = false;
+        // The budget is only enforced with KV configured (or in production); these scenarios model configured KV.
+        process.env.KV_REST_API_URL = "https://kv.test";
+        process.env.KV_REST_API_TOKEN = "test-token";
     });
 
     it("concurrent reservations never grant more than the limit (anonymous limit 10, 5 x 3 units)", async () => {
@@ -82,5 +85,20 @@ describe("atomic tool budget", () => {
         expect((await reserveToolBudget("repo", "anonymous", "anon_1")).status).toBe("unavailable");
         const usage = await getToolBudgetUsage("repo", "anonymous", "anon_1");
         expect(usage).toMatchObject({ remaining: 0, unavailable: true });
+    });
+
+    it("is not enforced outside production when KV is not configured, but still fails closed in production", async () => {
+        delete process.env.KV_REST_API_URL;
+        delete process.env.KV_REST_API_TOKEN;
+        store.fail = true;
+        expect((await reserveToolBudget("repo", "anonymous", "anon_1")).status).toBe("granted");
+        expect(await getToolBudgetUsage("repo", "anonymous", "anon_1")).toMatchObject({ used: 0, remaining: 10 });
+
+        vi.stubEnv("NODE_ENV", "production");
+        try {
+            expect((await reserveToolBudget("repo", "anonymous", "anon_1")).status).toBe("unavailable");
+        } finally {
+            vi.unstubAllEnvs();
+        }
     });
 });

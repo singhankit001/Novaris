@@ -262,6 +262,14 @@ export async function resolveAnonymousConsecutivePaths(
 
 type BudgetActors = string | string[] | undefined;
 
+/**
+ * Same rule as the chat rate limiter: outside production with no KV configured at all (local dev,
+ * tests) the tool budget is not enforced. In production a missing or failing KV fails closed.
+ */
+function isToolBudgetEnforced(): boolean {
+    return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) || process.env.NODE_ENV === "production";
+}
+
 function toBudgetActorList(actorIds: BudgetActors): Array<string | undefined> {
     if (Array.isArray(actorIds)) return actorIds.length > 0 ? actorIds : [undefined];
     return [actorIds];
@@ -277,6 +285,7 @@ export async function getToolBudgetUsage(
     actorIds?: BudgetActors
 ): Promise<ToolBudgetUsage> {
     const limit = getToolBudgetLimit(audience);
+    if (!isToolBudgetEnforced()) return { used: 0, limit, remaining: limit };
     const keys = toBudgetActorList(actorIds).map((actor) => getToolBudgetKey(scope, audience, actor));
     try {
         const values = await Promise.all(keys.map((key) => kv.get<number>(key)));
@@ -344,6 +353,7 @@ export async function reserveToolBudget(
 ): Promise<ToolBudgetReservation> {
     const limit = getToolBudgetLimit(audience);
     const want = Math.max(1, Math.floor(units));
+    if (!isToolBudgetEnforced()) return { status: "granted", reserved: want, settle: async () => {} };
     const keys = toBudgetActorList(actorIds).map((actor) => getToolBudgetKey(scope, audience, actor));
     const grantedByKey: number[] = [];
     try {

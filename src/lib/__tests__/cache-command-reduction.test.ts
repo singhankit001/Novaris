@@ -32,6 +32,9 @@ describe("cache command reduction helpers", () => {
         kvExpireMock.mockReset();
         kvMGetMock.mockReset();
         kvSetExMock.mockReset();
+        // The tool budget is only enforced with KV configured (or in production); model configured KV.
+        process.env.KV_REST_API_URL = "https://kv.test";
+        process.env.KV_REST_API_TOKEN = "test-token";
     });
 
     it("sets tool-budget expiry only on first write of the day key", async () => {
