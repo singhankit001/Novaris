@@ -1,11 +1,8 @@
-import Link from "next/link";
-import Image from "next/image";
 import { getPublishedPosts } from "@/lib/services/blog-service";
 import SiteChrome from "@/components/seo/SiteChrome";
 import { ActionLink, Page, PageHeader } from "@/components/seo/blocks";
-import { cn } from "@/components/nv/cn";
+import { EmptyShelf, FeaturedPost, PostGrid } from "@/components/experiences/blog/post-cards";
 import s from "@/components/seo/seo.module.css";
-import { EmptyState } from "@/components/nv/states";
 import { BlogPost } from "@prisma/client";
 import JsonLdScript from "@/components/JsonLdScript";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
@@ -56,53 +53,22 @@ export default async function BlogIndex() {
         </PageHeader>
 
         {posts.length === 0 ? (
-          <EmptyState
-            title="No posts published yet"
-            action={<ActionLink href="/solutions" variant="primary">Read the solution guides</ActionLink>}
-          >
-            <p>Articles will appear here when they are published. The solution guides cover the same topics in the meantime.</p>
-          </EmptyState>
+          <div>
+            <EmptyShelf />
+            <div className="mt-6">
+              <ActionLink href="/solutions" variant="primary">Read the solution guides</ActionLink>
+            </div>
+          </div>
         ) : (
           <>
-            {featuredPost && (
-              <article className={s.feature}>
-                <div className={s.featureImg}>
-                  <Image src={featuredPost.image} alt="" fill sizes="(min-width: 1024px) 56vw, 100vw" className="object-cover" priority />
-                </div>
-                <div>
-                  <p className={s.articleMeta}>
-                    <span className={s.chip}>{featuredPost.category}</span>
-                    <span className="nv-num">{featuredPost.date}</span>
-                  </p>
-                  <h2 className={cn(s.featureTitle, "nv-display")}>
-                    <Link href={`/blog/${featuredPost.slug}`}>{featuredPost.title}</Link>
-                  </h2>
-                  <p className={cn(s.postExcerpt, "!max-w-[48ch] !text-base")}>{featuredPost.excerpt}</p>
-                  <p className="mt-6 text-sm text-nv-ivory-300">By {featuredPost.author}</p>
-                </div>
-              </article>
-            )}
+            {featuredPost && <FeaturedPost post={featuredPost} />}
 
             {regularPosts.length > 0 && (
               <section aria-labelledby="blog-all-h" className="mt-20">
                 <h2 id="blog-all-h" className="nv-eyebrow mb-6">
                   All posts
                 </h2>
-                <ul className={s.postGrid}>
-                  {regularPosts.map((post, i) => (
-                    <li key={post.slug} className={s.post}>
-                      <span aria-hidden className={cn(s.postNum, "nv-num")}>{String(i + 2).padStart(2, "0")}</span>
-                      <p className={cn(s.articleMeta, "!mb-0 mt-4")}>
-                        <span className="nv-num">{post.date}</span>
-                        <span>{post.category}</span>
-                      </p>
-                      <h3 className={cn(s.postTitle, "nv-display")}>
-                        <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                      </h3>
-                      <p className={s.postExcerpt}>{post.excerpt}</p>
-                    </li>
-                  ))}
-                </ul>
+                <PostGrid posts={regularPosts} />
               </section>
             )}
           </>

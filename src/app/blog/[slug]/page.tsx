@@ -5,6 +5,8 @@ import { ActionLink, H2, LinkRow, Page } from "@/components/seo/blocks";
 import { Breadcrumbs } from "@/components/nv/nav";
 import { cn } from "@/components/nv/cn";
 import s from "@/components/seo/seo.module.css";
+import { ReadingProgress } from "@/components/experiences/blog/reading-progress";
+import { PostArt } from "@/components/experiences/blog/post-art";
 import { EnhancedMarkdown } from "@/components/EnhancedMarkdown";
 import JsonLdScript from "@/components/JsonLdScript";
 import { BlogPost } from "@prisma/client";
@@ -112,6 +114,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <SiteChrome current="/blog">
+      <ReadingProgress targetId="post-body" />
       <JsonLdScript data={blogPostingSchema} />
       <JsonLdScript data={breadcrumbSchema} />
 
@@ -135,11 +138,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </header>
 
           <div className={s.cover}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={post.image} alt="" width={1600} height={800} />
+            {post.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={post.image} alt="" width={1600} height={800} />
+            ) : (
+              <PostArt seed={post.slug} className="size-full" />
+            )}
           </div>
 
-          <div className={cn(s.article, "prose [--tw-prose-body:var(--nv-ivory-200)] [--tw-prose-headings:var(--nv-ivory-50)] [--tw-prose-lead:var(--nv-ivory-200)] [--tw-prose-links:var(--nv-copper-400)] [--tw-prose-bold:var(--nv-ivory-50)] [--tw-prose-counters:var(--nv-ivory-300)] [--tw-prose-bullets:var(--nv-copper-600)] [--tw-prose-hr:var(--nv-graphite-700)] [--tw-prose-quotes:var(--nv-ivory-100)] [--tw-prose-quote-borders:var(--nv-violet-400)] [--tw-prose-captions:var(--nv-ivory-300)] [--tw-prose-code:var(--nv-ivory-100)] [--tw-prose-th-borders:var(--nv-graphite-600)] [--tw-prose-td-borders:var(--nv-graphite-700)] prose-headings:font-nv-display prose-headings:font-semibold prose-headings:tracking-tight")}>
+          <div id="post-body" className={cn(s.article, "prose max-w-[68ch] leading-[1.7] [--tw-prose-body:var(--nv-ivory-200)] [--tw-prose-headings:var(--nv-ivory-50)] [--tw-prose-lead:var(--nv-ivory-200)] [--tw-prose-links:var(--nv-copper-400)] [--tw-prose-bold:var(--nv-ivory-50)] [--tw-prose-counters:var(--nv-ivory-300)] [--tw-prose-bullets:var(--nv-copper-600)] [--tw-prose-hr:var(--nv-graphite-700)] [--tw-prose-quotes:var(--nv-ivory-100)] [--tw-prose-quote-borders:var(--nv-violet-400)] [--tw-prose-captions:var(--nv-ivory-300)] [--tw-prose-code:var(--nv-ivory-100)] [--tw-prose-th-borders:var(--nv-graphite-600)] [--tw-prose-td-borders:var(--nv-graphite-700)] prose-headings:font-nv-display prose-headings:font-semibold prose-headings:tracking-tight")}>
             <EnhancedMarkdown content={post.content} />
           </div>
         </article>

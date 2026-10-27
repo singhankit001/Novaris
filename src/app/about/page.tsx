@@ -4,7 +4,8 @@ import JsonLdScript from "@/components/JsonLdScript";
 import s from "@/components/seo/seo.module.css";
 import { cn } from "@/components/nv/cn";
 import SiteChrome from "@/components/seo/SiteChrome";
-import { ActionLink, BulletList, FaqList, H2, Page, PageHeader, Prose } from "@/components/seo/blocks";
+import { FaqList, H2, Page, PageHeader } from "@/components/seo/blocks";
+import { CubesBackdrop, HowItWorks, Limits, Maker, OpenSourceGlobe } from "@/components/experiences/about/about-parts";
 import { FAQ_PAGE_ITEMS } from "@/lib/faq-data";
 import { getCanonicalSiteUrl } from "@/lib/site-url";
 
@@ -75,76 +76,20 @@ export default function AboutPage() {
   return (
     <SiteChrome>
       <Page wide>
-        <PageHeader
-          crumbs={[{ label: "Home", href: "/" }, { label: "About" }]}
-          eyebrow="Open source · novaris.in"
-          title="About Novaris"
-          lead="Novaris is an open-source web tool that reads public GitHub repositories and developer profiles and answers questions about them, naming the files it used."
-        />
+        <CubesBackdrop>
+          <PageHeader
+            crumbs={[{ label: "Home", href: "/" }, { label: "About" }]}
+            eyebrow="Open source · novaris.in"
+            title="About Novaris"
+            lead="Novaris is an open-source web tool that reads public GitHub repositories and developer profiles and answers questions about them, naming the files it used."
+          />
+        </CubesBackdrop>
 
-        <div className={s.stack}>
-          <section aria-labelledby="ab-does-h" className={s.grid12}>
-            <div className={cn(s.leftWide, s.stickyLeft)}>
-              <H2 id="ab-does-h">What it does</H2>
-            </div>
-            <div className={s.rightFrom7}>
-              <Prose>
-                <p>
-                  You give it a repository URL, <code>owner/repo</code>, or a GitHub username. Novaris fetches public data
-                  through the GitHub API, picks the complete files relevant to your question, and sends them to Google Gemini to
-                  produce an answer, an architecture diagram, or a security review.
-                </p>
-              </Prose>
-              <div className="mt-5">
-                <BulletList
-                  items={[
-                    "Architecture and dependency questions answered from whole files, not fragments.",
-                    "Quick security scans for everyone, deeper scans for signed-in users.",
-                    "Reports you can revisit for 7 days.",
-                  ]}
-                />
-              </div>
-            </div>
-          </section>
-
-          <section aria-labelledby="ab-not-h" className={s.grid12}>
-            <div className={cn(s.leftWide, s.stickyLeft)}>
-              <H2 id="ab-not-h">What it does not do</H2>
-            </div>
-            <div className={s.rightFrom7}>
-              <BulletList
-                items={[
-                  "It does not clone or run your code.",
-                  "It does not rank developers or score people.",
-                  "It cannot guarantee a model answer is correct. Check the cited files.",
-                  "It reads private repositories only when you grant GitHub access.",
-                ]}
-              />
-            </div>
-          </section>
-
-          <section aria-labelledby="ab-who-h" className={s.grid12}>
-            <div className={cn(s.leftWide, s.stickyLeft)}>
-              <H2 id="ab-who-h">Who built it</H2>
-            </div>
-            <div className={s.rightFrom7}>
-              <Prose>
-                <p>
-                  Novaris is built by{" "}
-                  <a href="https://www.linkedin.com/in/singhankit001/" target="_blank" rel="noopener noreferrer">
-                    Ankit Singh
-                  </a>{" "}
-                  (GitHub <a href="https://github.com/singhankit001" target="_blank" rel="noopener noreferrer">@singhankit001</a>), a software developer.
-                  It started as a personal project to understand unfamiliar repositories faster.
-                </p>
-              </Prose>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <ActionLink href="/" variant="primary">Try Novaris</ActionLink>
-                <ActionLink href="https://github.com/singhankit001/novaris" external>View source</ActionLink>
-              </div>
-            </div>
-          </section>
-
+        <div className={cn(s.stack, "mt-16")}>
+          <HowItWorks />
+          <Limits />
+          <OpenSourceGlobe />
+          <Maker />
           <section aria-labelledby="ab-faq-h" className={s.grid12}>
             <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="ab-faq-h">Common questions</H2>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import SiteChrome from "@/components/seo/SiteChrome";
 import { ActionLink, Page, PageHeader } from "@/components/seo/blocks";
+import { BuildingCubes } from "@/components/experiences/coming-soon/building-cubes";
 import { buildOgImageUrl, createSeoMetadata, truncateMetaText } from "@/lib/seo";
 
 function formatFeatureLabel(raw?: string): string {
@@ -58,12 +59,16 @@ export default async function ComingSoonPage({
   return (
     <SiteChrome>
       <Page>
+        <div className="pt-8">
+          <BuildingCubes />
+        </div>
         <PageHeader
+          align="center"
           eyebrow="Roadmap"
           title={`${label} is not available yet`}
           lead="This page is not built yet. The pages that exist today are under Solutions and Insights."
         />
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap justify-center gap-3">
           <ActionLink href="/solutions" variant="primary" large>Explore solutions</ActionLink>
           <ActionLink href="/blog" large>Read insights</ActionLink>
         </div>
