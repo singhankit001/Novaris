@@ -4,20 +4,20 @@ import { cn } from "@/components/nv/cn";
 // Brand artwork ships on a white field; multiply blending drops that field on light surfaces.
 
 /**
- * The Novaris "N" mark, the supplied artwork file used uncropped (public/brand/novaris-n.png, 1254px).
- * The artwork has a wide glow margin, so it is scaled up inside its box to keep the N legible at header sizes.
+ * The Novaris "N" mark (public/brand/novaris-n-mark.png, 4096px): the supplied artwork cropped to a square
+ * centred on the N, sized so the whole letter sits inside the circular frame.
  */
 export function BrandMark({ size = 32, className }: { size?: number; className?: string }) {
   return (
     <span aria-hidden className={cn("relative block shrink-0 overflow-hidden rounded-full", className)} style={{ width: size, height: size }}>
       <Image
-        src="/brand/novaris-n.png"
+        src="/brand/novaris-n-mark.png"
         alt=""
         fill
         sizes={`${size * 3}px`}
         quality={100}
         priority
-        className="scale-[1.4] object-contain mix-blend-multiply"
+        className="object-contain mix-blend-multiply"
       />
     </span>
   );
