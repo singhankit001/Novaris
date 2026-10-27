@@ -25,6 +25,9 @@ export interface SolutionPageProps {
   heroAlign?: "start" | "center";
   /** Route-specific interactive demonstration; replaces the static workflow illustration when present. */
   experience?: ReactNode;
+  /** Replaces the default "how it works" section (title, intro, subsections). */
+  mainSection?: ReactNode;
+  hideCrumbs?: boolean;
 }
 
 /** Shared layout for the three solution landing pages: copy and metadata stay in each route file. */
@@ -36,7 +39,7 @@ export default function SolutionPage(p: SolutionPageProps) {
       ))}
       <Page wide>
         <PageHeader
-          crumbs={[{ label: "Home", href: "/" }, { label: "Solutions", href: "/solutions" }, { label: p.crumbTitle }]}
+          crumbs={p.hideCrumbs ? undefined : [{ label: "Home", href: "/" }, { label: "Solutions", href: "/solutions" }, { label: p.crumbTitle }]}
           eyebrow="Solution"
           title={p.h1}
           lead={p.lead[0]}
@@ -58,6 +61,7 @@ export default function SolutionPage(p: SolutionPageProps) {
         )}
 
         <div className={s.stack}>
+          {p.mainSection ?? (
           <section aria-labelledby="sol-main-h" className={s.grid12}>
             <div className={cn(s.leftWide, s.stickyLeft)}>
               <H2 id="sol-main-h">{p.mainTitle}</H2>
@@ -78,6 +82,7 @@ export default function SolutionPage(p: SolutionPageProps) {
               </div>
             </div>
           </section>
+          )}
 
           <section aria-label="Use cases" className={s.cols2}>
             {p.cards.map((card) => (
