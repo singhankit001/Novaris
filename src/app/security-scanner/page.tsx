@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SolutionPage from "@/components/seo/SolutionPage";
+import { SecurityScannerExperience } from "@/components/experiences/security-scanner/security-scanner-experience";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -82,6 +83,8 @@ const softwareSchema = buildSoftwareApplicationStructuredData({
 export default function SecurityScannerPage() {
   return (
     <SolutionPage
+      heroAlign="start"
+      experience={<SecurityScannerExperience />}
       crumbTitle="Security Scanner"
       h1="AI Security Scanner for Repositories"
       lead={["Novaris helps teams identify and prioritize repository security risks using architecture-aware analysis so remediation work starts with the issues most likely to impact real systems.", "Instead of handling alerts in isolation, teams get context-rich guidance that improves triage confidence, security-to-engineering handoff, and fix execution speed."]}

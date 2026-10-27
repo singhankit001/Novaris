@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SolutionPage from "@/components/seo/SolutionPage";
+import { RepoAnalysisExperience } from "@/components/experiences/repo-analysis/repo-analysis-experience";
 import { buildOgImageUrl, createSeoMetadata } from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
@@ -82,6 +83,8 @@ const softwareSchema = buildSoftwareApplicationStructuredData({
 export default function GitHubRepositoryAnalysisPage() {
   return (
     <SolutionPage
+      heroAlign="start"
+      experience={<RepoAnalysisExperience />}
       crumbTitle="GitHub Repository Analysis"
       h1="GitHub Repository Analysis with Full-Context AI"
       lead={["Novaris helps teams evaluate unfamiliar repositories by mapping architecture, tracing implementation behavior, and surfacing risk hotspots that affect delivery confidence.", "The workflow is designed for practical decisions: whether to adopt a dependency, how to onboard quickly, and where to focus review effort when timelines are tight."]}
