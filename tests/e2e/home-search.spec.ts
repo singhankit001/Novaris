@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const searchInput = (page: import("@playwright/test").Page) =>
-    page.getByRole("textbox", { name: "GitHub URL, username, or repository" });
+    page.getByRole("combobox", { name: "GitHub URL, username, or repository" });
 
 test("suggestion spinner clears when the query is shortened mid-request", async ({ page }) => {
     let releaseSuggestions: () => void = () => {};
