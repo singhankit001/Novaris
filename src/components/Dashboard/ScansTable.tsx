@@ -127,7 +127,7 @@ export function ScansView({ state, retry, showViewAll = false }: { state: ApiSta
     }
 
     return (
-        <div className="space-y-3">
+        <div className="nv-fade space-y-3">
             <div className="hidden md:block">
                 <DataTable caption="Saved security scans" columns={columns} rows={scans} rowKey={(s) => s.id} />
             </div>

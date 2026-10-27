@@ -1,4 +1,5 @@
 import { BarList } from "@/components/nv/charts";
+import { StructureMap } from "@/components/app-fx/StructureMap";
 import { buildTree, summarizeTopLevel } from "./repo-tree";
 
 interface RepoStructureProps {
@@ -26,6 +27,11 @@ export function RepoStructure({ files, hiddenCount }: RepoStructureProps) {
             <div className="relative mt-5">
                 {items.length > 0 ? <BarList caption="Files per top-level directory" items={items} /> : <p className="text-nv-small text-nv-ivory-300">No files to chart.</p>}
                 {omitted > 0 && <p className="mt-3 text-nv-micro text-nv-ivory-300">{omitted} smaller directories are not listed.</p>}
+                {directories.length > 1 && (
+                    <div className="mt-6">
+                        <StructureMap directories={directories} />
+                    </div>
+                )}
             </div>
         </section>
     );

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReportFalsePositiveReason } from "@prisma/client";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Copy, Download, MessageCircle, Printer, Search, Wrench } from "lucide-react";
+import { ChevronDown, Copy, Download, MessageCircle, Printer, Search, Wrench } from "lucide-react";
 import type { StoredScan } from "@/lib/services/scan-storage";
 import type { PriorScanDiff, ReportFindingView } from "@/lib/services/report-service";
 import { getCanonicalSiteUrl } from "@/lib/site-url";
@@ -88,6 +88,7 @@ export function ReportContent({
     const baseUrl = getCanonicalSiteUrl();
     const defaultReportUrl = `${baseUrl}/report/${scan.id}`;
     const [now, setNow] = useState(() => Date.now());
+    const [groupBy, setGroupBy] = useState<"severity" | "file">("severity");
     const [sevFilter, setSevFilter] = useState<SeverityChoice>("all");
     const [feedback, setFeedback] = useState<Feedback | null>(null);
     const [showFixPrompt, setShowFixPrompt] = useState(false);
@@ -121,6 +122,8 @@ export function ReportContent({
     const grouped = SEVERITIES.map((s) => ({ severity: s, views: findingViews.filter((v) => v.finding.severity === s) })).filter((g) => g.views.length > 0);
     const shownCounts = Object.fromEntries(SEVERITIES.map((s) => [s, findingViews.filter((v) => v.finding.severity === s).length])) as Record<Severity, number>;
     const visibleGroups = sevFilter === "all" ? grouped : grouped.filter((g) => g.severity === sevFilter);
+    const filteredViews = sevFilter === "all" ? findingViews : findingViews.filter((v) => v.finding.severity === sevFilter);
+    const fileGroups = [...Map.groupBy(filteredViews, (v) => v.finding.file)].map(([file, views]) => ({ file, views })).sort((x, y) => y.views.length - x.views.length || x.file.localeCompare(y.file));
     const shownTotal = findingViews.length;
     const recordedTotal = scan.summary.total;
     const hiddenCount = Math.max(0, recordedTotal - shownTotal);
@@ -198,6 +201,29 @@ export function ReportContent({
             });
             setFpError(error instanceof Error ? error.message : "Failed to submit the false positive.");
         }
+    }
+
+    function renderCards(views: ReportFindingView[]) {
+        return (
+            <ul className="m-0 list-none space-y-3 p-0">
+                {views.map((view) => {
+                    const key = `${view.fingerprint}:${view.index}`;
+                    return (
+                        <FindingCard
+                            key={key}
+                            view={view}
+                            owner={scan.owner}
+                            repo={scan.repo}
+                            falsePositive={fpStatus[key] ?? "idle"}
+                            onReportFalsePositive={() => {
+                                setFpKey(key);
+                                setFpError(null);
+                            }}
+                        />
+                    );
+                })}
+            </ul>
+        );
     }
 
     return (
@@ -340,38 +366,39 @@ export function ReportContent({
                         <h2 id="findings-h" className="nv-display text-nv-title text-nv-ivory-50">
                             Findings <span className="nv-num text-nv-ivory-300">({shownTotal})</span>
                         </h2>
-                        {shownTotal > 1 && <SeverityFilter counts={shownCounts} value={sevFilter} onChange={setSevFilter} />}
+                        {shownTotal > 1 && <SeverityFilter counts={shownCounts} value={sevFilter} onChange={setSevFilter} groupBy={groupBy} onGroupByChange={setGroupBy} />}
                         {shownTotal === 0 ? (
                             <EmptyState title="No verified findings">
                                 <p>The scanner reported nothing it could verify. That is not proof the code is safe; see the limits above.</p>
                             </EmptyState>
                         ) : (
-                            visibleGroups.map((g) => (
-                                <div key={g.severity} className="space-y-3">
-                                    <h3 className="flex items-center gap-2 text-nv-body font-medium text-nv-ivory-100">
-                                        <StatusPill status={severityStatus[g.severity]}>{severityLabel[g.severity]}</StatusPill>
-                                        <span className="nv-num text-nv-ivory-300">{g.views.length}</span>
-                                    </h3>
-                                    <ul className="m-0 list-none space-y-3 p-0">
-                                        {g.views.map((view) => {
-                                            const key = `${view.fingerprint}:${view.index}`;
-                                            return (
-                                                <FindingCard
-                                                    key={key}
-                                                    view={view}
-                                                    owner={scan.owner}
-                                                    repo={scan.repo}
-                                                    falsePositive={fpStatus[key] ?? "idle"}
-                                                    onReportFalsePositive={() => {
-                                                        setFpKey(key);
-                                                        setFpError(null);
-                                                    }}
-                                                />
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
-                            ))
+                            groupBy === "severity" ? (
+                                visibleGroups.map((g) => (
+                                    <div key={g.severity} className="space-y-3">
+                                        <h3 className="flex items-center gap-2 text-nv-body font-medium text-nv-ivory-100">
+                                            <StatusPill status={severityStatus[g.severity]}>{severityLabel[g.severity]}</StatusPill>
+                                            <span className="nv-num text-nv-ivory-300">{g.views.length}</span>
+                                        </h3>
+                                        {renderCards(g.views)}
+                                    </div>
+                                ))
+                            ) : (
+                                fileGroups.map((g) => (
+                                    <details key={g.file} open className="group/file space-y-3">
+                                        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-nv-body font-medium text-nv-ivory-100 focus-visible:outline-2 focus-visible:outline-nv-copper-400 [&::-webkit-details-marker]:hidden">
+                                            <ChevronDown aria-hidden className="size-4 shrink-0 text-nv-ivory-300 transition-transform duration-150 motion-reduce:transition-none -rotate-90 group-open/file:rotate-0" />
+                                            <span className="min-w-0 break-all font-nv-mono text-nv-small">{g.file}</span>
+                                            <span className="nv-num text-nv-ivory-300">{g.views.length}</span>
+                                            {SEVERITIES.filter((sv) => g.views.some((v) => v.finding.severity === sv)).map((sv) => (
+                                                <StatusPill key={sv} status={severityStatus[sv]}>
+                                                    {severityLabel[sv]} {g.views.filter((v) => v.finding.severity === sv).length}
+                                                </StatusPill>
+                                            ))}
+                                        </summary>
+                                        {renderCards(g.views)}
+                                    </details>
+                                ))
+                            )
                         )}
                     </section>
                 </div>

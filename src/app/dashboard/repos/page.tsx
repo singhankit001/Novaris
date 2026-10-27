@@ -6,6 +6,7 @@ import { signIn, useSession } from "next-auth/react";
 import { GitFork, Lock, RefreshCw, Search, Star } from "lucide-react";
 import PageHeader from "@/components/Dashboard/PageHeader";
 import { useApi } from "@/components/Dashboard/use-api";
+import { RepoRowDetails } from "@/components/app-fx/RepoRowDetails";
 import { Badge } from "@/components/nv/badge";
 import { Button } from "@/components/nv/button";
 import { DataRow } from "@/components/nv/data";
@@ -128,7 +129,7 @@ export default function MyReposPage() {
                         <p>{needle ? "Try a different name or clear the filter." : "GitHub returned no repositories for this account."}</p>
                     </EmptyState>
                 ) : (
-                    <ul className="m-0 list-none overflow-hidden nv-card p-0">
+                    <ul className="nv-fade m-0 list-none overflow-hidden nv-card p-0">
                         {shown.map((repo) => (
                             <li key={repo.full_name}>
                                 <DataRow
@@ -155,6 +156,14 @@ export default function MyReposPage() {
                                             </span>
                                         </span>
                                     }
+                                />
+                                <RepoRowDetails
+                                    fullName={repo.full_name}
+                                    description={repo.description}
+                                    language={repo.language}
+                                    forks={repo.forks_count}
+                                    stars={repo.stargazers_count}
+                                    updatedAt={repo.updated_at}
                                 />
                             </li>
                         ))}

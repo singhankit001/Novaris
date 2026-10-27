@@ -18,10 +18,14 @@ export function SeverityFilter({
     counts,
     value,
     onChange,
+    groupBy,
+    onGroupByChange,
 }: {
     counts: Record<Severity, number>;
     value: SeverityChoice;
     onChange: (next: SeverityChoice) => void;
+    groupBy: "severity" | "file";
+    onGroupByChange: (next: "severity" | "file") => void;
 }) {
     const total = SEVERITIES.reduce((n, s) => n + counts[s], 0);
     const chip = (active: boolean) =>
@@ -43,6 +47,14 @@ export function SeverityFilter({
                     </button>
                 );
             })}
+            <span className="ml-auto inline-flex items-center gap-2 text-nv-small text-nv-ivory-300">
+                Group by
+                {(["severity", "file"] as const).map((g) => (
+                    <button key={g} type="button" aria-pressed={groupBy === g} onClick={() => onGroupByChange(g)} className={chip(groupBy === g)}>
+                        {g === "severity" ? "Severity" : "File"}
+                    </button>
+                ))}
+            </span>
         </div>
     );
 }
