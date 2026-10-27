@@ -2,78 +2,26 @@ import type { ReactNode } from "react";
 import { CubesGrid } from "@/components/fx/scene/cubes-grid";
 import { Globe } from "@/components/fx/scene/globe";
 import { Particles3D } from "@/components/fx/scene/particles-3d";
-import { Timeline } from "@/components/fx/surface/timeline";
-import { ActionLink, BulletList, H2, Prose } from "@/components/seo/blocks";
+import { ActionLink, H2, Prose } from "@/components/seo/blocks";
+import { OpenSourceActivity } from "./open-source-activity";
 
-/** Hero backdrop: pointer-reactive cube field, masked to fade out toward the text column. */
+/**
+ * Hero backdrop: pointer-reactive cube field across the full viewport width, from the very top of the page
+ * (under the floating header) down through the hero. It fades out at the bottom and softens behind the text.
+ */
 export function CubesBackdrop({ children }: { children: ReactNode }) {
   return (
     <div className="relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-10 bottom-0 -z-10 overflow-hidden [mask-image:linear-gradient(to_left,black,transparent_75%)] max-md:opacity-50"
+        className="pointer-events-none absolute -top-[calc(var(--nv-header-h,72px)+64px)] bottom-0 left-1/2 -z-10 w-screen -translate-x-1/2 overflow-hidden [mask-image:linear-gradient(to_bottom,black_72%,transparent)]"
       >
-        <CubesGrid />
+        <div className="absolute inset-0 [mask-image:linear-gradient(to_left,black_30%,rgb(0_0_0/0.28)_78%)] max-md:opacity-60">
+          <CubesGrid />
+        </div>
       </div>
       {children}
     </div>
-  );
-}
-
-export function HowItWorks() {
-  return (
-    <section aria-labelledby="ab-does-h">
-      <H2 id="ab-does-h">What it does</H2>
-      <div className="mt-10 max-w-4xl">
-        <Timeline
-          entries={[
-            {
-              id: "give",
-              label: "Step 1",
-              title: "You point it at GitHub",
-              content: (
-                <Prose>
-                  <p>
-                    You give it a repository URL, <code>owner/repo</code>, or a GitHub username.
-                  </p>
-                </Prose>
-              ),
-            },
-            {
-              id: "fetch",
-              label: "Step 2",
-              title: "It reads whole files",
-              content: (
-                <Prose>
-                  <p>Novaris fetches public data through the GitHub API and picks the complete files relevant to your question.</p>
-                </Prose>
-              ),
-            },
-            {
-              id: "answer",
-              label: "Step 3",
-              title: "You get a cited answer",
-              content: (
-                <>
-                  <Prose>
-                    <p>It sends them to Google Gemini to produce an answer, an architecture diagram, or a security review.</p>
-                  </Prose>
-                  <div className="mt-5 max-w-[var(--nv-measure)]">
-                    <BulletList
-                      items={[
-                        "Architecture and dependency questions answered from whole files, not fragments.",
-                        "Quick security scans for everyone, deeper scans for signed-in users.",
-                        "Reports you can revisit for 7 days.",
-                      ]}
-                    />
-                  </div>
-                </>
-              ),
-            },
-          ]}
-        />
-      </div>
-    </section>
   );
 }
 
@@ -111,9 +59,11 @@ export function OpenSourceGlobe() {
         </Prose>
       </div>
       <figure className="m-0 min-w-0 lg:col-span-5 lg:col-start-8">
-        <Globe className="mx-auto max-w-sm" caption="Illustrative globe with example connection arcs between sample points" />
+        <OpenSourceActivity>
+          <Globe className="mx-auto max-w-sm" caption="Illustrative globe with example connection arcs between sample points" />
+        </OpenSourceActivity>
         <figcaption className="mt-3 text-center text-nv-small text-nv-text-muted">
-          Illustration only. The arcs are examples; they are not users, repositories, or locations.
+          Illustration only. The arcs and labels show the kinds of open-source activity, not real users, repositories, or locations.
         </figcaption>
       </figure>
     </section>
