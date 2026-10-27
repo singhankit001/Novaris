@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { cn } from "@/components/nv/cn";
 import { H2, Prose } from "@/components/seo/blocks";
 import { hasWebGL, useInViewport } from "@/components/fx/scene/shared";

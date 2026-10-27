@@ -2,7 +2,8 @@
 
 import { useRef } from "react";
 import dynamic from "next/dynamic";
-import { useInView, useReducedMotion } from "framer-motion";
+import { useInView } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { GraphList } from "./graph-list";
 import type { ArchitectureGraphProps } from "./graph-types";
 

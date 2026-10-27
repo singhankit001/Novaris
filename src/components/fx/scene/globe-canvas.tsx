@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { GlobeFallback } from "./globe-fallback";
 import { hasWebGL, visibleLoop } from "./shared";
 

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRef, type ReactNode } from "react";
-import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { buttonClasses, type ButtonSize, type ButtonVariant } from "@/components/nv/button-styles";
 import { useFinePointer } from "./hooks";
 

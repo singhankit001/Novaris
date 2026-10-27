@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, type CSSProperties, type ReactNode } from "react";
-import { useInView, useReducedMotion } from "framer-motion";
+import { useInView } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { cn } from "@/components/nv/cn";
 
 export interface OrbitItem {

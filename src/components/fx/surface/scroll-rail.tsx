@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, type RefObject } from "react";
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { cn } from "@/components/nv/cn";
 import { useElementHeight } from "./hooks";
 

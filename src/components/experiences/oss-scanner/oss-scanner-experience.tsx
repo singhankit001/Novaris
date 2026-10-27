@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { Check, GitBranch, Package, Play } from "lucide-react";
 import { cn } from "@/components/nv/cn";
 import { CodeLines } from "@/components/fx/code/code-lines";

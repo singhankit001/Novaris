@@ -1,7 +1,8 @@
 "use client";
 
 import { type ReactNode, useRef } from "react";
-import { type MotionValue, motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { type MotionValue, motion, useScroll, useTransform } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { cn } from "@/components/nv/cn";
 import { useMedia } from "./shared";
 

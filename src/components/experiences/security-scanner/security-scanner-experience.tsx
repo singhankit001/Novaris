@@ -1,7 +1,8 @@
 "use client";
 
 import { Fragment, createRef, useEffect, useRef, useState, type RefObject } from "react";
-import { useInView, useReducedMotion } from "framer-motion";
+import { useInView } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { Check, ChevronLeft, ChevronRight, FileCode2, Pause, Play, RotateCcw } from "lucide-react";
 import { cn } from "@/components/nv/cn";
 import { AnimatedBeam } from "@/components/fx/code/animated-beam";

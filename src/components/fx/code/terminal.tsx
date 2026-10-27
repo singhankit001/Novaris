@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useInView, useReducedMotion } from "framer-motion";
+import { useInView } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { RotateCcw } from "lucide-react";
 import { cn } from "@/components/nv/cn";
 

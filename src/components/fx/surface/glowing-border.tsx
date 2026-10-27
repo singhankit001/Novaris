@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type CSSProperties, type PointerEvent, type ReactNode } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { cn } from "@/components/nv/cn";
 import { useFinePointer } from "./hooks";
 import { RING_MASK } from "./ring-mask";

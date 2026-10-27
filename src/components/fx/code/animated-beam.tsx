@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useState, type RefObject } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 
 /**
  * SVG beam between two DOM nodes inside `containerRef` (which must be position: relative).

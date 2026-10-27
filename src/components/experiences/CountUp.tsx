@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useInView, useReducedMotion } from "framer-motion";
+import { useInView } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 
 /**
  * Counts up to a real value once it scrolls into view, and re-tweens when the value changes.

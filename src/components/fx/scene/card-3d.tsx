@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ElementType, type ReactNode, use, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { cn } from "@/components/nv/cn";
 import { useFinePointer } from "./shared";
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
-import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { FileCode2, Pause, Play } from "lucide-react";
 import { AnimatedBeam } from "@/components/fx/code/animated-beam";
 import { CodeBlock } from "@/components/fx/code/code-block";

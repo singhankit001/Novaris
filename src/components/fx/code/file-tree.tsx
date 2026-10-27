@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, type KeyboardEvent } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/components/fx/use-reduced-motion";
 import { AlertTriangle, ChevronRight, File, Folder, FolderOpen } from "lucide-react";
 import { cn } from "@/components/nv/cn";
 
