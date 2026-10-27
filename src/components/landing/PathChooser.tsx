@@ -1,10 +1,9 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, GitBranch, ShieldAlert, User } from "lucide-react";
-import { BasisTag } from "@/components/nv/badge";
-import { Citation } from "@/components/nv/evidence";
+import DemoVideo, { type DemoName } from "@/components/media/DemoVideo";
 import { cn } from "@/components/nv/cn";
 import s from "./landing.module.css";
 
@@ -14,83 +13,8 @@ interface Path {
   text: string;
   href: string;
   cta: string;
-  pane: ReactNode;
-}
-
-function ProfilePane() {
-  return (
-    <>
-      <div className={s.card}>
-        <div className={s.row}>
-          <span aria-hidden className={s.avatarG}>
-            T
-          </span>
-          <div className="min-w-0">
-            <p className="m-0 font-semibold text-nv-ivory-50">torvalds</p>
-            <p className="m-0 font-mono text-nv-micro text-nv-ivory-300">@torvalds · public profile</p>
-          </div>
-        </div>
-      </div>
-      <p className={s.winCap}>Ask about a developer</p>
-      <div className={s.ask}>Which projects does this developer maintain?</div>
-      <div className={s.ask}>What languages show up in recent commits?</div>
-      <div className={s.ask}>
-        <span className={s.askMono}>@username</span> Summarise how they collaborate.
-      </div>
-    </>
-  );
-}
-
-function RepoPane() {
-  return (
-    <>
-      <div className={s.card}>
-        <ul className={s.mini}>
-          <li className={s.miniItem}>src/</li>
-          <li className={cn(s.miniItem, s.indent1)}>middleware.ts</li>
-          <li className={cn(s.miniItem, s.miniOn, s.indent1)}>lib/auth.ts</li>
-          <li className={cn(s.miniItem, s.indent1)}>app/</li>
-          <li className={cn(s.miniItem, s.indent2)}>page.tsx</li>
-        </ul>
-      </div>
-      <div className={s.claim}>
-        <p className={s.claimText}>Requests pass through a single auth middleware before reaching route handlers.</p>
-        <div className={s.claimMeta}>
-          <BasisTag basis="measured" />
-          <Citation kind="file" target="src/lib/auth.ts" lines="12-40" />
-        </div>
-      </div>
-    </>
-  );
-}
-
-function ScanPane() {
-  return (
-    <>
-      <div className={s.card}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="font-medium text-nv-ivory-50">Scan depth</span>
-          <span className={s.seg2}>
-            <span className={s.seg2On}>Quick · 20 files</span>
-            <span>Deep · 60 files</span>
-          </span>
-        </div>
-      </div>
-      <div className={s.claim}>
-        <div className={s.claimMeta}>
-          <span className={s.sev}>
-            <ShieldAlert aria-hidden className="size-3.5" />
-            Example finding · Medium
-          </span>
-          <BasisTag basis="inferred" />
-        </div>
-        <p className={s.claimText}>User input reaches a query without validation. Verify before acting.</p>
-        <div className={s.claimMeta}>
-          <Citation kind="file" target="src/app/api/search.ts" lines="31-48" />
-        </div>
-      </div>
-    </>
-  );
+  demo: DemoName;
+  demoLabel: string;
 }
 
 const PATHS: Path[] = [
@@ -100,7 +24,8 @@ const PATHS: Path[] = [
     text: "Start from a GitHub username and ask about their public projects and activity.",
     href: `/chat?q=${encodeURIComponent("torvalds")}`,
     cta: "Analyze the example profile",
-    pane: <ProfilePane />,
+    demo: "developer-analysis",
+    demoLabel: "Illustrative developer analysis: a profile is analysed, then languages, repository insights and contributions appear",
   },
   {
     id: "repository",
@@ -108,7 +33,8 @@ const PATHS: Path[] = [
     text: "Paste owner/repo and get answers about architecture, with the files shown.",
     href: `/chat?q=${encodeURIComponent("facebook/react")}`,
     cta: "Analyze the example repository",
-    pane: <RepoPane />,
+    demo: "repo-analysis",
+    demoLabel: "Illustrative repository analysis: a repository is entered, files are highlighted, and an architecture summary with citations appears",
   },
   {
     id: "security",
@@ -116,7 +42,8 @@ const PATHS: Path[] = [
     text: "Quick scans are open to everyone. Deep scans need sign-in.",
     href: `/chat?q=${encodeURIComponent("vercel/next.js")}&prompt=security`,
     cta: "Scan the example repository",
-    pane: <ScanPane />,
+    demo: "security-scan",
+    demoLabel: "Illustrative security scan: stages complete, then findings are grouped by severity",
   },
 ];
 const ICONS = [User, GitBranch, ShieldAlert];
@@ -158,7 +85,7 @@ export default function PathChooser() {
         <div aria-hidden className={cn(s.previewGlow, "nv-aurora")} />
         {PATHS.map((p) => (
           <div key={p.id} id={`${uid}-${p.id}`} role="region" aria-label={`${p.title} preview`} className={cn(s.pane, p.id === active && s.paneOn)} inert={p.id !== active}>
-            {p.pane}
+            <DemoVideo name={p.demo} label={p.demoLabel} active={p.id === active} className="rounded-2xl border border-nv-graphite-700 bg-white shadow-nv-card" />
           </div>
         ))}
         <p className={s.previewNote}>Sample layout with made-up values, not a real result.</p>

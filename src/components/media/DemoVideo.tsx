@@ -24,6 +24,8 @@ interface DemoVideoProps {
     fill?: boolean;
     /** Shows the small "Illustrative" tag. */
     illustrative?: boolean;
+    /** False while the demo is hidden (for example an inactive tab pane): no download, paused. */
+    active?: boolean;
     className?: string;
 }
 
@@ -42,7 +44,7 @@ function wantsStillOnly(): boolean {
  * The video mounts when the box nears the viewport, plays while visible and pauses when not.
  * Reduced motion, reduced data and Save-Data keep the poster and never download the video.
  */
-export default function DemoVideo({ name, label, fill = false, illustrative = true, className }: DemoVideoProps) {
+export default function DemoVideo({ name, label, fill = false, illustrative = true, active = true, className }: DemoVideoProps) {
     const box = useRef<HTMLDivElement>(null);
     const vid = useRef<HTMLVideoElement>(null);
     const [mount, setMount] = useState(false);
@@ -52,7 +54,7 @@ export default function DemoVideo({ name, label, fill = false, illustrative = tr
 
     useEffect(() => {
         const el = box.current;
-        if (!el || wantsStillOnly() || typeof IntersectionObserver === "undefined") return;
+        if (!el || !active || wantsStillOnly() || typeof IntersectionObserver === "undefined") return;
         const near = new IntersectionObserver(
             ([e]) => {
                 if (e?.isIntersecting) {
@@ -64,12 +66,16 @@ export default function DemoVideo({ name, label, fill = false, illustrative = tr
         );
         near.observe(el);
         return () => near.disconnect();
-    }, []);
+    }, [active]);
 
     useEffect(() => {
         const el = box.current;
         const v = vid.current;
         if (!mount || !el || !v) return;
+        if (!active) {
+            v.pause();
+            return;
+        }
         v.muted = true; // React does not reliably reflect the muted attribute
         const vis = new IntersectionObserver(([e]) => {
             if (e?.isIntersecting) v.play().catch(() => {});
@@ -77,7 +83,7 @@ export default function DemoVideo({ name, label, fill = false, illustrative = tr
         });
         vis.observe(el);
         return () => vis.disconnect();
-    }, [mount]);
+    }, [mount, active]);
 
     const a11y = label ? { role: "img" as const, "aria-label": label } : { "aria-hidden": true as const };
     return (
@@ -117,7 +123,7 @@ export default function DemoVideo({ name, label, fill = false, illustrative = tr
                 </video>
             )}
             {illustrative && (
-                <span aria-hidden className="pointer-events-none absolute right-2 bottom-2 rounded-full border border-nv-graphite-700 bg-white/90 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-nv-ivory-300">
+                <span aria-hidden className="pointer-events-none absolute right-1.5 bottom-1.5 rounded-full border border-nv-graphite-700 bg-white/90 px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.1em] text-nv-ivory-300">
                     Illustrative
                 </span>
             )}
