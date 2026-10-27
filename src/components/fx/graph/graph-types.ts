@@ -33,6 +33,12 @@ export interface ArchitectureGraphProps {
   /** Zoom/fit controls. */
   controls?: boolean;
   className?: string;
+  /** Node shown as selected. */
+  selectedId?: string | null;
+  /** Click or Enter on a node. Makes nodes act as buttons. */
+  onSelect?: (id: string) => void;
+  /** When set, nodes outside the list dim and edges between listed nodes take the accent colour with a moving packet. */
+  highlightIds?: string[];
 }
 
 export const KIND_LABEL: Record<ArchKind, string> = {

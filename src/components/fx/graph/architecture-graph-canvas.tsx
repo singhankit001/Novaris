@@ -27,9 +27,12 @@ interface NodeData extends Record<string, unknown> {
   kind: ArchKind;
   detail?: string;
   severity?: Severity;
+  dim?: boolean;
 }
 interface EdgeData extends Record<string, unknown> {
   packet: boolean;
+  hot: boolean;
+  dim: boolean;
 }
 
 const ICON = { module: Boxes, file: FileCode2, service: Server, external: Cloud, finding: AlertTriangle };
@@ -52,7 +55,8 @@ function NovarisNode({ data, selected }: NodeProps<Node<NodeData>>) {
   return (
     <div
       className={cn(
-        "w-[11.5rem] rounded-nv-sm border px-3 py-2 font-nv-sans shadow-nv-card",
+        "w-[11.5rem] rounded-nv-sm border px-3 py-2 font-nv-sans shadow-nv-card transition-opacity",
+        data.dim && "opacity-40",
         KIND_CLS[data.kind],
         data.kind === "finding" && data.severity && SEV[data.severity],
         selected && "outline outline-2 outline-nv-copper-400",
@@ -77,7 +81,11 @@ function FlowEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targ
   const [path, lx, ly] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
   return (
     <>
-      <BaseEdge id={id} path={path} style={{ stroke: "var(--nv-graphite-500)", strokeWidth: 1.5 }} />
+      <BaseEdge
+        id={id}
+        path={path}
+        style={{ stroke: data?.hot ? "var(--nv-copper-400)" : "var(--nv-graphite-500)", strokeWidth: data?.hot ? 2.5 : 1.5, opacity: data?.dim ? 0.35 : 1 }}
+      />
       {data?.packet ? (
         <circle r={3.5} fill="var(--nv-copper-400)">
           <animateMotion dur="3.2s" repeatCount="indefinite" path={path} />
@@ -101,12 +109,14 @@ const nodeTypes: NodeTypes = { module: NovarisNode, file: NovarisNode, service: 
 const edgeTypes: EdgeTypes = { flow: FlowEdge };
 
 /** @xyflow/react canvas with Novaris node/edge types. Loaded on demand by ArchitectureGraph. */
-export default function ArchitectureGraphCanvas({ nodes, edges, label, height = 420, controls = true, className, animate }: ArchitectureGraphProps & { animate: boolean }) {
+export default function ArchitectureGraphCanvas({ nodes, edges, label, height = 420, controls = true, className, animate, selectedId, onSelect, highlightIds }: ArchitectureGraphProps & { animate: boolean }) {
+  const lit = highlightIds ? new Set(highlightIds) : null;
   const rfNodes: Node<NodeData>[] = nodes.map((n) => ({
     id: n.id,
     type: n.kind,
     position: { x: n.x, y: n.y },
-    data: { label: n.label, kind: n.kind, detail: n.detail, severity: n.severity },
+    selected: n.id === selectedId,
+    data: { label: n.label, kind: n.kind, detail: n.detail, severity: n.severity, dim: !!lit && !lit.has(n.id) },
     ariaLabel: `${KIND_LABEL[n.kind]} ${n.label}${n.severity ? `, ${n.severity} severity` : ""}${n.detail ? `, ${n.detail}` : ""}`,
   }));
   const rfEdges: Edge<EdgeData>[] = edges.map((e) => ({
@@ -115,7 +125,11 @@ export default function ArchitectureGraphCanvas({ nodes, edges, label, height = 
     target: e.to,
     type: "flow",
     label: e.label,
-    data: { packet: animate && !!e.animated },
+    data: {
+      packet: animate && (!lit ? !!e.animated : lit.has(e.from) && lit.has(e.to)),
+      hot: !!lit && lit.has(e.from) && lit.has(e.to),
+      dim: !!lit && !(lit.has(e.from) && lit.has(e.to)),
+    },
   }));
   return (
     <div style={{ height }} role="group" aria-label={label} className={cn("overflow-hidden rounded-nv-md border border-nv-graphite-700 bg-nv-graphite-850", className)}>
@@ -128,6 +142,7 @@ export default function ArchitectureGraphCanvas({ nodes, edges, label, height = 
         fitViewOptions={{ padding: 0.15 }}
         minZoom={0.3}
         maxZoom={1.6}
+        onNodeClick={onSelect ? (_, node) => onSelect(node.id) : undefined}
         nodesDraggable={false}
         nodesConnectable={false}
         edgesFocusable={false}
