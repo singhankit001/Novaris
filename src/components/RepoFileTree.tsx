@@ -141,7 +141,7 @@ export function RepoFileTree({ files, onOpenFile, className }: RepoFileTreeProps
                 return activate(row.node.path, isFolder);
         }
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            const now = Date.now();
+            const now = e.timeStamp;
             typed.current = { text: now - typed.current.at > 700 ? e.key : typed.current.text + e.key, at: now };
             const hit = typeAheadIndex(rows, typed.current.text.length > 1 ? activeIndex - 1 : activeIndex, typed.current.text);
             if (hit >= 0) moveTo(hit);

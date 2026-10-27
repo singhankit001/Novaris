@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
+    // Vendored, minified libraries used only by the demo-video compositions.
+    "video/shared/*.min.js",
     "build/**",
     "coverage/**",
     "next-env.d.ts",

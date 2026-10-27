@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import type { ModelPreference } from "@/lib/ai-client";
 import type { ChatMessageBase, MessageFailure, ThinkingChatMessage } from "@/lib/chat-types";
 import { copyChatMessageContent, exportChatMessages } from "@/lib/chat-message-actions";
@@ -116,16 +116,20 @@ function failureFromRun(run: RunSnapshot): MessageFailure {
 
 export function useAnalysisChat<M extends ThinkingChatMessage>(config: AnalysisChatConfig<M>) {
     const cfg = useRef(config);
-    cfg.current = config;
 
     const welcomeMessage = (): M => ({ id: "welcome", role: "model", content: config.welcome }) as M;
     const [messages, setMessages] = useState<M[]>(() => [welcomeMessage()]);
     const messagesRef = useRef(messages);
-    messagesRef.current = messages;
 
     const [machine, dispatch] = useReducer(analysisReducer, initialAnalysisState);
     const machineRef = useRef<AnalysisState>(machine);
-    machineRef.current = machine;
+
+    // Latest-value refs for callbacks; updated after every commit, before any event handler runs.
+    useLayoutEffect(() => {
+        cfg.current = config;
+        messagesRef.current = messages;
+        machineRef.current = machine;
+    });
 
     const [initialized, setInitialized] = useState(false);
     const [resuming, setResuming] = useState(false);
