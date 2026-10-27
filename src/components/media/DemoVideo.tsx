@@ -25,6 +25,8 @@ interface DemoVideoProps {
     fill?: boolean;
     /** Shows the small "Illustrative" tag. */
     illustrative?: boolean;
+    /** Corner for the tag; pick the one the demo's own UI leaves empty. */
+    tagCorner?: "bottom-right" | "top-left";
     /** False while the demo is hidden (for example an inactive tab pane): no download, paused. */
     active?: boolean;
     className?: string;
@@ -45,7 +47,7 @@ function wantsStillOnly(): boolean {
  * The video mounts when the box nears the viewport, plays while visible and pauses when not.
  * Reduced motion, reduced data and Save-Data keep the poster and never download the video.
  */
-export default function DemoVideo({ name, label, fill = false, illustrative = true, active = true, className }: DemoVideoProps) {
+export default function DemoVideo({ name, label, fill = false, illustrative = true, tagCorner = "bottom-right", active = true, className }: DemoVideoProps) {
     const box = useRef<HTMLDivElement>(null);
     const vid = useRef<HTMLVideoElement>(null);
     const [mount, setMount] = useState(false);
@@ -124,7 +126,7 @@ export default function DemoVideo({ name, label, fill = false, illustrative = tr
                 </video>
             )}
             {illustrative && (
-                <span aria-hidden className="pointer-events-none absolute right-1.5 bottom-1.5 rounded-full border border-nv-graphite-700 bg-white/90 px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.1em] text-nv-ivory-300">
+                <span aria-hidden className={cn("pointer-events-none absolute rounded-full", tagCorner === "top-left" ? "top-1.5 left-1.5" : "right-1.5 bottom-1.5", "border border-nv-graphite-700 bg-white/90 px-1.5 py-px font-mono text-[9px] uppercase tracking-[0.1em] text-nv-ivory-300")}>
                     Illustrative
                 </span>
             )}

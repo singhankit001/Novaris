@@ -360,8 +360,8 @@ export default function HomeClient({
                                                     </div>
                                                 </div>
                                             </div>
-                                            <DemoVideo name="ai-chat" fill label="Illustrative chat: a question, files read, and an answer with cited sources" className="hidden min-[1100px]:block rounded-2xl border border-nv-graphite-700 bg-white" />
-                                            <DemoVideo name="ai-chat-narrow" fill label="Illustrative chat: a question, files read, and an answer with cited sources" className="min-[1100px]:hidden rounded-2xl border border-nv-graphite-700 bg-white" />
+                                            <DemoVideo name="ai-chat" fill tagCorner="top-left" label="Illustrative chat: a question, files read, and an answer with cited sources" className="hidden min-[1100px]:block rounded-2xl border border-nv-graphite-700 bg-white" />
+                                            <DemoVideo name="ai-chat-narrow" fill tagCorner="top-left" label="Illustrative chat: a question, files read, and an answer with cited sources" className="min-[1100px]:hidden rounded-2xl border border-nv-graphite-700 bg-white" />
                                         </div>
                                     </div>
                                     <div className={s.winCol}>
