@@ -15,16 +15,20 @@ const adapter: Adapter = {
         prismaAdapter.linkAccount!({ ...account, access_token: undefined, refresh_token: undefined, id_token: undefined }),
 };
 
+// Sign-in only needs AUTH_SECRET and the GitHub OAuth app. Without a database, users still sign in
+// (the session id is the GitHub account id); features that store data report storage as unavailable.
+const hasDatabase = Boolean(process.env.DATABASE_URL);
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
-    adapter,
+    adapter: hasDatabase ? adapter : undefined,
     session: {
         strategy: "jwt",
     },
     callbacks: {
         ...authConfig.callbacks,
         async signIn({ user, profile }) {
-            if (user?.id && user?.email) {
+            if (hasDatabase && user?.id && user?.email) {
                 const username = profile?.login || user.name || user.email.split("@")[0];
                 queueWelcomeEmailDelivery({
                     userId: user.id,
@@ -35,7 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 });
             }
 
-            if (user?.id && profile?.login) {
+            if (hasDatabase && user?.id && profile?.login) {
                 await prisma.user
                     .update({
                         where: { id: user.id },

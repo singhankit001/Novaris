@@ -56,6 +56,8 @@ const authConfig: NextAuthConfig = {
     },
     pages: {
         signIn: "/",
+        // Sign-in failures land on the homepage, which explains them (HomeClient).
+        error: "/",
     },
 };
 

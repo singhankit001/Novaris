@@ -12,6 +12,9 @@ Tick each row when set in the target environment.
 | [ ] | `NEXTAUTH_SECRET` | Optional (legacy fallback for `AUTH_SECRET`) | `src/lib/github-api.ts`, `src/lib/services/scan-share-links.ts` | Used only when `AUTH_SECRET` is unset | Nothing if `AUTH_SECRET` is set |
 | [ ] | `AUTH_GITHUB_ID` | Required | `src/lib/auth.config.ts` | GitHub OAuth app client id | GitHub sign-in |
 | [ ] | `AUTH_GITHUB_SECRET` | Required | `src/lib/auth.config.ts` | GitHub OAuth app client secret | GitHub sign-in |
+| [ ] | `AUTH_TRUST_HOST` | Required when self-hosting (`next start`, Docker); Vercel sets it implicitly | Auth.js | Lets Auth.js trust the request host behind a proxy | Every auth request fails with `UntrustedHost` |
+
+GitHub OAuth app: one per environment (GitHub allows one callback URL per OAuth app). Callback URL is `<site origin>/api/auth/callback/github`, for example `https://novaris.in/api/auth/callback/github` or `http://localhost:3000/api/auth/callback/github`. Sign-in works without `DATABASE_URL` (no accounts are stored); dashboard history, scans and reports need the database.
 | [ ] | `NEXT_PUBLIC_APP_URL` | Required in production | `src/lib/site-url.ts` | Canonical site URL (links, sitemap, metadata, emails) | Wrong canonical and absolute URLs |
 | [ ] | `GITHUB_TOKEN` | Required | `src/lib/github.ts`, `src/lib/github-api.ts`, `scripts/fetch-top-repos.ts`, `scripts/fetch-trending-repos.mjs` | Server GitHub API token for repo reads and catalog refresh | Repo analysis for anonymous users, catalog refresh (the workflow supplies its own) |
 | [ ] | `NOVARIS_GITHUB_TOKEN` | Optional | `src/lib/github-api.ts` | Alternate app-level GitHub token | Falls back to `GITHUB_TOKEN` |

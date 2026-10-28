@@ -85,6 +85,18 @@ function MiniDiagram({ className }: { className?: string }) {
     );
 }
 
+
+/** Auth.js sends `?error=<code>` here when GitHub sign-in fails. */
+function describeSignInError(code: string): { title: string; body: string } {
+    if (code === "AccessDenied") {
+        return { title: "GitHub sign-in was cancelled", body: "Authorize the Novaris app on GitHub to sign in." };
+    }
+    if (code === "Configuration") {
+        return { title: "GitHub sign-in is not available right now", body: "The server's sign-in setup is incomplete. Try again later." };
+    }
+    return { title: "GitHub sign-in did not complete", body: "Start sign-in again. If it keeps failing, clear this site's cookies and retry." };
+}
+
 export default function HomeClient({
     initialPosts = [],
     weeklyTrending = [],
@@ -107,7 +119,9 @@ export default function HomeClient({
     const reduce = useReducedMotion();
     const searchRef = useRef<HTMLDivElement>(null);
     const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
-    const hasInvalidSessionError = searchParams.get("error") === INVALID_SESSION_ERROR_PARAM;
+    const authError = searchParams.get("error");
+    const hasInvalidSessionError = authError === INVALID_SESSION_ERROR_PARAM;
+    const signInFailure = authError && !hasInvalidSessionError ? describeSignInError(authError) : null;
 
     const [trendingTier, setTrendingTier] = useState<"weekly" | "monthly">("weekly");
     const trendingRepos = trendingTier === "weekly" ? weeklyTrending : monthlyTrending;
@@ -192,6 +206,12 @@ export default function HomeClient({
                         {hasInvalidSessionError && (
                             <Notice tone="warning" title="Your session could not be validated" className="mx-auto mt-6 max-w-xl text-left">
                                 Sign in again to continue.
+                            </Notice>
+                        )}
+
+                        {signInFailure && (
+                            <Notice tone="warning" title={signInFailure.title} className="mx-auto mt-6 max-w-xl text-left">
+                                {signInFailure.body}
                             </Notice>
                         )}
 
