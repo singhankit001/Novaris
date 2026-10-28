@@ -181,7 +181,8 @@ function buildConfidenceRationale(finding: SecurityFinding): string {
 }
 
 export function findingFingerprint(finding: SecurityFinding): string {
-    const descriptionSignature = normalizeToken(finding.description).slice(0, 120);
+    // Line references are dropped so the fingerprint survives code moving up or down the file.
+    const descriptionSignature = normalizeToken(finding.description.replace(/\b(?:at |on )?lines?\s+\d+(?:\s*[-–]\s*\d+)?/gi, "")).slice(0, 120);
     return [
         normalizeToken(finding.type),
         normalizeToken(finding.file),

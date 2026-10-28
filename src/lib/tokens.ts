@@ -91,3 +91,11 @@ export function getRateLimitErrorMessage(error: unknown): string {
     }
     return 'Rate limit exceeded. Please try again shortly.';
 }
+
+/** "12| code" prefixes give the model real line numbers to cite. */
+export function numberLines(content: string): string {
+    return content
+        .split("\n")
+        .map((line, index) => `${index + 1}| ${line}`)
+        .join("\n");
+}

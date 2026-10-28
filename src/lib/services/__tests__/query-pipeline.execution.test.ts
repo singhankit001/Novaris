@@ -1,21 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { executeRepoQuery, executeRepoQueryStream } from "@/lib/services/query-pipeline";
+import { describe, expect, it, vi } from "vitest";
+import { executeRepoQueryStream, numberLines } from "@/lib/services/query-pipeline";
 import type { StreamUpdate } from "@/lib/streaming-types";
 
-const {
-    getCachedRepoQueryAnswerMock,
-    cacheRepoQueryAnswerMock,
-    getLatestRepoQueryAnswerMock,
-} = vi.hoisted(() => ({
-    getCachedRepoQueryAnswerMock: vi.fn(),
-    cacheRepoQueryAnswerMock: vi.fn(),
-    getLatestRepoQueryAnswerMock: vi.fn(),
-}));
-
 vi.mock("@/lib/cache", () => ({
-    getCachedRepoQueryAnswer: getCachedRepoQueryAnswerMock,
-    cacheRepoQueryAnswer: cacheRepoQueryAnswerMock,
-    getLatestRepoQueryAnswer: getLatestRepoQueryAnswerMock,
+    resolveAnonymousConsecutivePaths: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/gemini", () => ({
@@ -25,127 +13,86 @@ vi.mock("@/lib/gemini", () => ({
 
 vi.mock("@/lib/github", () => ({
     getFileContentBatch: vi.fn(),
+    getFileContentBatchWithStats: vi.fn(),
 }));
 
+async function run(params: Parameters<typeof executeRepoQueryStream>[0], deps: Parameters<typeof executeRepoQueryStream>[1]) {
+    const updates: StreamUpdate[] = [];
+    for await (const update of executeRepoQueryStream(params, deps)) updates.push(update);
+    return updates;
+}
+
 describe("executeRepoQueryStream", () => {
-    beforeEach(() => {
-        getCachedRepoQueryAnswerMock.mockReset();
-        cacheRepoQueryAnswerMock.mockReset();
-        getLatestRepoQueryAnswerMock.mockReset();
-    });
-
-    it("short-circuits when a latest cached answer exists", async () => {
-        getLatestRepoQueryAnswerMock.mockResolvedValue("recent answer");
-
-        const updates: StreamUpdate[] = [];
-        for await (const update of executeRepoQueryStream({
-            query: "what does this repo do?",
-            owner: "acme",
-            repo: "widget",
-            filePaths: ["src/index.ts"],
-        })) {
-            updates.push(update);
-        }
-
-        expect(updates).toEqual([
-            { type: "status", message: "Using cached answer...", progress: 95 },
-            { type: "content", text: "recent answer", append: true },
-            { type: "complete", relevantFiles: [] },
-        ]);
-    });
-});
-
-describe("executeRepoQuery", () => {
-    beforeEach(() => {
-        getCachedRepoQueryAnswerMock.mockReset();
-        cacheRepoQueryAnswerMock.mockReset();
-        getLatestRepoQueryAnswerMock.mockReset();
-    });
-
-    it("returns cached answer when selected-file cache hit exists", async () => {
-        getLatestRepoQueryAnswerMock.mockResolvedValue(null);
-        getCachedRepoQueryAnswerMock.mockResolvedValue("cached-by-selection");
-
-        const analyzeFiles = vi.fn().mockResolvedValue(["src/index.ts"]);
-
-        const result = await executeRepoQuery(
-            {
-                query: "explain architecture",
-                owner: "acme",
-                repo: "widget",
-                filePaths: ["src/index.ts", "public/logo.png"],
-            },
-            { analyzeFiles }
-        );
-
-        expect(result).toEqual({
-            answer: "cached-by-selection",
-            relevantFiles: ["src/index.ts"],
+    it("sends numbered file content so cited line numbers are real", async () => {
+        const streamAnswer = vi.fn(async function* () {
+            yield "answer";
         });
-        expect(cacheRepoQueryAnswerMock).not.toHaveBeenCalled();
+        await run(
+            { query: "what is value?", owner: "acme", repo: "widget", filePaths: ["src/core.ts"] },
+            {
+                analyzeFiles: vi.fn().mockResolvedValue(["src/core.ts"]),
+                fetchFiles: vi.fn().mockResolvedValue([{ path: "src/core.ts", content: "import x from 'y';\nexport const value = 1;" }]),
+                streamAnswer,
+            }
+        );
+        const context = (streamAnswer.mock.calls[0] as unknown[])[1] as string;
+        expect(context).toContain("--- FILE: src/core.ts ---\n1| import x from 'y';\n2| export const value = 1;");
     });
 
-    it("streams and caches a fresh answer when no cache hit exists", async () => {
-        getLatestRepoQueryAnswerMock.mockResolvedValue(null);
-        getCachedRepoQueryAnswerMock.mockResolvedValue(null);
-
-        const analyzeFiles = vi.fn().mockResolvedValue(["src/core.ts"]);
-        const fetchFiles = vi.fn().mockResolvedValue([
-            { path: "src/core.ts", content: "export const value = 1;" },
-        ]);
-        const streamAnswer = async function* () {
-            yield "First ";
-            yield "Second";
+    it("answers every question afresh instead of replaying a cached answer for the same text", async () => {
+        const streamAnswer = vi.fn(async function* () {
+            yield "fresh";
+        });
+        const deps = {
+            analyzeFiles: vi.fn().mockResolvedValue([]),
+            fetchFiles: vi.fn().mockResolvedValue([]),
+            streamAnswer,
         };
+        await run({ query: "explain more", owner: "acme", repo: "widget", filePaths: [] }, deps);
+        await run({ query: "explain more", owner: "acme", repo: "widget", filePaths: [] }, deps);
+        expect(streamAnswer).toHaveBeenCalledTimes(2);
+    });
 
-        const result = await executeRepoQuery(
-            {
-                query: "summarize core logic",
-                owner: "acme",
-                repo: "widget",
-                filePaths: ["src/core.ts"],
-            },
-            { analyzeFiles, fetchFiles, streamAnswer }
-        );
-
-        expect(result).toEqual({
-            answer: "First Second",
-            relevantFiles: ["src/core.ts"],
+    it("skips a file over the token budget but keeps smaller files after it", async () => {
+        const streamAnswer = vi.fn(async function* () {
+            yield "ok";
         });
-        expect(cacheRepoQueryAnswerMock).toHaveBeenCalledWith(
-            "acme",
-            "widget",
-            "summarize core logic",
-            ["src/core.ts"],
-            "First Second",
-            undefined
+        const huge = "x ".repeat(300_000);
+        await run(
+            { query: "q", owner: "acme", repo: "widget", filePaths: ["big.txt", "small.ts"] },
+            {
+                analyzeFiles: vi.fn().mockResolvedValue(["big.txt", "small.ts"]),
+                fetchFiles: vi.fn().mockResolvedValue([
+                    { path: "big.txt", content: huge },
+                    { path: "small.ts", content: "export {};" },
+                ]),
+                streamAnswer,
+            }
         );
+        const context = (streamAnswer.mock.calls[0] as unknown[])[1] as string;
+        expect(context).toContain("--- FILE: small.ts ---");
+        expect(context).not.toContain("--- FILE: big.txt ---");
+        expect(context).toContain("Not loaded (over the");
     });
 
     it("passes disableToolCalls to the answer stream dependency", async () => {
-        getLatestRepoQueryAnswerMock.mockResolvedValue(null);
-        getCachedRepoQueryAnswerMock.mockResolvedValue(null);
-
-        const analyzeFiles = vi.fn().mockResolvedValue(["src/core.ts"]);
-        const fetchFiles = vi.fn().mockResolvedValue([
-            { path: "src/core.ts", content: "export const value = 1;" },
-        ]);
         const streamAnswer = vi.fn(async function* () {
             yield "No-tool response";
         });
-
-        await executeRepoQuery(
+        await run(
+            { query: "summarize core logic", owner: "acme", repo: "widget", filePaths: ["src/core.ts"], disableToolCalls: true },
             {
-                query: "summarize core logic",
-                owner: "acme",
-                repo: "widget",
-                filePaths: ["src/core.ts"],
-                disableToolCalls: true,
-            },
-            { analyzeFiles, fetchFiles, streamAnswer }
+                analyzeFiles: vi.fn().mockResolvedValue(["src/core.ts"]),
+                fetchFiles: vi.fn().mockResolvedValue([{ path: "src/core.ts", content: "export const value = 1;" }]),
+                streamAnswer,
+            }
         );
-
-        expect(streamAnswer).toHaveBeenCalled();
         expect((streamAnswer.mock.calls[0] as unknown[])?.[6]).toBe(true);
+    });
+});
+
+describe("numberLines", () => {
+    it("prefixes 1-based line numbers", () => {
+        expect(numberLines("a\nb")).toBe("1| a\n2| b");
     });
 });
