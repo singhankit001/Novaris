@@ -37,6 +37,15 @@ export const RATE_LIMIT_FIX_MERMAID: RateLimitPolicy = {
     failClosed: true,
 };
 
+/** Anonymous GitHub lookups share one system token (5000 requests/hour). */
+export const RATE_LIMIT_GITHUB: RateLimitPolicy = {
+    route: "github",
+    actorLimit: 40,
+    ipLimit: 120,
+    windowSeconds: 60,
+    failClosed: false,
+};
+
 let loggedLimiterFailure = false;
 
 export function resetRateLimiterLogStateForTests(): void {

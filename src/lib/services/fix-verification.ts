@@ -37,6 +37,16 @@ export interface FixVerificationDeps {
     }>;
 }
 
+function normalizePath(path: string): string {
+    return path.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/** findingFingerprint() puts the normalized file path in the second segment. */
+function fingerprintFile(fingerprint: string): string | null {
+    const file = fingerprint.split("|")[1];
+    return file ? file : null;
+}
+
 function asStringArray(value: unknown): string[] {
     if (!Array.isArray(value)) return [];
     return value.filter((item): item is string => typeof item === "string");
@@ -59,7 +69,17 @@ async function runTargetedRescan(params: {
             .map((node) => [node.path, node.sha])
     );
 
-    const targetPaths = params.changedFiles.filter((path) => blobMap.has(path));
+    // The finding's own file is always rescanned: a run whose changedFiles omit it cannot close it.
+    const findingFile = fingerprintFile(params.findingFingerprint);
+    if (!findingFile) {
+        return { passed: false, findingCount: 0, findings: [] };
+    }
+    const findingPath = [...blobMap.keys()].find((path) => normalizePath(path) === findingFile);
+    if (!findingPath) {
+        // The file no longer exists on the default branch, so the finding cannot recur there.
+        return { passed: true, findingCount: 0, findings: [] };
+    }
+    const targetPaths = [...new Set([findingPath, ...params.changedFiles.filter((path) => blobMap.has(path))])];
     if (targetPaths.length === 0) {
         return {
             passed: false,
@@ -100,7 +120,8 @@ async function runTargetedRescan(params: {
         findings: detection.findings,
     });
 
-    const hasFingerprint = verification.verifiedFindings.some(
+    // Raw detections count too: a finding the verifier hid or could not adjudicate is not fixed.
+    const hasFingerprint = [...detection.findings, ...verification.verifiedFindings, ...verification.hiddenFindings].some(
         (finding) => buildFindingFingerprint(finding) === params.findingFingerprint
     );
 
@@ -128,7 +149,7 @@ async function runFallbackFullRescan(params: {
         aiAssist: "off",
     });
     const full = await runSecurityScan(params.owner, params.repo, files, config);
-    const hasFingerprint = full.findings.some(
+    const hasFingerprint = [...full.findings, ...(full.hiddenFindings ?? [])].some(
         (finding) => buildFindingFingerprint(finding) === params.findingFingerprint
     );
 

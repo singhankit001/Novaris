@@ -45,17 +45,70 @@ function isRateLimited(response: Response): boolean {
   return response.status === 429 || (response.status === 403 && response.headers.get("x-ratelimit-remaining") === "0");
 }
 
+const PUBLIC_VISIBILITY_TTL_MS = 10 * 60 * 1000;
+const publicRepoChecks = new Map<string, number>();
+
+function notFoundResponse(): Response {
+  return new Response(JSON.stringify({ message: "Not Found" }), {
+    status: 404,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function repoFromApiUrl(url: string | URL | Request): { owner: string; repo: string; isRepoRoot: boolean } | null {
+  try {
+    const parsed = new URL(typeof url === "string" ? url : url instanceof URL ? url.href : url.url);
+    if (parsed.hostname !== "api.github.com") return null;
+    const match = /^\/repos\/([^/]+)\/([^/]+)(\/.*)?$/.exec(parsed.pathname);
+    if (!match) return null;
+    return {
+      owner: decodeURIComponent(match[1]).toLowerCase(),
+      repo: decodeURIComponent(match[2]).toLowerCase(),
+      isRepoRoot: !match[3] || match[3] === "/",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The system token may see private repositories (its owner's or an org's). Without a signed-in
+ * user it is only ever used for public ones: a private repository looks like a 404, exactly as it
+ * would to an anonymous GitHub visitor.
+ */
+async function systemTokenMayRead(
+  target: { owner: string; repo: string },
+  fetchRepo: () => Promise<Response>
+): Promise<{ allowed: boolean; repoResponse?: Response }> {
+  const key = `${target.owner}/${target.repo}`;
+  const checkedAt = publicRepoChecks.get(key);
+  if (checkedAt && Date.now() - checkedAt < PUBLIC_VISIBILITY_TTL_MS) return { allowed: true };
+
+  const { isRepoMarkedPrivate, markRepoPrivate } = await import("./cache");
+  if (await isRepoMarkedPrivate(target.owner, target.repo)) return { allowed: false };
+
+  const response = await fetchRepo();
+  if (!response.ok) return { allowed: true, repoResponse: response };
+  const data = (await response.clone().json().catch(() => null)) as { private?: unknown } | null;
+  if (data?.private === true) {
+    await markRepoPrivate(target.owner, target.repo);
+    return { allowed: false };
+  }
+  publicRepoChecks.set(key, Date.now());
+  return { allowed: true, repoResponse: response };
+}
+
 export async function fetchGitHubAPI(url: string | URL | Request, options: RequestInit = {}): Promise<Response> {
   const systemToken = process.env.NOVARIS_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
   const sessionToken = await getSessionGitHubToken();
   const headers = new Headers(options.headers);
 
-  const doFetch = async (token?: string) => {
+  const doFetch = async (token?: string, target: string | URL | Request = url) => {
     const fetchHeaders = new Headers(headers);
     if (token && !fetchHeaders.has("Authorization") && !fetchHeaders.has("authorization")) {
       fetchHeaders.set("Authorization", `Bearer ${token}`);
     }
-    return fetch(url, {
+    return fetch(target, {
       ...options,
       headers: fetchHeaders,
       cache: "no-store",
@@ -63,19 +116,32 @@ export async function fetchGitHubAPI(url: string | URL | Request, options: Reque
     });
   };
 
-  let response = await doFetch(sessionToken || systemToken);
-
-  // If the session token is expired (401), and we have a valid system token, retry!
-  if (response.status === 401 && sessionToken && systemToken && sessionToken !== systemToken) {
-    console.warn(`[GitHub API] Session token got 401 on ${url.toString()}, retrying with system token...`);
-    response = await doFetch(systemToken);
+  let response: Response;
+  if (sessionToken) {
+    // A rejected user token is reported, never retried as the service account:
+    // the system token can see repositories the user cannot.
+    response = await doFetch(sessionToken);
+  } else {
+    const target = repoFromApiUrl(url);
+    if (target && systemToken) {
+      const repoUrl = `https://api.github.com/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}`;
+      const check = await systemTokenMayRead(target, () => doFetch(systemToken, repoUrl));
+      if (!check.allowed) return notFoundResponse();
+      response = target.isRepoRoot && check.repoResponse && (options.method ?? "GET").toUpperCase() === "GET"
+        ? check.repoResponse
+        : await doFetch(systemToken);
+    } else {
+      response = await doFetch(systemToken);
+    }
   }
 
   if (response.status === 401 || isRateLimited(response)) {
     console.error(`GitHub API Error (${response.status}) on ${url.toString()}`);
     throw new GitHubAuthError(
       response.status === 401
-        ? "Bad credentials or expired GitHub token."
+        ? sessionToken
+          ? "GitHub token expired or was revoked. Sign in again."
+          : "Bad credentials or expired GitHub token."
         : "GitHub API rate limit exceeded.",
       response.status
     );

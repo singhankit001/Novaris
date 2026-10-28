@@ -1,12 +1,23 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { Adapter } from "next-auth/adapters";
 import { queueWelcomeEmailDelivery } from "./emails/delivery-service";
 import authConfig from "./auth.config";
 import { prisma } from "./db";
 
+const prismaAdapter = PrismaAdapter(prisma);
+
+// The GitHub token lives only in the encrypted session JWT. Nothing reads it from the database,
+// so it is never written there.
+const adapter: Adapter = {
+    ...prismaAdapter,
+    linkAccount: (account) =>
+        prismaAdapter.linkAccount!({ ...account, access_token: undefined, refresh_token: undefined, id_token: undefined }),
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
-    adapter: PrismaAdapter(prisma),
+    adapter,
     session: {
         strategy: "jwt",
     },

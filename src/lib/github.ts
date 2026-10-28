@@ -9,8 +9,6 @@ import {
   getCachedProfileData,
   cacheFileTree,
   getCachedFileTree,
-  cacheRepoFullContext,
-  getCachedRepoFullContext,
   getCachedFilesBatch,
   getCachedProfileCommitSnapshot,
   cacheProfileCommitSnapshot,
@@ -24,44 +22,6 @@ import { ensureRepoIndexForTree } from "@/lib/services/repo-index-service";
 interface ErrorWithStatus {
   status?: number;
   message?: string;
-}
-
-interface RepoLanguageEdge {
-  size: number;
-  node: {
-    name: string;
-    color: string | null;
-  };
-}
-
-interface RepoCommitEdge {
-  node: {
-    message: string;
-    committedDate: string;
-    author: {
-      name: string;
-      avatarUrl: string | null;
-      user: {
-        login: string;
-      } | null;
-    };
-  };
-}
-
-interface RepoDetailsGraphQLResponse {
-  repository: {
-    languages: {
-      totalSize: number;
-      edges: RepoLanguageEdge[];
-    };
-    defaultBranchRef: {
-      target: {
-        history: {
-          edges: RepoCommitEdge[];
-        };
-      };
-    };
-  };
 }
 
 export type Result<T> =
@@ -318,44 +278,6 @@ export interface FileNode {
  * Defined at module level rather than inside the calling function
  * to keep constants and queries out of the function body.
  */
-const REPO_DETAILS_QUERY = `
-  query RepoDetails($owner: String!, $name: String!) {
-    repository(owner: $owner, name: $name) {
-      languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
-        totalSize
-        edges {
-          size
-          node {
-            name
-            color
-          }
-        }
-      }
-      defaultBranchRef {
-        target {
-          ... on Commit {
-            history(first: 5) {
-              edges {
-                node {
-                  message
-                  committedDate
-                  author {
-                    name
-                    avatarUrl
-                    user {
-                      login
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
 /**
  * Core Profile Fetcher (hit by unstable_cache)
  */
@@ -524,113 +446,6 @@ export async function getRepoFileTree(owner: string, repo: string, branch: strin
 
   return { tree: minimalTree, hiddenFiles, treeSha: sha };
 }
-
-/**
- * Fetch enhanced repository details using GraphQL
- */
-export async function getRepoDetailsGraphQL(owner: string, repo: string): Promise<Result<{ languages: RepoLanguage[], commits: RepoCommit[], totalSize: number }>> {
-  const { graphql } = await import("@octokit/graphql");
-
-  try {
-    const data = await graphql<RepoDetailsGraphQLResponse>(REPO_DETAILS_QUERY, {
-      owner,
-      name: repo,
-      headers: {
-        authorization: `token ${process.env.GITHUB_TOKEN}`,
-      },
-    });
-
-    const languages = data.repository.languages.edges.map((edge) => ({
-      name: edge.node.name,
-      color: edge.node.color,
-      size: edge.size,
-      percentage: ((edge.size / data.repository.languages.totalSize) * 100).toFixed(1)
-    }));
-
-    const commits = data.repository.defaultBranchRef.target.history.edges.map((edge) => ({
-      message: edge.node.message,
-      date: edge.node.committedDate,
-      author: {
-        name: edge.node.author.name,
-        login: edge.node.author.user?.login,
-        avatar: edge.node.author.avatarUrl
-      }
-    }));
-
-    return {
-      success: true,
-      data: {
-        languages,
-        commits,
-        totalSize: data.repository.languages.totalSize
-      }
-    };
-  } catch (error) {
-    // TODO: Replace with robust logger
-    // logger.error("GraphQL fetch failed", { owner, repo, error });
-    console.error("GraphQL fetch failed:", error);
-    return { success: false, error: "Failed to fetch repository details from GitHub" };
-  }
-}
-
-/**
- * Core Repo Context Fetcher (hit by unstable_cache)
- */
-async function getRepoFullContextRaw(owner: string, repo: string): Promise<Result<RepoFullContext>> {
-  // Check Mega-Key cache first
-  const cached = await getCachedRepoFullContext(owner, repo);
-  if (cached && isGitHubRepo(cached.metadata)) {
-    // Put into memory caches for efficiency if needed
-    repoCache.set(`${owner}/${repo}`, cached.metadata);
-    return {
-      success: true,
-      data: {
-        metadata: cached.metadata,
-        languages: Array.isArray(cached.languages) ? (cached.languages as RepoLanguage[]) : [],
-        commits: Array.isArray(cached.commits) ? (cached.commits as RepoCommit[]) : [],
-        readme: typeof cached.readme === "string" ? cached.readme : null
-      }
-    };
-  }
-
-  try {
-    // Fetch all in parallel
-  const [metadata, details, readme] = await Promise.all([
-    getRepo(owner, repo),
-    getRepoDetailsGraphQL(owner, repo),
-    getRepoReadme(owner, repo)
-  ]);
-
-  const context: RepoFullContext = {
-    metadata,
-    languages: details.success ? details.data.languages : [],
-    commits: details.success ? details.data.commits : [],
-    readme
-  };
-
-  // Cache as Mega-Key
-  await cacheRepoFullContext(owner, repo, context);
-
-  return { success: true, data: context };
-  } catch (error) {
-    // TODO: Replace with robust logger
-    console.error("Failed to load repo full context:", error);
-    const status = getErrorStatus(error);
-    return { success: false, error: "Failed to load repository.", status };
-  }
-}
-
-/**
- * EDGE-CACHE: Get Full Repo Context with Edge Performance
- */
-export const getRepoFullContext = unstable_cache(
-  async (owner: string, repo: string) => getRepoFullContextRaw(owner, repo),
-  ['github-repo-full'],
-  {
-    revalidate: 3600, // 60 minutes
-    tags: ['repo-full']
-  }
-);
 
 export async function getFileContent(
   owner: string,
