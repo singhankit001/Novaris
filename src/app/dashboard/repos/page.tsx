@@ -29,6 +29,7 @@ interface Repo {
 interface ReposResponse {
     repos?: Repo[];
     hasPrivateAccess?: boolean;
+    truncated?: boolean;
 }
 
 function grantRepositoryAccess() {
@@ -117,7 +118,7 @@ export default function MyReposPage() {
                 )}
                 <Input
                     label="Filter repositories"
-                    hint={`${shown.length} of ${repos.length} shown. Matches name and description.`}
+                    hint={`${shown.length} of ${repos.length}${state.data.truncated ? " most recently updated" : ""} shown. Matches name and description.`}
                     leading={<Search className="size-4" />}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}

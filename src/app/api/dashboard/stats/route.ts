@@ -22,17 +22,21 @@ export async function GET() {
     try {
         const scans = await getUserScans(userId);
 
-        const reposScanned = new Set<string>();
-        let issuesFound = 0;
+        // Findings come from the latest scan of each repository, so rescanning does not double-count.
+        const latestByRepo = new Map<string, (typeof scans)[number]>();
         let deepScans = 0;
 
         for (const scan of scans) {
-            reposScanned.add(`${scan.owner}/${scan.repo}`);
-            issuesFound += scan.summary.total || 0;
+            const key = `${scan.owner}/${scan.repo}`.toLowerCase();
+            const current = latestByRepo.get(key);
+            if (!current || Number(scan.timestamp) > Number(current.timestamp)) latestByRepo.set(key, scan);
             if (scan.depth === 'deep') {
                 deepScans += 1;
             }
         }
+        const reposScanned = latestByRepo;
+        let issuesFound = 0;
+        for (const scan of latestByRepo.values()) issuesFound += scan.summary.total || 0;
 
         return NextResponse.json({
             stats: {

@@ -57,7 +57,7 @@ export function OverviewStatsView({ state, retry }: { state: ApiState<{ stats?: 
             label="Account totals"
             items={[
                 { label: "Repositories scanned", value: <CountUp value={reposScanned} />, note },
-                { label: "Findings in saved reports", value: <CountUp value={issuesFound} />, note },
+                { label: "Findings in latest reports", value: <CountUp value={issuesFound} />, note },
                 { label: "Deep scans", value: <CountUp value={deepScans} />, note },
             ]}
         />

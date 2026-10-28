@@ -440,11 +440,25 @@ export async function getRepoFileTree(owner: string, repo: string, branch: strin
     size: node.size
   }));
 
+  // GitHub caps recursive trees (100,000 entries / 7 MB). A partial tree is shown as such and never cached.
+  if (data.truncated) {
+    hiddenFiles.push({ path: "(more paths not returned by GitHub)", reason: "GitHub truncated this tree because the repository is very large; some files are not listed" });
+    void ensureRepoIndexForTree(owner, repo, sha, minimalTree);
+    return { tree: minimalTree, hiddenFiles, treeSha: sha };
+  }
+
   // Cache the minimal tree
   await cacheFileTree(owner, repo, sha, minimalTree);
   void ensureRepoIndexForTree(owner, repo, sha, minimalTree);
 
   return { tree: minimalTree, hiddenFiles, treeSha: sha };
+}
+
+/** Decodes GitHub base64 content; binary files (a NUL byte in the first 8 KB) return null. */
+export function decodeTextContent(base64: string): string | null {
+  const bytes = Buffer.from(base64, "base64");
+  if (bytes.subarray(0, 8192).includes(0)) return null;
+  return bytes.toString("utf-8");
 }
 
 export async function getFileContent(
@@ -483,7 +497,8 @@ export async function getFileContent(
           file_sha: sha,
         });
 
-        const content = Buffer.from(data.content, "base64").toString("utf-8");
+        const content = decodeTextContent(data.content);
+        if (content === null) return null;
         await cacheFile(owner, repo, path, sha, content, fileCachePolicy);
         return content;
       } catch (error: unknown) {
@@ -513,7 +528,8 @@ export async function getFileContent(
       }
 
       // Decode content
-      const content = Buffer.from(data.content, "base64").toString("utf-8");
+      const content = decodeTextContent(data.content);
+      if (content === null) return null;
 
       // Cache for future requests
       await cacheFile(owner, repo, path, currentSha, content, fileCachePolicy);
@@ -609,6 +625,20 @@ export async function getProfileReadme(username: string) {
     return Buffer.from(data.content, "base64").toString("utf-8");
   } catch {
     return null;
+  }
+}
+
+/** Languages by bytes from GitHub (REST has no colors; the page falls back to its default dot). */
+export async function getRepoLanguages(owner: string, repo: string): Promise<RepoLanguage[]> {
+  try {
+    const { data } = await octokit.rest.repos.listLanguages({ owner, repo });
+    const total = Object.values(data).reduce((sum, bytes) => sum + bytes, 0);
+    if (total === 0) return [];
+    return Object.entries(data)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, size]) => ({ name, color: null, size, percentage: ((size / total) * 100).toFixed(1) }));
+  } catch {
+    return [];
   }
 }
 

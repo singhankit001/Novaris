@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
-import type { GitHubRepo, RepoLanguage } from '@/lib/github';
-import { getErrorStatus, getRepo } from '@/lib/github';
-import { cacheRepoUnavailable, getCachedRepoFullContext, getCachedRepoUnavailable } from '@/lib/cache';
+import type { GitHubRepo } from '@/lib/github';
+import { getErrorStatus, getRepo, getRepoLanguages, getRepoReadme } from '@/lib/github';
+import { cacheRepoUnavailable, getCachedRepoUnavailable } from '@/lib/cache';
+import { getSessionGitHubAuth } from '@/lib/github-api';
 import { isCuratedRepo } from '@/lib/repo-catalog';
 import { GitFork, AlertCircle, Clock, FileCode, Search, Lock, Home, Github, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
@@ -129,7 +130,10 @@ export default async function RepoPage({ params }: Props) {
         return <RepoUnavailableState owner={owner} repo={repo} />;
     }
 
-    if (await getCachedRepoUnavailable(owner, repo)) {
+    // The unavailable marker describes what anonymous visitors see. A signed-in user may have
+    // access to a private repository, so they always ask GitHub and never write the marker.
+    const signedIn = Boolean((await getSessionGitHubAuth()).accessToken);
+    if (!signedIn && (await getCachedRepoUnavailable(owner, repo))) {
         return <RepoUnavailableState owner={owner} repo={repo} />;
     }
 
@@ -137,21 +141,15 @@ export default async function RepoPage({ params }: Props) {
     try {
         repoData = await getRepo(owner, repo);
     } catch (error) {
-        if (getErrorStatus(error) === 404) {
+        if (!signedIn && getErrorStatus(error) === 404) {
             await cacheRepoUnavailable(owner, repo);
         }
         console.error('Failed repository existence check:', error);
         return <RepoUnavailableState owner={owner} repo={repo} />;
     }
 
-    const cachedContext = await getCachedRepoFullContext(owner, repo);
-    const repoLanguages: RepoLanguage[] =
-        cachedContext && Array.isArray(cachedContext.languages)
-            ? (cachedContext.languages as RepoLanguage[])
-            : [];
-    const fullReadme = normalizeReadmeForPreview(
-        cachedContext && typeof cachedContext.readme === "string" ? cachedContext.readme : null
-    );
+    const [repoLanguages, readme] = await Promise.all([getRepoLanguages(owner, repo), getRepoReadme(owner, repo)]);
+    const fullReadme = normalizeReadmeForPreview(readme);
     const repoDescription = emojifyGitHubShortcodes(repoData.description);
 
     const chatBase = `/chat?q=${owner}/${repo}`;
