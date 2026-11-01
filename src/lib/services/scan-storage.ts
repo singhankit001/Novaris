@@ -92,17 +92,22 @@ export async function saveScanResult(
 
 export async function getScanResultWithStatus(id: string): Promise<ScanLookupResult> {
     if (!isDatabaseConfigured()) return { status: "not_found" };
-    const record = await prisma.repoScan.findUnique({ where: { id } });
-    if (!record) {
+    try {
+        const record = await prisma.repoScan.findUnique({ where: { id } });
+        if (!record) {
+            return { status: "not_found" };
+        }
+
+        const scan = mapStoredScan(record);
+        if (isScanExpired(scan)) {
+            return { status: "expired", scan };
+        }
+
+        return { status: "ok", scan };
+    } catch (error) {
+        console.error("Scan lookup failed:", error);
         return { status: "not_found" };
     }
-
-    const scan = mapStoredScan(record);
-    if (isScanExpired(scan)) {
-        return { status: "expired", scan };
-    }
-
-    return { status: "ok", scan };
 }
 
 export async function getScanResult(id: string): Promise<StoredScan | null> {
@@ -112,17 +117,22 @@ export async function getScanResult(id: string): Promise<StoredScan | null> {
 
 export async function getLatestScanId(owner: string, repo: string): Promise<string | null> {
     if (!isDatabaseConfigured()) return null;
-    const now = new Date();
-    const latest = await prisma.repoScan.findFirst({
-        where: {
-            owner,
-            repo,
-            expiresAt: { gt: now }
-        },
-        orderBy: { timestamp: "desc" },
-        select: { id: true },
-    });
-    return latest?.id ?? null;
+    try {
+        const now = new Date();
+        const latest = await prisma.repoScan.findFirst({
+            where: {
+                owner,
+                repo,
+                expiresAt: { gt: now }
+            },
+            orderBy: { timestamp: "desc" },
+            select: { id: true },
+        });
+        return latest?.id ?? null;
+    } catch (error) {
+        console.error("Latest scan lookup failed:", error);
+        return null;
+    }
 }
 
 export async function getPreviousScan(
@@ -131,46 +141,58 @@ export async function getPreviousScan(
     currentScanId: string,
     currentTimestamp?: number
 ): Promise<StoredScan | null> {
-    let resolvedTimestamp = currentTimestamp;
+    if (!isDatabaseConfigured()) return null;
+    try {
+        let resolvedTimestamp = currentTimestamp;
 
-    if (typeof resolvedTimestamp !== "number") {
-        const current = await getScanResult(currentScanId);
-        if (!current) return null;
-        resolvedTimestamp = current.timestamp;
+        if (typeof resolvedTimestamp !== "number") {
+            const current = await getScanResult(currentScanId);
+            if (!current) return null;
+            resolvedTimestamp = current.timestamp;
+        }
+
+        const previous = await prisma.repoScan.findFirst({
+            where: {
+                owner,
+                repo,
+                id: { not: currentScanId },
+                timestamp: { lt: BigInt(resolvedTimestamp) },
+                expiresAt: { gt: new Date() },
+            },
+            orderBy: { timestamp: "desc" },
+        });
+
+        return previous ? mapStoredScan(previous) : null;
+    } catch (error) {
+        console.error("Previous scan lookup failed:", error);
+        return null;
     }
-
-    const previous = await prisma.repoScan.findFirst({
-        where: {
-            owner,
-            repo,
-            id: { not: currentScanId },
-            timestamp: { lt: BigInt(resolvedTimestamp) },
-            expiresAt: { gt: new Date() },
-        },
-        orderBy: { timestamp: "desc" },
-    });
-
-    return previous ? mapStoredScan(previous) : null;
 }
 
 export async function getUserScans(userId: string, limit?: number): Promise<StoredScan[]> {
-    const scans = await prisma.repoScan.findMany({
-        where: {
-            userId,
-            expiresAt: { gt: new Date() },
-        },
-        orderBy: { timestamp: "desc" },
-        ...(typeof limit === "number" && limit > 0 ? { take: limit } : {}),
-        select: {
-            id: true,
-            owner: true,
-            repo: true,
-            timestamp: true,
-            expiresAt: true,
-            depth: true,
-            summary: true,
-            userId: true,
-        },
-    });
-    return scans.map((scan) => mapStoredScan({ ...scan, findings: [] }));
+    if (!isDatabaseConfigured()) return [];
+    try {
+        const scans = await prisma.repoScan.findMany({
+            where: {
+                userId,
+                expiresAt: { gt: new Date() },
+            },
+            orderBy: { timestamp: "desc" },
+            ...(typeof limit === "number" && limit > 0 ? { take: limit } : {}),
+            select: {
+                id: true,
+                owner: true,
+                repo: true,
+                timestamp: true,
+                expiresAt: true,
+                depth: true,
+                summary: true,
+                userId: true,
+            },
+        });
+        return scans.map((scan) => mapStoredScan({ ...scan, findings: [] }));
+    } catch (error) {
+        console.error("User scans lookup failed:", error);
+        return [];
+    }
 }

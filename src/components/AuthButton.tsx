@@ -1,22 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { signInWithGitHub } from "@/lib/sign-in";
-import { Github, LogOut, LayoutDashboard, User } from "lucide-react";
+import { LogOut, LayoutDashboard, User } from "lucide-react";
 import Image from "next/image";
 import { Menu } from "@/components/nv/menu";
 import { Button } from "@/components/nv/button";
 import { Skeleton } from "@/components/nv/skeleton";
+import { LoginModal } from "@/components/LoginModal";
 
 export default function AuthButton() {
     const { data: session, status } = useSession();
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
 
     if (status === "loading") {
         return <Skeleton className="h-11 w-24 rounded-nv-sm" />;
     }
 
     if (session) {
-        const name = session.user?.name || "Account";
+        const name = session.user?.name || session.user?.email || "Account";
         return (
             <Menu
                 label={`Account menu for ${name}`}
@@ -36,9 +38,16 @@ export default function AuthButton() {
     }
 
     return (
-        <Button className="border-transparent bg-transparent hover:bg-nv-copper-wash" variant="secondary" leading={<Github aria-hidden className="size-4" />} onClick={() => signInWithGitHub()}>
-            <span className="hidden sm:inline">Sign in</span>
-            <span className="sm:hidden">Sign in</span>
-        </Button>
+        <>
+            <Button
+                className="border-transparent bg-transparent hover:bg-nv-copper-wash"
+                variant="secondary"
+                leading={<User aria-hidden className="size-4" />}
+                onClick={() => setLoginModalOpen(true)}
+            >
+                <span>Sign in</span>
+            </Button>
+            <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+        </>
     );
 }

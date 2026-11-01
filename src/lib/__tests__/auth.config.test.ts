@@ -58,4 +58,38 @@ describe("auth.config callbacks", () => {
         expect(JSON.stringify(result)).not.toContain("oauthScope");
         expect((result as { user?: { username?: string } })?.user?.username).toBe("octocat");
     });
+
+    it("populates username and email for Google sign-in", async () => {
+        const jwt = authConfig.callbacks?.jwt;
+        const result = await jwt?.({
+            token: { sub: "google_user_123" },
+            profile: { name: "Google Developer" },
+            account: { provider: "google", access_token: "ya29.secret" },
+            user: { id: "google_user_123", email: "dev@gmail.com", name: "Google Developer" },
+            trigger: "signIn",
+            session: null,
+            isNewUser: false,
+        } as never);
+
+        expect(result?.id).toBe("google_user_123");
+        expect(result?.username).toBe("Google Developer");
+        expect(result?.email).toBe("dev@gmail.com");
+        // Google access token must not be set as the GitHub accessToken
+        expect(result?.accessToken).toBeUndefined();
+    });
+
+    it("populates session for Google users", async () => {
+        const session = authConfig.callbacks?.session;
+        const result = await session?.({
+            session: { expires: "2099-01-01T00:00:00.000Z", user: { name: "Google Developer", email: "dev@gmail.com", image: null } },
+            token: { id: "google_123", username: "Google Developer", email: "dev@gmail.com" },
+            user: undefined,
+            newSession: undefined,
+            trigger: "update",
+        } as never);
+
+        expect(result?.user?.id).toBe("google_123");
+        expect(result?.user?.username).toBe("Google Developer");
+        expect(result?.user?.email).toBe("dev@gmail.com");
+    });
 });

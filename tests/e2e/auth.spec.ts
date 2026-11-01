@@ -10,6 +10,10 @@ async function clickSignIn(page: import("@playwright/test").Page) {
     const menu = page.getByRole("button", { name: "Open menu" });
     if (await menu.isVisible()) await menu.click();
     await page.getByRole("button", { name: /^sign in$/i }).filter({ visible: true }).first().click();
+    const githubBtn = page.getByRole("button", { name: /continue with github|sign in with github/i });
+    if (await githubBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await githubBtn.click();
+    }
 }
 
 // GitHub is registered only when AUTH_GITHUB_ID and AUTH_GITHUB_SECRET are both set.
