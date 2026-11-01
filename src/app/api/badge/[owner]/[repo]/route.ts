@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLatestScanId, getScanResult } from "@/lib/services/scan-storage";
+import { getRepo } from "@/lib/github";
+import { isGithubName } from "@/lib/request-validation";
+
+/** Scan results are published only for repositories GitHub reports as public. */
+async function isPublicRepo(owner: string, repo: string): Promise<boolean> {
+    if (!isGithubName(owner) || !isGithubName(repo)) return false;
+    try {
+        return (await getRepo(owner, repo)).private === false;
+    } catch {
+        return false;
+    }
+}
 
 export async function GET(
     request: NextRequest,
@@ -8,9 +20,9 @@ export async function GET(
     const { owner, repo } = await params;
 
     try {
-        const latestScanId = await getLatestScanId(owner, repo);
         let statusText = "no scan";
         let statusColor = "#9f9f9f"; // grey
+        const latestScanId = (await isPublicRepo(owner, repo)) ? await getLatestScanId(owner, repo) : null;
 
         if (latestScanId) {
             const scan = await getScanResult(latestScanId);

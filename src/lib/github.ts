@@ -9,8 +9,6 @@ import {
   getCachedProfileData,
   cacheFileTree,
   getCachedFileTree,
-  cacheRepoFullContext,
-  getCachedRepoFullContext,
   getCachedFilesBatch,
   getCachedProfileCommitSnapshot,
   cacheProfileCommitSnapshot,
@@ -24,44 +22,6 @@ import { ensureRepoIndexForTree } from "@/lib/services/repo-index-service";
 interface ErrorWithStatus {
   status?: number;
   message?: string;
-}
-
-interface RepoLanguageEdge {
-  size: number;
-  node: {
-    name: string;
-    color: string | null;
-  };
-}
-
-interface RepoCommitEdge {
-  node: {
-    message: string;
-    committedDate: string;
-    author: {
-      name: string;
-      avatarUrl: string | null;
-      user: {
-        login: string;
-      } | null;
-    };
-  };
-}
-
-interface RepoDetailsGraphQLResponse {
-  repository: {
-    languages: {
-      totalSize: number;
-      edges: RepoLanguageEdge[];
-    };
-    defaultBranchRef: {
-      target: {
-        history: {
-          edges: RepoCommitEdge[];
-        };
-      };
-    };
-  };
 }
 
 export type Result<T> =
@@ -318,44 +278,6 @@ export interface FileNode {
  * Defined at module level rather than inside the calling function
  * to keep constants and queries out of the function body.
  */
-const REPO_DETAILS_QUERY = `
-  query RepoDetails($owner: String!, $name: String!) {
-    repository(owner: $owner, name: $name) {
-      languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
-        totalSize
-        edges {
-          size
-          node {
-            name
-            color
-          }
-        }
-      }
-      defaultBranchRef {
-        target {
-          ... on Commit {
-            history(first: 5) {
-              edges {
-                node {
-                  message
-                  committedDate
-                  author {
-                    name
-                    avatarUrl
-                    user {
-                      login
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
-
 /**
  * Core Profile Fetcher (hit by unstable_cache)
  */
@@ -518,6 +440,13 @@ export async function getRepoFileTree(owner: string, repo: string, branch: strin
     size: node.size
   }));
 
+  // GitHub caps recursive trees (100,000 entries / 7 MB). A partial tree is shown as such and never cached.
+  if (data.truncated) {
+    hiddenFiles.push({ path: "(more paths not returned by GitHub)", reason: "GitHub truncated this tree because the repository is very large; some files are not listed" });
+    void ensureRepoIndexForTree(owner, repo, sha, minimalTree);
+    return { tree: minimalTree, hiddenFiles, treeSha: sha };
+  }
+
   // Cache the minimal tree
   await cacheFileTree(owner, repo, sha, minimalTree);
   void ensureRepoIndexForTree(owner, repo, sha, minimalTree);
@@ -525,112 +454,12 @@ export async function getRepoFileTree(owner: string, repo: string, branch: strin
   return { tree: minimalTree, hiddenFiles, treeSha: sha };
 }
 
-/**
- * Fetch enhanced repository details using GraphQL
- */
-export async function getRepoDetailsGraphQL(owner: string, repo: string): Promise<Result<{ languages: RepoLanguage[], commits: RepoCommit[], totalSize: number }>> {
-  const { graphql } = await import("@octokit/graphql");
-
-  try {
-    const data = await graphql<RepoDetailsGraphQLResponse>(REPO_DETAILS_QUERY, {
-      owner,
-      name: repo,
-      headers: {
-        authorization: `token ${process.env.GITHUB_TOKEN}`,
-      },
-    });
-
-    const languages = data.repository.languages.edges.map((edge) => ({
-      name: edge.node.name,
-      color: edge.node.color,
-      size: edge.size,
-      percentage: ((edge.size / data.repository.languages.totalSize) * 100).toFixed(1)
-    }));
-
-    const commits = data.repository.defaultBranchRef.target.history.edges.map((edge) => ({
-      message: edge.node.message,
-      date: edge.node.committedDate,
-      author: {
-        name: edge.node.author.name,
-        login: edge.node.author.user?.login,
-        avatar: edge.node.author.avatarUrl
-      }
-    }));
-
-    return {
-      success: true,
-      data: {
-        languages,
-        commits,
-        totalSize: data.repository.languages.totalSize
-      }
-    };
-  } catch (error) {
-    // TODO: Replace with robust logger
-    // logger.error("GraphQL fetch failed", { owner, repo, error });
-    console.error("GraphQL fetch failed:", error);
-    return { success: false, error: "Failed to fetch repository details from GitHub" };
-  }
+/** Decodes GitHub base64 content; binary files (a NUL byte in the first 8 KB) return null. */
+export function decodeTextContent(base64: string): string | null {
+  const bytes = Buffer.from(base64, "base64");
+  if (bytes.subarray(0, 8192).includes(0)) return null;
+  return bytes.toString("utf-8");
 }
-
-/**
- * Core Repo Context Fetcher (hit by unstable_cache)
- */
-async function getRepoFullContextRaw(owner: string, repo: string): Promise<Result<RepoFullContext>> {
-  // Check Mega-Key cache first
-  const cached = await getCachedRepoFullContext(owner, repo);
-  if (cached && isGitHubRepo(cached.metadata)) {
-    // Put into memory caches for efficiency if needed
-    repoCache.set(`${owner}/${repo}`, cached.metadata);
-    return {
-      success: true,
-      data: {
-        metadata: cached.metadata,
-        languages: Array.isArray(cached.languages) ? (cached.languages as RepoLanguage[]) : [],
-        commits: Array.isArray(cached.commits) ? (cached.commits as RepoCommit[]) : [],
-        readme: typeof cached.readme === "string" ? cached.readme : null
-      }
-    };
-  }
-
-  try {
-    // Fetch all in parallel
-  const [metadata, details, readme] = await Promise.all([
-    getRepo(owner, repo),
-    getRepoDetailsGraphQL(owner, repo),
-    getRepoReadme(owner, repo)
-  ]);
-
-  const context: RepoFullContext = {
-    metadata,
-    languages: details.success ? details.data.languages : [],
-    commits: details.success ? details.data.commits : [],
-    readme
-  };
-
-  // Cache as Mega-Key
-  await cacheRepoFullContext(owner, repo, context);
-
-  return { success: true, data: context };
-  } catch (error) {
-    // TODO: Replace with robust logger
-    console.error("Failed to load repo full context:", error);
-    const status = getErrorStatus(error);
-    return { success: false, error: "Failed to load repository.", status };
-  }
-}
-
-/**
- * EDGE-CACHE: Get Full Repo Context with Edge Performance
- */
-export const getRepoFullContext = unstable_cache(
-  async (owner: string, repo: string) => getRepoFullContextRaw(owner, repo),
-  ['github-repo-full'],
-  {
-    revalidate: 3600, // 60 minutes
-    tags: ['repo-full']
-  }
-);
 
 export async function getFileContent(
   owner: string,
@@ -668,7 +497,8 @@ export async function getFileContent(
           file_sha: sha,
         });
 
-        const content = Buffer.from(data.content, "base64").toString("utf-8");
+        const content = decodeTextContent(data.content);
+        if (content === null) return null;
         await cacheFile(owner, repo, path, sha, content, fileCachePolicy);
         return content;
       } catch (error: unknown) {
@@ -698,7 +528,8 @@ export async function getFileContent(
       }
 
       // Decode content
-      const content = Buffer.from(data.content, "base64").toString("utf-8");
+      const content = decodeTextContent(data.content);
+      if (content === null) return null;
 
       // Cache for future requests
       await cacheFile(owner, repo, path, currentSha, content, fileCachePolicy);
@@ -794,6 +625,20 @@ export async function getProfileReadme(username: string) {
     return Buffer.from(data.content, "base64").toString("utf-8");
   } catch {
     return null;
+  }
+}
+
+/** Languages by bytes from GitHub (REST has no colors; the page falls back to its default dot). */
+export async function getRepoLanguages(owner: string, repo: string): Promise<RepoLanguage[]> {
+  try {
+    const { data } = await octokit.rest.repos.listLanguages({ owner, repo });
+    const total = Object.values(data).reduce((sum, bytes) => sum + bytes, 0);
+    if (total === 0) return [];
+    return Object.entries(data)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, size]) => ({ name, color: null, size, percentage: ((size / total) * 100).toFixed(1) }));
+  } catch {
+    return [];
   }
 }
 

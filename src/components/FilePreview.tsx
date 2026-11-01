@@ -27,6 +27,15 @@ interface FilePreviewProps {
     onAsk?: (path: string) => void;
 }
 
+/** A cited range checked against the real file: ranges past the end are flagged, not highlighted. */
+function checkCitedRange(lines: string | undefined, lineCount: number): { highlight?: [number, number]; outOfFile: boolean } {
+    const range = parseLines(lines);
+    if (!range) return { outOfFile: false };
+    const [from, to] = range[0] <= range[1] ? range : [range[1], range[0]];
+    if (from < 1 || from > lineCount) return { outOfFile: true };
+    return { highlight: [from, Math.min(to, lineCount)], outOfFile: false };
+}
+
 function parseLines(lines?: string): [number, number] | undefined {
     const match = lines ? /^(\d+)(?:-(\d+))?$/.exec(lines) : null;
     if (!match?.[1]) return undefined;
@@ -71,6 +80,8 @@ const LANG: Record<string, string> = { js: "javascript", jsx: "javascript", ts: 
 export function FilePreview({ isOpen, filePath, repoOwner, repoName, onClose, variant = "dialog", lines, onAsk }: FilePreviewProps) {
     const [state, setState] = useState<LoadState>({ phase: "idle" });
     const [mediaFailed, setMediaFailed] = useState(false);
+    const lineCount = state.phase === "ready" && state.content ? state.content.split("\n").length : 0;
+    const citedRange = checkCitedRange(lines, lineCount);
 
     useEffect(() => {
         if (!isOpen || !filePath) return;
@@ -201,7 +212,10 @@ export function FilePreview({ isOpen, filePath, repoOwner, repoName, onClose, va
                                     {state.content.split("\n").length > MAX_PREVIEW_LINES && (
                                         <Notice tone="info" title={`Showing the first ${MAX_PREVIEW_LINES.toLocaleString()} lines`}>Open the file on GitHub for the rest.</Notice>
                                     )}
-                                    <CodeBlock value={state.content.split("\n").slice(0, MAX_PREVIEW_LINES).join("\n")} language={LANG[ext] ?? "text"} filename={filePath ?? undefined} collapse={false} highlight={parseLines(lines)} />
+                                    {citedRange.outOfFile && (
+                                        <Notice tone="info" title={`Lines ${lines} are not in this file`}>This file has {lineCount.toLocaleString()} lines, so that reference could not be checked. Treat it as unverified.</Notice>
+                                    )}
+                                    <CodeBlock value={state.content.split("\n").slice(0, MAX_PREVIEW_LINES).join("\n")} language={LANG[ext] ?? "text"} filename={filePath ?? undefined} collapse={false} highlight={citedRange.highlight} />
                                 </>
                             )}
                         </>

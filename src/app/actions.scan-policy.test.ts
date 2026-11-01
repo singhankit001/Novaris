@@ -129,7 +129,6 @@ vi.mock("@/lib/analytics", () => ({
 }));
 
 vi.mock("@/lib/services/query-pipeline", () => ({
-    executeRepoQuery: vi.fn(),
     executeRepoQueryStream: vi.fn(),
 }));
 

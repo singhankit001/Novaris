@@ -52,6 +52,18 @@ import {
     startFixVerificationRun,
 } from "@/lib/services/fix-verification";
 
+const FP_API = buildFindingFingerprint({
+    type: "code",
+    severity: "high",
+    title: "SQL injection via tainted query construction",
+    description: "Tainted input reaches query sink.",
+    file: "src/api.ts",
+    line: 12,
+    recommendation: "Use parameterized queries.",
+    cwe: "CWE-89",
+    confidence: "high",
+});
+
 function makeRun(overrides: Record<string, unknown> = {}) {
     return {
         id: "run_1",
@@ -146,7 +158,7 @@ describe("fix verification flow", () => {
     });
 
     it("auto-closes when regression and rescans pass", async () => {
-        getFixVerificationRunMock.mockResolvedValue(makeRun());
+        getFixVerificationRunMock.mockResolvedValue(makeRun({ findingFingerprint: FP_API }));
 
         const result = await finalizeFixVerificationRun("run_1", {
             runRegressionSuite: async () => ({ precision: 0.95, recall: 0.9, truePositiveCount: 5, falsePositiveCount: 0, falseNegativeCount: 0 }),
@@ -156,7 +168,7 @@ describe("fix verification flow", () => {
         expect(closeFindingLifecycleByFingerprintMock).toHaveBeenCalledWith({
             owner: "acme",
             repo: "widget",
-            findingFingerprint: "fp_1",
+            findingFingerprint: FP_API,
         });
         expect(updateFixVerificationRunMock).toHaveBeenCalled();
     });
@@ -190,6 +202,42 @@ describe("fix verification flow", () => {
                 verifiedOnlyReportsEnabled: true,
             },
         });
+
+        const result = await finalizeFixVerificationRun("run_1", {
+            runRegressionSuite: async () => ({ precision: 0.95, recall: 0.9, truePositiveCount: 5, falsePositiveCount: 0, falseNegativeCount: 0 }),
+        });
+
+        expect(result.closed).toBe(false);
+        expect(closeFindingLifecycleByFingerprintMock).not.toHaveBeenCalled();
+    });
+    it("rescans the finding's own file even when changedFiles omit it", async () => {
+        getRepoFileTreeMock.mockResolvedValue({
+            tree: [
+                { path: "src/api.ts", type: "blob", sha: "sha1" },
+                { path: "README.md", type: "blob", sha: "sha2" },
+            ],
+            hiddenFiles: [],
+        });
+        getFixVerificationRunMock.mockResolvedValue(makeRun({ findingFingerprint: FP_API, changedFiles: ["README.md"] }));
+        verifyDetectedFindingsMock.mockImplementation(async () => ({
+            verifiedFindings: [],
+            hiddenFindings: [{ type: "code", severity: "high", title: "SQL injection via tainted query construction", description: "Tainted input reaches query sink.", file: "src/api.ts", line: 12, recommendation: "Use parameterized queries.", cwe: "CWE-89", confidence: "high" }],
+            rejectedFindings: [],
+            records: [],
+            stats: { detected: 1, verifiedTrue: 0, rejectedFalse: 0, inconclusiveHidden: 1, canaryApplied: true, verificationGateEnabled: true, verifiedOnlyReportsEnabled: true },
+        }));
+
+        const result = await finalizeFixVerificationRun("run_1", {
+            runRegressionSuite: async () => ({ precision: 0.95, recall: 0.9, truePositiveCount: 5, falsePositiveCount: 0, falseNegativeCount: 0 }),
+        });
+
+        expect(getFileContentMock).toHaveBeenCalledWith("acme", "widget", "src/api.ts", "sha1");
+        expect(result.closed).toBe(false);
+        expect(closeFindingLifecycleByFingerprintMock).not.toHaveBeenCalled();
+    });
+
+    it("never closes a fingerprint that does not name a file", async () => {
+        getFixVerificationRunMock.mockResolvedValue(makeRun({ findingFingerprint: "fp_1" }));
 
         const result = await finalizeFixVerificationRun("run_1", {
             runRegressionSuite: async () => ({ precision: 0.95, recall: 0.9, truePositiveCount: 5, falsePositiveCount: 0, falseNegativeCount: 0 }),

@@ -1,5 +1,6 @@
 import { kv } from "@vercel/kv";
 import { NextResponse } from "next/server";
+import { isKvConfigured } from "@/lib/kv-env";
 import { getAnonymousNetworkId } from "@/lib/actor-id";
 
 /**
@@ -35,6 +36,15 @@ export const RATE_LIMIT_FIX_MERMAID: RateLimitPolicy = {
     ipLimit: 90,
     windowSeconds: 60,
     failClosed: true,
+};
+
+/** Anonymous GitHub lookups share one system token (5000 requests/hour). */
+export const RATE_LIMIT_GITHUB: RateLimitPolicy = {
+    route: "github",
+    actorLimit: 40,
+    ipLimit: 120,
+    windowSeconds: 60,
+    failClosed: false,
 };
 
 let loggedLimiterFailure = false;
@@ -88,7 +98,7 @@ export async function enforceRateLimit(
         }
         // Outside production with no KV configured at all (local dev, tests), limiting is simply off,
         // like the other KV-backed features. In production a missing or failing KV fails closed.
-        const kvConfigured = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+        const kvConfigured = isKvConfigured();
         if (policy.failClosed && (kvConfigured || process.env.NODE_ENV === "production")) {
             return NextResponse.json(
                 {

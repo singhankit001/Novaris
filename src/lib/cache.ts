@@ -1,4 +1,7 @@
 import { kv } from "@vercel/kv";
+import { isKvConfigured, syncKvEnv } from "@/lib/kv-env";
+
+syncKvEnv();
 import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 
@@ -65,10 +68,16 @@ export interface ToolBudgetWindowUsage extends ToolBudgetUsage {
 }
 
 // Helper to handle KV errors gracefully
+// An unconfigured KV throws on every call; report that once instead of once per cache read.
+let reportedMissingKvConfig = false;
+
 async function safeKvOperation<T>(operation: () => Promise<T>): Promise<T | null> {
     try {
         return await operation();
     } catch (error) {
+        const missingConfig = error instanceof Error && error.message.includes("Missing required environment variables");
+        if (missingConfig && reportedMissingKvConfig) return null;
+        reportedMissingKvConfig ||= missingConfig;
         console.warn("KV operation failed (gracefully degrading):", error);
         return null;
     }
@@ -267,7 +276,7 @@ type BudgetActors = string | string[] | undefined;
  * tests) the tool budget is not enforced. In production a missing or failing KV fails closed.
  */
 function isToolBudgetEnforced(): boolean {
-    return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) || process.env.NODE_ENV === "production";
+    return isKvConfigured() || process.env.NODE_ENV === "production";
 }
 
 function toBudgetActorList(actorIds: BudgetActors): Array<string | undefined> {
@@ -810,106 +819,6 @@ export async function getCachedQuerySelection(
     const namespace = getQueryCacheNamespace(owner, repo, policy);
     const key = `query:${namespace}:${normalizedQuery}${intentSuffix}`;
     return await safeKvOperation(() => kv.get<string[]>(key));
-}
-
-/**
- * Cache Full AI Query Answer
- * Maps a query (plus the files used) to the final generated Markdown answer
- */
-export async function cacheRepoQueryAnswer(
-    owner: string,
-    repo: string,
-    query: string,
-    files: string[],
-    answer: string,
-    policy?: FileCachePolicy
-): Promise<void> {
-    // We hash the file list to ensure if files change, cache invalidates.
-    // A simple join is sufficient for our keys since they are relative paths.
-    const fileHash = files.sort().join('|').substring(0, 100);
-    const normalizedQuery = query.toLowerCase().trim();
-    const namespace = getQueryCacheNamespace(owner, repo, policy);
-    const key = `answer:${namespace}:${normalizedQuery}:${fileHash}`;
-
-    // Cache for 24 hours
-    // We compress the answer if it's large as AI responses can be long
-    try {
-        const stringified = answer;
-        const compressed = gzipSync(Buffer.from(stringified));
-        const value = `gz:${compressed.toString('base64')}`;
-        // Store both the specific (hashed) and latest answer
-        await Promise.all([
-            safeKvOperation(() => kv.setex(key, 86400, value)),
-            safeKvOperation(() => kv.setex(`latest_answer:${namespace}:${normalizedQuery}`, 86400, value))
-        ]);
-    } catch {
-        console.warn("Failed to compress answer, caching plain text...");
-        const stringified = answer;
-        await Promise.all([
-            safeKvOperation(() => kv.setex(key, 86400, stringified)),
-            safeKvOperation(() => kv.setex(`latest_answer:${namespace}:${normalizedQuery}`, 86400, stringified))
-        ]);
-    }
-}
-
-export async function getCachedRepoQueryAnswer(
-    owner: string,
-    repo: string,
-    query: string,
-    files: string[],
-    policy?: FileCachePolicy
-): Promise<string | null> {
-    const fileHash = files.sort().join('|').substring(0, 100);
-    const normalizedQuery = query.toLowerCase().trim();
-    const namespace = getQueryCacheNamespace(owner, repo, policy);
-    const key = `answer:${namespace}:${normalizedQuery}:${fileHash}`;
-
-    const cached = await safeKvOperation(() => kv.get<string>(key));
-    if (!cached) return null;
-
-    let resultString = cached;
-    if (cached.startsWith('gz:')) {
-        try {
-            const buffer = Buffer.from(cached.slice(3), 'base64');
-            resultString = gunzipSync(buffer).toString();
-        } catch {
-            console.error("Failed to decompress cached answer");
-            return null;
-        }
-    }
-
-    return resultString;
-}
-
-/**
- * Short-circuit check for query answer.
- * Checks if there's any answer for this query, ignoring file selection hash.
- * This is faster but potentially slightly less accurate if the codebase changed recently.
- */
-export async function getLatestRepoQueryAnswer(
-    owner: string,
-    repo: string,
-    query: string,
-    policy?: FileCachePolicy
-): Promise<string | null> {
-    const normalizedQuery = query.toLowerCase().trim();
-    const namespace = getQueryCacheNamespace(owner, repo, policy);
-    const key = `latest_answer:${namespace}:${normalizedQuery}`;
-
-    const cached = await safeKvOperation(() => kv.get<string>(key));
-    if (!cached) return null;
-
-    let resultString = cached;
-    if (cached.startsWith('gz:')) {
-        try {
-            const buffer = Buffer.from(cached.slice(3), 'base64');
-            resultString = gunzipSync(buffer).toString();
-        } catch {
-            return null;
-        }
-    }
-
-    return resultString;
 }
 
 export interface SecurityScanCacheIdentity {

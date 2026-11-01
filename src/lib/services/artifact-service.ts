@@ -38,7 +38,7 @@ export async function searchRepositoryCode(
             if (type === "ast" && !/\.(js|jsx|ts|tsx)$/.test(file.path)) continue;
             try {
                 const content = await fetchContent(owner, repo, file.path);
-                filesWithContent.push({ path: file.path, content });
+                if (content !== null) filesWithContent.push({ path: file.path, content });
             } catch {
                 // Skip files that fail to fetch — don't abort the whole search
             }

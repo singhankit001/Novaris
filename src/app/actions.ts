@@ -30,17 +30,16 @@ import {
 } from "@/lib/github";
 import {
     ADMIN_ANALYTICS_CACHE_TAGS,
-    trackEvent,
-    trackAuthenticatedQueryEvent,
     getPublicStats,
     trackReportConversionEvent,
     resetReportConversionMetrics,
     type ReportConversionEvent,
 } from "@/lib/analytics";
-import { ANON_COOKIE_NAME, isValidAnonymousCookieId } from "@/lib/actor-id";
+import { ANON_COOKIE_NAME, getAnonymousActorId, isValidAnonymousCookieId } from "@/lib/actor-id";
+import { enforceRateLimit, RATE_LIMIT_GITHUB } from "@/lib/rate-limit";
 import { getRepoIndexStatus } from "@/lib/services/repo-index-service";
 import { toSafeStreamError, type StreamUpdate } from "@/lib/streaming-types";
-import { GITHUB_NAME_PATTERN, MAX_FILE_PATH_LENGTH, MAX_FILE_PATHS, assertGithubName, assertMaxLength } from "@/lib/request-validation";
+import { isGithubName, MAX_FILE_PATH_LENGTH, MAX_FILE_PATHS, assertGithubName, assertMaxLength } from "@/lib/request-validation";
 import type { GitHubProfile } from "@/lib/github";
 import type { SearchResult } from "@/lib/search-engine";
 import { getCachedSecurityScanResult, cacheSecurityScanResult } from "@/lib/cache";
@@ -49,7 +48,6 @@ import type { ModelPreference } from "@/lib/ai-client";
 
 // ─── Services & Domain ────────────────────────────────────────────────────────
 import {
-    executeRepoQuery,
     executeRepoQueryStream,
 } from "@/lib/services/query-pipeline";
 import {
@@ -76,7 +74,7 @@ import {
     buildRepoReadmeEntry,
     type RepoReadmeSummary,
 } from "@/lib/domain";
-import { analyzeFileSelection, answerWithContext, answerWithContextStream } from "@/lib/gemini";
+import { analyzeFileSelection, answerWithContextStream } from "@/lib/gemini";
 import { mapProfileStreamChunk } from "@/lib/profile-stream";
 import { buildOutreachPack, findingFingerprint as buildFindingFingerprint } from "@/lib/services/report-service";
 import { getPublicSiteUrl } from "@/lib/site-url";
@@ -116,47 +114,6 @@ function classifyStreamError(error: unknown): { message: string; code: string } 
 
 // ─── Private: Analytics tracking ─────────────────────────────────────────────
 
-/**
- * Fire-and-forget analytics event.
- * Reads headers at this function's top level (required by Next.js 15).
- */
-async function trackQueryEvent(visitorId: string | undefined): Promise<void> {
-    const session = await auth();
-    const h = await headers();
-    const cookieStore = await cookies();
-    const userAgent = h.get("user-agent") ?? "";
-    const country = h.get("x-vercel-ip-country") ?? "Unknown";
-    const device = /mobile/i.test(userAgent) ? "mobile" : "desktop";
-    const cookieAnonId = cookieStore.get(ANON_COOKIE_NAME)?.value;
-    const anonIdFromCookie = isValidAnonymousCookieId(cookieAnonId) ? `anon_${cookieAnonId}` : undefined;
-    const anonId = visitorId && visitorId.startsWith("anon_") ? visitorId : anonIdFromCookie;
-    
-    // If authenticated, we use trackAuthenticatedQueryEvent which handles 
-    // migration from anonId (visitorId) and excludes admins.
-    if (session?.user?.id) {
-        await trackAuthenticatedQueryEvent(session.user.id, {
-            anonId,
-            country,
-            device,
-            userAgent,
-        });
-        return;
-    }
-
-    if (process.env.NODE_ENV === "development" && process.env.TRACK_ANALYTICS_IN_DEV !== "true") {
-        console.log("[Analytics] Skipped (dev). Set TRACK_ANALYTICS_IN_DEV=true to enable.");
-        return;
-    }
-
-    if (!anonId) return;
-
-    try {
-        await trackEvent(anonId, "query", { country, device, userAgent });
-    } catch (e) {
-        console.error("Analytics tracking failed:", e);
-    }
-}
-
 function revalidateAdminAnalytics() {
     for (const tag of ADMIN_ANALYTICS_CACHE_TAGS) {
         try {
@@ -178,6 +135,35 @@ async function requireAuthenticatedActor() {
         throw new Error("Unauthorized");
     }
     return { session, userId: getSessionUserId(session) };
+}
+
+/** Limits GitHub-backed actions per actor and network. Returns a user-safe error when over. */
+async function limitGitHubLookups(): Promise<{ error: string; code: string } | null> {
+    const [session, requestHeaders, cookieStore] = await Promise.all([auth(), headers(), cookies()]);
+    const anonCookie = cookieStore.get(ANON_COOKIE_NAME)?.value ?? null;
+    const actorId = getSessionUserId(session) ?? getAnonymousActorId(requestHeaders, isValidAnonymousCookieId(anonCookie) ? anonCookie : null);
+    const limited = await enforceRateLimit(requestHeaders, actorId, RATE_LIMIT_GITHUB);
+    if (!limited) return null;
+    return limited.status === 429
+        ? { error: "Too many requests. Please wait a moment and try again.", code: "RATE_LIMITED" }
+        : { error: "Request limiting is temporarily unavailable. Please try again shortly.", code: "LIMITER_UNAVAILABLE" };
+}
+
+/** Private repositories get a per-user cache namespace; unknown visibility counts as private. */
+async function resolveFileCachePolicy(owner: string, repo: string): Promise<FileCachePolicy> {
+    const userId = getSessionUserId(await auth());
+    let visibility: "public" | "private" = "private";
+    try {
+        visibility = (await getRepo(owner, repo)).private ? "private" : "public";
+    } catch {
+        // keep private
+    }
+    return { audience: userId ? "authenticated" : "anonymous", actorId: userId ?? undefined, visibility };
+}
+
+async function assertGitHubLookupAllowed(): Promise<void> {
+    const limited = await limitGitHubLookups();
+    if (limited) throw new Error(limited.error);
 }
 
 // ─── Private: Profile context ─────────────────────────────────────────────────
@@ -389,7 +375,9 @@ async function buildCrossRepoContext(
 export async function fetchGitHubData(input: string) {
     if (typeof input !== "string" || input.length > 201) return { error: "Invalid input format", code: "INPUT_INVALID" };
     const parts = input.split("/");
-    if (parts.some((part) => !GITHUB_NAME_PATTERN.test(part))) return { error: "Invalid input format", code: "INPUT_INVALID" };
+    if (parts.length > 2 || parts.some((part) => !isGithubName(part))) return { error: "Invalid input format", code: "INPUT_INVALID" };
+    const limited = await limitGitHubLookups();
+    if (limited) return { error: limited.error, code: limited.code };
     const session = await auth();
 
     if (parts.length === 1) {
@@ -466,10 +454,7 @@ export async function trackReportConversion(event: ReportConversionEvent, scanId
 }
 
 /**
- * Fetch file content and assemble a context string.
- * @deprecated Prefer generateAnswer(query, ..., filePaths) which uses the
- * unified query pipeline. This export is kept for ChatInterface.tsx
- * backwards-compatibility.
+ * Fetch file content and assemble a context string (used by the codebase map).
  */
 export async function fetchRepoFiles(
     owner: string,
@@ -479,8 +464,9 @@ export async function fetchRepoFiles(
     assertGithubName(owner, "owner");
     assertGithubName(repo, "repo");
     assertFileList(files);
+    await assertGitHubLookupAllowed();
     const { countTokens, MAX_TOKENS } = await import("@/lib/tokens");
-    const results = await getFileContentBatch(owner, repo, files);
+    const results = await getFileContentBatch(owner, repo, files, await resolveFileCachePolicy(owner, repo));
 
     let context = "";
     let tokenTotal = 0;
@@ -524,65 +510,11 @@ export async function fetchUserRepos(username: string) {
 export async function fetchRepoDetails(owner: string, repo: string) {
     assertGithubName(owner, "owner");
     assertGithubName(repo, "repo");
+    await assertGitHubLookupAllowed();
     return getRepo(owner, repo);
 }
 
 // ─── Public Actions — Repo Query Pipeline ────────────────────────────────────
-
-/**
- * Step 1: Select relevant files for a query (thin adapter over query-pipeline).
- * Kept as a separate action so clients can report file selection progress.
- */
-export async function analyzeRepoFiles(
-    query: string,
-    filePaths: string[],
-    owner?: string,
-    repo?: string,
-    modelPreference: ModelPreference = "flash"
-): Promise<{ relevantFiles: string[]; fileCount: number }> {
-    // For backwards compatibility (some callers only want the file list),
-    // we run the selection step directly from gemini rather than the full pipeline
-    const { analyzeFileSelection } = await import("@/lib/gemini");
-    const SKIP = /\.(png|jpg|jpeg|gif|svg|ico|lock|pdf|zip|tar|gz|map|wasm|min\.js|min\.css)$/i;
-    const pruned = filePaths.filter(
-        (p) => !SKIP.test(p) && !p.includes("node_modules/") && !p.includes(".git/")
-    );
-    const relevantFiles = await analyzeFileSelection(query, pruned, owner, repo, modelPreference);
-    return { relevantFiles, fileCount: relevantFiles.length };
-}
-
-/**
- * Step 2+3 combined: fetch files + generate answer (non-streaming).
- * Thin adapter — delegates entirely to the query pipeline.
- */
-export async function generateAnswer(
-    query: string,
-    context: string,
-    repoDetails: { owner: string; repo: string },
-    history: { role: "user" | "model"; content: string }[] = [],
-    profileData?: GitHubProfile,
-    visitorId?: string,
-    filePaths?: string[],
-    modelPreference: ModelPreference = "flash"
-): Promise<string> {
-    await trackQueryEvent(visitorId);
-
-    if (!filePaths?.length) {
-        // Fallback: if no file paths, answer with the pre-built context
-        return answerWithContext(query, context, repoDetails, profileData, history, modelPreference);
-    }
-
-    const { answer } = await executeRepoQuery({
-        query,
-        owner: repoDetails.owner,
-        repo: repoDetails.repo,
-        filePaths,
-        history,
-        profileData,
-        modelPreference,
-    });
-    return answer;
-}
 
 /**
  * Streaming variant of the repo query pipeline — yields StreamUpdate events
@@ -605,7 +537,8 @@ export async function* generateAnswerStream(
         const repo = await getRepo(repoDetails.owner, repoDetails.repo) as { private?: boolean };
         visibility = repo.private ? "private" : "public";
     } catch {
-        visibility = "public";
+        // Unknown visibility is treated as private so nothing lands in the shared cache namespace.
+        visibility = "private";
     }
 
     const fileCachePolicy: FileCachePolicy = {
@@ -629,26 +562,6 @@ export async function* generateAnswerStream(
 }
 
 // ─── Public Actions — Profile Mode ───────────────────────────────────────────
-
-export async function processProfileQuery(
-    query: string,
-    profileContext: ProfileQueryInput,
-    visitorId?: string,
-    history: { role: "user" | "model"; content: string }[] = [],
-    modelPreference: ModelPreference = "flash"
-) {
-    await trackQueryEvent(visitorId);
-    const context = await buildFullProfileContext(profileContext, query);
-    const answer = await answerWithContext(
-        query,
-        context,
-        { owner: profileContext.username, repo: "profile" },
-        profileContext.profile,
-        history,
-        modelPreference
-    );
-    return { answer };
-}
 
 export async function* processProfileQueryStream(
     query: string,

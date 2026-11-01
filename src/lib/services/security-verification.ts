@@ -587,6 +587,19 @@ async function applyAdjudicatorSignals(params: {
     }
 
     if (adjudication.verdict === "needs_more_evidence") {
+        if (adjudication.confidence <= 0 || adjudication.justification.includes("failed to execute")) {
+            params.signals.push({
+                name: "llm_adjudicator_unavailable",
+                passed: false,
+                detail: adjudication.justification,
+                weight: 0,
+            });
+            return {
+                score: params.score,
+                status: params.currentStatus,
+                rationale: `${params.currentRationale} Adjudicator unavailable; preserved deterministic verification.`,
+            };
+        }
         return {
             score: scoreAfterVerdict,
             status: "INCONCLUSIVE_HIDDEN",
@@ -667,7 +680,7 @@ async function verifySingleFinding(
         rationale = `${rationale} ${policy.summary}`;
     }
 
-    if (context.enableAiAdjudication) {
+    if (context.enableAiAdjudication && finding.type !== "dependency") {
         const adjudicated = await applyAdjudicatorSignals({
             finding,
             score,

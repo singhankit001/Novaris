@@ -974,6 +974,28 @@ const KNOWN_VULNERABLE: Record<string, DependencyVulnerabilityRule[]> = {
     "node-fetch": [{ range: "<2.6.7", severity: "high", issue: "Potential SSRF vulnerability in older versions", cve: "CVE-2022-0235" }],
 };
 
+interface OsvVulnerability {
+    id: string;
+    summary?: string;
+    details?: string;
+    aliases?: string[];
+    database_specific?: { severity?: unknown };
+}
+
+/**
+ * OSV puts a CVSS vector (not a label) in `severity[].score`. The GitHub advisory label lives in
+ * `database_specific.severity` (CRITICAL, HIGH, MODERATE, LOW); without one the advisory is medium.
+ */
+export function osvSeverity(vuln: OsvVulnerability): SecuritySeverity {
+    const label = typeof vuln.database_specific?.severity === "string" ? vuln.database_specific.severity.toUpperCase() : "";
+    if (label === "CRITICAL") return "critical";
+    if (label === "HIGH") return "high";
+    if (label === "LOW") return "low";
+    return "medium";
+}
+
+const OSV_TIMEOUT_MS = 4000;
+
 async function fetchVulnerabilitiesFromOSV(packageName: string, version: string): Promise<DependencyVulnerabilityRule[]> {
     try {
         const response = await fetch("https://api.osv.dev/v1/query", {
@@ -983,19 +1005,23 @@ async function fetchVulnerabilitiesFromOSV(packageName: string, version: string)
                 version,
                 package: { name: packageName, ecosystem: "npm" },
             }),
+            signal: AbortSignal.timeout(OSV_TIMEOUT_MS),
         });
 
         if (!response.ok) return [];
 
-        const data = (await response.json()) as { vulns?: Array<{ id: string; summary: string; details: string; severity?: Array<{ score: string }> }> };
+        const data = (await response.json()) as { vulns?: OsvVulnerability[] };
         if (!data.vulns) return [];
 
-        return data.vulns.map((v) => ({
-            range: version, // OSV returns vulns relevant to the queried version
-            severity: (v.severity?.[0]?.score?.includes("HIGH") || v.severity?.[0]?.score?.includes("CRITICAL")) ? "high" : "medium",
-            issue: v.summary || v.details || "Known vulnerability",
-            cve: v.id.startsWith("GHSA") || v.id.startsWith("CVE") ? v.id : undefined,
-        }));
+        return data.vulns.map((v) => {
+            const cve = [v.id, ...(v.aliases ?? [])].find((id) => id.startsWith("CVE-")) ?? (v.id.startsWith("GHSA") ? v.id : undefined);
+            return {
+                range: `includes ${version}`, // OSV returns vulns that affect the queried version
+                severity: osvSeverity(v),
+                issue: v.summary || v.details || "Known vulnerability",
+                cve,
+            };
+        });
     } catch (error) {
         console.error(`Failed to fetch OSV data for ${packageName}:`, error);
         return [];
@@ -1175,17 +1201,28 @@ export async function analyzeDependencies(
         }));
         const resolvedIndex = buildResolvedDependencyIndex(lockfiles);
 
-        for (const dep of [...runtimeDeps, ...devDeps]) {
-            const resolved = resolvedIndex.get(dep.name) ?? parseDeclaredPinnedVersion(dep.declared);
-            if (!resolved) continue;
+        const resolvedDeps = [...runtimeDeps, ...devDeps]
+            .map((dep) => ({ ...dep, resolved: resolvedIndex.get(dep.name) ?? parseDeclaredPinnedVersion(dep.declared) }))
+            .filter((dep): dep is typeof dep & { resolved: string } => Boolean(dep.resolved));
+        // ponytail: fixed batches of 8 parallel OSV queries; switch to /v1/querybatch if manifests grow past a few hundred deps.
+        const osvByDep = new Map<string, DependencyVulnerabilityRule[]>();
+        for (let i = 0; i < resolvedDeps.length; i += 8) {
+            const batch = resolvedDeps.slice(i, i + 8);
+            const results = await Promise.all(batch.map((dep) => fetchVulnerabilitiesFromOSV(dep.name, dep.resolved)));
+            batch.forEach((dep, index) => osvByDep.set(dep.name, results[index] ?? []));
+        }
+
+        for (const dep of resolvedDeps) {
+            const { resolved } = dep;
 
             // 1. Check local fallback (quick)
             const fallbackRules = KNOWN_VULNERABLE[dep.name] || [];
             const activeRules: DependencyVulnerabilityRule[] = [...fallbackRules.filter(r => isVersionInRange(resolved, r.range))];
 
-            // 2. Query OSV API for real-time data
-            const osvRules = await fetchVulnerabilitiesFromOSV(dep.name, resolved);
-            activeRules.push(...osvRules);
+            // 2. Live OSV advisories, skipping ones the fallback already reported
+            for (const rule of osvByDep.get(dep.name) ?? []) {
+                if (!rule.cve || !activeRules.some((existing) => existing.cve === rule.cve)) activeRules.push(rule);
+            }
 
             if (!activeRules.length) continue;
 

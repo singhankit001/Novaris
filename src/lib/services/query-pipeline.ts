@@ -12,11 +12,10 @@
  */
 import { analyzeFileSelection, answerWithContextStream } from "@/lib/gemini";
 import { getFileContentBatch, getFileContentBatchWithStats, type FileBatchFetchStats } from "@/lib/github";
-import { countTokens, MAX_TOKENS } from "@/lib/tokens";
+import { countTokens, MAX_TOKENS, numberLines } from "@/lib/tokens";
+
+export { numberLines };
 import {
-    getCachedRepoQueryAnswer,
-    cacheRepoQueryAnswer,
-    getLatestRepoQueryAnswer,
     resolveAnonymousConsecutivePaths,
 } from "@/lib/cache";
 import type { FileCachePolicy } from "@/lib/cache";
@@ -183,7 +182,7 @@ function buildRepoFolderStructure(paths: string[], maxPaths: number = 500, maxLi
 /**
  * Core repository query pipeline as a streaming generator.
  * Yields StreamUpdate events that consumers can forward directly to the client
- * or collect into a single response (see executeRepoQuery).
+ * or collect into a single response.
  */
 export async function* executeRepoQueryStream(
     params: RepoQueryParams,
@@ -204,22 +203,6 @@ export async function* executeRepoQueryStream(
         let fileFetchMs = 0;
         let contextBuildMs = 0;
         let answerMs = 0;
-
-        // Step 0: Short-circuit check
-        // Check if we have ANY recent answer for this exact query in this repo.
-        // This bypasses file selection, fetching, and AI generation entirely (0.1s hit).
-        const shortCircuit = await getLatestRepoQueryAnswer(owner, repo, query, fileCachePolicy);
-        if (shortCircuit) {
-            console.log(`[query-pipeline] Short-circuit cache hit: ${owner}/${repo} -> ${query}`);
-            yield {
-                type: "status",
-                message: "Using cached answer...",
-                progress: 95,
-            };
-            yield { type: "content", text: stripEmojiCharacters(shortCircuit), append: true };
-            yield { type: "complete", relevantFiles: [] }; // In short-circuit we don't know the files, or we could cache them too.
-            return;
-        }
 
         // Step 1: Select relevant files
         yield {
@@ -324,16 +307,22 @@ export async function* executeRepoQueryStream(
         let tokenTotal = countTokens(context);
         let contextTruncated = false;
 
+        const skippedForBudget: string[] = [];
         for (const { path, content } of fileResults) {
             if (!content) continue;
-            const tokens = countTokens(content);
+            const numbered = numberLines(content);
+            const tokens = countTokens(numbered);
             if (tokenTotal + tokens > MAX_TOKENS) {
-                context += `\n--- NOTE: Context truncated at ${MAX_TOKENS.toLocaleString()} token limit ---\n`;
+                // Skip this file but keep going: a smaller, lower-ranked file may still fit.
+                skippedForBudget.push(path);
                 contextTruncated = true;
-                break;
+                continue;
             }
-            context += `\n--- FILE: ${path} ---\n${content}\n`;
+            context += `\n--- FILE: ${path} ---\n${numbered}\n`;
             tokenTotal += tokens;
+        }
+        if (skippedForBudget.length > 0) {
+            context += `\n--- NOTE: Not loaded (over the ${MAX_TOKENS.toLocaleString()} token limit): ${skippedForBudget.join(", ")} ---\n`;
         }
         contextBuildMs = Date.now() - contextBuildStartMs;
 
@@ -463,66 +452,4 @@ export async function* executeRepoQueryStream(
         const classified = classifyPipelineError(error);
         yield { type: "error", message: classified.message, code: classified.code };
     }
-}
-
-/**
- * Non-streaming wrapper around executeRepoQueryStream.
- * Collects all chunks into a single string response.
- * Used by server actions that don't need incremental delivery.
- */
-export async function executeRepoQuery(
-    params: RepoQueryParams,
-    deps: QueryPipelineDeps = {}
-): Promise<{ answer: string; relevantFiles: string[] }> {
-    let answer = "";
-    let relevantFiles: string[] = [];
-
-    // Attempt cache hit first
-    const { analyzeFiles = analyzeFileSelection } = deps;
-    const prunedPaths = pruneFilePaths(params.filePaths);
-    const selectedFiles = await analyzeFiles(
-        params.query,
-        prunedPaths,
-        params.owner,
-        params.repo,
-        params.modelPreference,
-        params.history,
-        params.fileCachePolicy
-    );
-    const cached = await getCachedRepoQueryAnswer(
-        params.owner,
-        params.repo,
-        params.query,
-        selectedFiles,
-        params.fileCachePolicy
-    );
-
-    if (cached) {
-        console.log(`[query-pipeline] AI response cache hit for ${params.owner}/${params.repo}: ${params.query}`);
-        return { answer: stripEmojiCharacters(cached), relevantFiles: selectedFiles };
-    }
-
-    for await (const update of executeRepoQueryStream(params, deps)) {
-        if (update.type === "content") {
-            answer += update.text;
-        } else if (update.type === "complete") {
-            relevantFiles = update.relevantFiles;
-        } else if (update.type === "error") {
-            throw new Error(update.message);
-        }
-    }
-
-    // Save to cache after complete response
-    if (answer) {
-        await cacheRepoQueryAnswer(
-            params.owner,
-            params.repo,
-            params.query,
-            relevantFiles,
-            answer,
-            params.fileCachePolicy
-        );
-    }
-
-    return { answer, relevantFiles };
 }

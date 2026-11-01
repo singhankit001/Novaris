@@ -239,4 +239,62 @@ describe("security verification gate", () => {
 
         expect(adjudicator).not.toHaveBeenCalled();
     });
+
+    it("preserves deterministic status when the adjudicator fails to execute with 0 confidence", async () => {
+        const finding = makeCodeFinding({
+            recommendation: "Use query placeholders and strict validation.",
+        });
+        const failingAdjudicator = vi.fn(async () => ({
+            verdict: "needs_more_evidence" as const,
+            confidence: 0,
+            justification: "Adjudicator failed to execute; treating as needs_more_evidence.",
+            evidenceUsed: [],
+            rawText: "",
+        }));
+
+        const result = await verifyDetectedFindings({
+            scanId: "scan_9",
+            owner: "acme",
+            repo: "widget",
+            findings: [finding],
+            enableAiAdjudication: true,
+            adjudicateFinding: failingAdjudicator,
+        });
+
+        expect(result.verifiedFindings).toHaveLength(1);
+        expect(result.hiddenFindings).toHaveLength(0);
+        expect(result.records[0]?.verificationStatus).toBe("AUTO_VERIFIED_TRUE");
+    });
+
+    it("does not call code adjudicator for dependency findings", async () => {
+        const depFinding: SecurityFinding = {
+            type: "dependency",
+            severity: "high",
+            title: "Vulnerable dependency version: lodash@4.17.15",
+            description: "Known CVE-2020-8203 prototype pollution",
+            file: "package.json",
+            recommendation: "Upgrade lodash",
+            confidence: "high",
+            confidenceScore: 0.9,
+            cwe: "CWE-1321",
+        };
+        const adjudicator = vi.fn(async () => ({
+            verdict: "true_positive" as const,
+            confidence: 0.9,
+            justification: "Valid",
+            evidenceUsed: [],
+            rawText: "{}",
+        }));
+
+        await verifyDetectedFindings({
+            scanId: "scan_10",
+            owner: "acme",
+            repo: "widget",
+            findings: [depFinding],
+            enableAiAdjudication: true,
+            adjudicateFinding: adjudicator,
+        });
+
+        expect(adjudicator).not.toHaveBeenCalled();
+    });
 });

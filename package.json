@@ -31,6 +31,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "node scripts/prisma-deploy.mjs",
+    "db:seed": "tsx scripts/seed-blog.ts",
     "data:refresh:repos": "node scripts/fetch-trending-repos.mjs",
     "backfill:kv": "node scripts/backfill-kv-to-postgres.mjs",
     "analytics:estimate-gap": "node scripts/estimate-analytics-gap.mjs"
@@ -94,9 +95,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.0.18"
-  },
-  "prisma": {
-    "seed": "tsx scripts/seed-blog.ts"
   },
   "overrides": {
     "dompurify": "^3.4.17",
