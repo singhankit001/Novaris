@@ -86,10 +86,14 @@ function MiniDiagram({ className }: { className?: string }) {
 }
 
 
-/** Auth.js sends `?error=<code>` here when GitHub sign-in fails. */
+/** Auth.js sends `?error=<code>` here when GitHub sign-in fails; the admin layout sends `unauthorized`. */
 function describeSignInError(code: string): { title: string; body: string } {
     if (code === "AccessDenied") {
         return { title: "GitHub sign-in was cancelled", body: "Authorize the Novaris app on GitHub to sign in." };
+    }
+    if (code === "unauthorized") {
+        // Sent by the admin layout, not Auth.js.
+        return { title: "That area is for administrators", body: "Sign in with an administrator GitHub account to open it." };
     }
     if (code === "Configuration") {
         return { title: "GitHub sign-in is not available right now", body: "The server's sign-in setup is incomplete. Try again later." };

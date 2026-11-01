@@ -5,6 +5,8 @@ import { expect, test } from "@playwright/test";
 
 // Phones keep the account button inside the header menu.
 async function clickSignIn(page: import("@playwright/test").Page) {
+    // A tap before hydration does nothing; wait until the client has loaded.
+    await page.waitForLoadState("networkidle");
     const menu = page.getByRole("button", { name: "Open menu" });
     if (await menu.isVisible()) await menu.click();
     await page.getByRole("button", { name: /^sign in$/i }).filter({ visible: true }).first().click();
@@ -46,4 +48,15 @@ test("session endpoint returns no user when signed out", async ({ request }) => 
     const res = await request.get("/api/auth/session");
     expect(res.status()).toBe(200);
     expect(await res.json()).toBeNull();
+});
+
+test("signed-out admin visit explains that the area is for administrators", async ({ page }) => {
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\?error=unauthorized/);
+    await expect(page.getByRole("main").getByText("That area is for administrators")).toBeVisible();
+});
+
+test("an unknown report id shows the not-found page, not a server error", async ({ page }) => {
+    await page.goto("/report/does-not-exist");
+    await expect(page.getByText("Nothing at this address")).toBeVisible();
 });
