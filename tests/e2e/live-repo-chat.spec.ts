@@ -15,7 +15,7 @@ test("public repo loads and a question returns an answer that cites a real file"
 
     await page.goto(`/chat?q=${REPO}`);
     await expect(page.getByRole("heading", { name: "slugify", level: 1 })).toBeVisible({ timeout: 60_000 });
-    await page.getByRole("button", { name: "Open chat" }).click();
+    await page.getByRole("button", { name: "Open chat" }).filter({ visible: true }).first().click();
     const input = page.getByRole("combobox", { name: "Your question" });
     await expect(input).toBeEnabled({ timeout: 30_000 });
 

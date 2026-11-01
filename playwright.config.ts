@@ -19,7 +19,7 @@ export default defineConfig({
     // Runs against a production build (`npm run build` first) so the service worker and
     // server actions behave as they do when deployed.
     webServer: {
-        command: `npx next start -p ${port}`,
+        command: `node scripts/run-e2e-server.mjs`,
         url: `http://localhost:${port}`,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
