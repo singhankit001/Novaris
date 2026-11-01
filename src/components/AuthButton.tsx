@@ -1,6 +1,7 @@
 "use client";
 
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
+import { signInWithGitHub } from "@/lib/sign-in";
 import { Github, LogOut, LayoutDashboard, User } from "lucide-react";
 import Image from "next/image";
 import { Menu } from "@/components/nv/menu";
@@ -35,7 +36,7 @@ export default function AuthButton() {
     }
 
     return (
-        <Button className="border-transparent bg-transparent hover:bg-nv-copper-wash" variant="secondary" leading={<Github aria-hidden className="size-4" />} onClick={() => signIn("github")}>
+        <Button className="border-transparent bg-transparent hover:bg-nv-copper-wash" variant="secondary" leading={<Github aria-hidden className="size-4" />} onClick={() => signInWithGitHub()}>
             <span className="hidden sm:inline">Sign in</span>
             <span className="sm:hidden">Sign in</span>
         </Button>

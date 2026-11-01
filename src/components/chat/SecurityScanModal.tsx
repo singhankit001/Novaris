@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signInWithGitHub } from "@/lib/sign-in";
 import { Button } from "@/components/nv/button";
 import { buttonClasses } from "@/components/nv/button-styles";
 import { Dialog } from "@/components/nv/dialog";
@@ -60,7 +60,7 @@ export function SecurityScanModal({ isOpen, isAuthenticated, deepScansData, late
                     {isAuthenticated ? (
                         <p className="nv-num mt-2 text-nv-small text-nv-ivory-100">{remainingLabel(deepScansData)}</p>
                     ) : (
-                        <Notice className="mt-3" tone="info" title="Deep scans need a signed-in account" action={<Button onClick={() => signIn("github")}>Sign in</Button>}>
+                        <Notice className="mt-3" tone="info" title="Deep scans need a signed-in account" action={<Button onClick={() => signInWithGitHub()}>Sign in</Button>}>
                             Reports from deep scans are saved to your account.
                         </Notice>
                     )}

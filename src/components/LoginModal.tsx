@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signInWithGitHub } from "@/lib/sign-in";
 import { Button } from "@/components/nv/button";
 import { Dialog } from "@/components/nv/dialog";
 
@@ -32,7 +32,7 @@ export function LoginModal({
                     <Button onClick={onClose}>Not now</Button>
                     <Button
                         variant="primary"
-                        onClick={() => signIn("github", callbackUrl ? { callbackUrl } : undefined, scope ? { scope } : undefined)}
+                        onClick={() => signInWithGitHub(callbackUrl ? { callbackUrl } : undefined, scope ? { scope } : undefined)}
                     >
                         Sign in with GitHub
                     </Button>

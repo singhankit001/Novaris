@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signInWithGitHub } from "@/lib/sign-in";
 import { GitFork, Lock, RefreshCw, Search, Star } from "lucide-react";
 import PageHeader from "@/components/Dashboard/PageHeader";
 import { useApi } from "@/components/Dashboard/use-api";
@@ -33,7 +34,7 @@ interface ReposResponse {
 }
 
 function grantRepositoryAccess() {
-    signIn("github", { callbackUrl: "/dashboard/repos" }, { scope: "read:user user:email repo" });
+    signInWithGitHub({ callbackUrl: "/dashboard/repos" }, { scope: "read:user user:email repo" });
 }
 
 function ReposSkeleton() {

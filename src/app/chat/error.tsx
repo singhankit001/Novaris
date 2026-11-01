@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, KeyRound, RefreshCw, Home, ShieldAlert } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { signInWithGitHub } from "@/lib/sign-in";
 import { buttonClasses } from "@/components/nv/button-styles";
 
 export default function ChatError({
@@ -48,7 +48,7 @@ export default function ChatError({
 
                     <div className="flex w-full flex-col gap-3 pt-2 sm:flex-row">
                         {isAuthError || isRateLimit ? (
-                            <button type="button" onClick={() => signIn("github")} className={buttonClasses("primary", "md", "flex-1")}>
+                            <button type="button" onClick={() => signInWithGitHub()} className={buttonClasses("primary", "md", "flex-1")}>
                                 <KeyRound className="size-4" aria-hidden /> Sign in with GitHub
                             </button>
                         ) : (

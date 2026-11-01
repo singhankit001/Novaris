@@ -2,13 +2,19 @@ import type { NextAuthConfig } from "next-auth";
 import GitHub from "next-auth/providers/github";
 import { INVALID_SESSION_ERROR_CODE } from "./session-guard";
 
+// GitHub rejects an authorize request with an empty client_id, so an unconfigured provider is
+// left out entirely. Clients then see no "github" provider and show the configuration notice.
+export const isGitHubAuthConfigured = Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET);
+
 const authConfig: NextAuthConfig = {
-    providers: [
-        GitHub({
-            clientId: process.env.AUTH_GITHUB_ID,
-            clientSecret: process.env.AUTH_GITHUB_SECRET,
-        }),
-    ],
+    providers: isGitHubAuthConfigured
+        ? [
+              GitHub({
+                  clientId: process.env.AUTH_GITHUB_ID,
+                  clientSecret: process.env.AUTH_GITHUB_SECRET,
+              }),
+          ]
+        : [],
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;

@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { Adapter } from "next-auth/adapters";
 import { queueWelcomeEmailDelivery } from "./emails/delivery-service";
-import authConfig from "./auth.config";
+import authConfig, { isGitHubAuthConfigured } from "./auth.config";
 import { prisma } from "./db";
 
 const prismaAdapter = PrismaAdapter(prisma);
@@ -18,6 +18,10 @@ const adapter: Adapter = {
 // Sign-in only needs AUTH_SECRET and the GitHub OAuth app. Without a database, users still sign in
 // (the session id is the GitHub account id); features that store data report storage as unavailable.
 const hasDatabase = Boolean(process.env.DATABASE_URL);
+
+if (!isGitHubAuthConfigured) {
+    console.error("GitHub sign-in is disabled: set AUTH_GITHUB_ID and AUTH_GITHUB_SECRET (OAuth app callback: <origin>/api/auth/callback/github).");
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
