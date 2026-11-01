@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { isDatabaseConfigured, prisma } from "@/lib/db";
 import type { SecurityFinding, ScanSummary } from "@/lib/security-scanner";
 
 export const SCAN_RETENTION_DAYS = 7;
@@ -91,6 +91,7 @@ export async function saveScanResult(
 }
 
 export async function getScanResultWithStatus(id: string): Promise<ScanLookupResult> {
+    if (!isDatabaseConfigured()) return { status: "not_found" };
     const record = await prisma.repoScan.findUnique({ where: { id } });
     if (!record) {
         return { status: "not_found" };
@@ -110,6 +111,7 @@ export async function getScanResult(id: string): Promise<StoredScan | null> {
 }
 
 export async function getLatestScanId(owner: string, repo: string): Promise<string | null> {
+    if (!isDatabaseConfigured()) return null;
     const now = new Date();
     const latest = await prisma.repoScan.findFirst({
         where: {

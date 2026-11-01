@@ -4,6 +4,11 @@ const globalForPrisma = globalThis as typeof globalThis & {
     prisma?: PrismaClient;
 };
 
+/** No DATABASE_URL means nothing was ever stored, so reads can answer "not found" without a query. */
+export function isDatabaseConfigured(): boolean {
+    return Boolean(process.env.DATABASE_URL);
+}
+
 function getPrismaClient(): PrismaClient {
     if (!globalForPrisma.prisma) {
         globalForPrisma.prisma = new PrismaClient();

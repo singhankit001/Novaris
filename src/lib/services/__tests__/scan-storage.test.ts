@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ScanSummary } from "@/lib/security-scanner";
 
-const { findUniqueMock, findFirstMock } = vi.hoisted(() => ({
+const { findUniqueMock, findFirstMock, dbConfiguredMock } = vi.hoisted(() => ({
     findUniqueMock: vi.fn(),
     findFirstMock: vi.fn(),
+    dbConfiguredMock: vi.fn(() => true),
 }));
 
 vi.mock("@/lib/db", () => ({
+    isDatabaseConfigured: dbConfiguredMock,
     prisma: {
         repoScan: {
             findUnique: findUniqueMock,
@@ -15,7 +17,16 @@ vi.mock("@/lib/db", () => ({
     },
 }));
 
-import { getPreviousScan } from "@/lib/services/scan-storage";
+import { getPreviousScan, getScanResultWithStatus } from "@/lib/services/scan-storage";
+
+describe("getScanResultWithStatus", () => {
+    it("reports not_found without querying when no database is configured", async () => {
+        dbConfiguredMock.mockReturnValueOnce(false);
+        findUniqueMock.mockClear();
+        await expect(getScanResultWithStatus("any-id")).resolves.toEqual({ status: "not_found" });
+        expect(findUniqueMock).not.toHaveBeenCalled();
+    });
+});
 
 function buildDbScan(overrides: Record<string, unknown>) {
     const summary: ScanSummary = {
