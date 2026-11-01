@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db";
 import { unstable_cache } from "next/cache";
 import type { FalsePositiveReviewSummary } from "@/lib/services/report-false-positives";
 import { getFalsePositiveReviewSummary } from "@/lib/services/report-false-positives";
+import { isKvConfigured, syncKvEnv } from "@/lib/kv-env";
+
+syncKvEnv();
 
 export interface KVUsagePoint {
     timestamp: number;
@@ -851,7 +854,7 @@ export async function resetReportConversionMetrics(): Promise<void> {
 
 // Throws on KV failure so callers with last-known-good fallbacks can tell a failed read from a zero.
 async function readManualAnalyticsAdjustments(): Promise<{ visitors: number; queries: number }> {
-    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+    if (!isKvConfigured()) {
         return { visitors: 0, queries: 0 };
     }
 
@@ -879,7 +882,7 @@ async function getGeoDeviceStatsFromHashes(): Promise<{
     countryStats: Record<string, number>;
     deviceStats: Record<string, number>;
 }> {
-    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+    if (!isKvConfigured()) {
         return { countryStats: {}, deviceStats: { mobile: 0, desktop: 0, unknown: 0 } };
     }
 
@@ -1586,7 +1589,6 @@ const PUBLIC_STATS_READ_RETRY_DELAY_MS = 120;
 let inMemoryLastKnownPublicStats: PublicStatsData | null = null;
 
 // Local dev often runs without KV or Postgres; skip those reads instead of logging errors.
-const isKvConfigured = () => Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
 const isDatabaseConfigured = () => Boolean(process.env.DATABASE_URL);
 
 function sleep(ms: number): Promise<void> {

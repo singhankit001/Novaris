@@ -173,7 +173,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             getIndexableTopics(),
         ]);
 
-        repoRoutes = curatedRepos.map((repo) => ({
+        repoRoutes = curatedRepos.slice(0, 3000).map((repo) => ({
             url: `${baseUrl}/repo/${repo.owner}/${repo.repo}`,
             lastModified: catalogModDate,
             changeFrequency: "weekly",

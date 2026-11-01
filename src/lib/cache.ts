@@ -1,4 +1,7 @@
 import { kv } from "@vercel/kv";
+import { isKvConfigured, syncKvEnv } from "@/lib/kv-env";
+
+syncKvEnv();
 import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 
@@ -273,7 +276,7 @@ type BudgetActors = string | string[] | undefined;
  * tests) the tool budget is not enforced. In production a missing or failing KV fails closed.
  */
 function isToolBudgetEnforced(): boolean {
-    return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) || process.env.NODE_ENV === "production";
+    return isKvConfigured() || process.env.NODE_ENV === "production";
 }
 
 function toBudgetActorList(actorIds: BudgetActors): Array<string | undefined> {

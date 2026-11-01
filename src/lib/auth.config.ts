@@ -7,6 +7,7 @@ import { INVALID_SESSION_ERROR_CODE } from "./session-guard";
 export const isGitHubAuthConfigured = Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET);
 
 const authConfig: NextAuthConfig = {
+    trustHost: true,
     providers: isGitHubAuthConfigured
         ? [
               GitHub({
