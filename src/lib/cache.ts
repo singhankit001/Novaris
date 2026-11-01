@@ -65,10 +65,16 @@ export interface ToolBudgetWindowUsage extends ToolBudgetUsage {
 }
 
 // Helper to handle KV errors gracefully
+// An unconfigured KV throws on every call; report that once instead of once per cache read.
+let reportedMissingKvConfig = false;
+
 async function safeKvOperation<T>(operation: () => Promise<T>): Promise<T | null> {
     try {
         return await operation();
     } catch (error) {
+        const missingConfig = error instanceof Error && error.message.includes("Missing required environment variables");
+        if (missingConfig && reportedMissingKvConfig) return null;
+        reportedMissingKvConfig ||= missingConfig;
         console.warn("KV operation failed (gracefully degrading):", error);
         return null;
     }
