@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "refreshedAt": "2026-11-02T10:15:49.014Z",
+  "allTimeRefreshedAt": "2026-11-02T10:15:49.014Z",
+  "tierCounts": {
+    "all-time": 4000,
+    "yearly": 777,
+    "6-month": 285,
+    "monthly": 201,
+    "weekly": 152
+  }
+}
